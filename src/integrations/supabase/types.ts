@@ -55,7 +55,9 @@ export type Database = {
           category: string | null
           city: string | null
           created_at: string
+          duplicate_score: number | null
           email: string | null
+          enriched_at: string | null
           google_maps_url: string | null
           id: string
           last_contact_date: string | null
@@ -64,8 +66,11 @@ export type Database = {
           notes: string | null
           phone: string | null
           place_id: string | null
+          possible_duplicate_of: string | null
           rating: number | null
           reviews_count: number | null
+          search_id: string | null
+          seen_at: string | null
           state: string | null
           status: string
           updated_at: string
@@ -80,7 +85,9 @@ export type Database = {
           category?: string | null
           city?: string | null
           created_at?: string
+          duplicate_score?: number | null
           email?: string | null
+          enriched_at?: string | null
           google_maps_url?: string | null
           id?: string
           last_contact_date?: string | null
@@ -89,8 +96,11 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           place_id?: string | null
+          possible_duplicate_of?: string | null
           rating?: number | null
           reviews_count?: number | null
+          search_id?: string | null
+          seen_at?: string | null
           state?: string | null
           status?: string
           updated_at?: string
@@ -105,7 +115,9 @@ export type Database = {
           category?: string | null
           city?: string | null
           created_at?: string
+          duplicate_score?: number | null
           email?: string | null
+          enriched_at?: string | null
           google_maps_url?: string | null
           id?: string
           last_contact_date?: string | null
@@ -114,8 +126,11 @@ export type Database = {
           notes?: string | null
           phone?: string | null
           place_id?: string | null
+          possible_duplicate_of?: string | null
           rating?: number | null
           reviews_count?: number | null
+          search_id?: string | null
+          seen_at?: string | null
           state?: string | null
           status?: string
           updated_at?: string
@@ -133,10 +148,47 @@ export type Database = {
           },
         ]
       }
+      google_maps_searches: {
+        Row: {
+          campaign_id: string | null
+          created_at: string | null
+          duplicates: number | null
+          id: string
+          new_leads: number | null
+          query: string
+          total_results: number | null
+          updated_leads: number | null
+          user_id: string
+        }
+        Insert: {
+          campaign_id?: string | null
+          created_at?: string | null
+          duplicates?: number | null
+          id?: string
+          new_leads?: number | null
+          query: string
+          total_results?: number | null
+          updated_leads?: number | null
+          user_id: string
+        }
+        Update: {
+          campaign_id?: string | null
+          created_at?: string | null
+          duplicates?: number | null
+          id?: string
+          new_leads?: number | null
+          query?: string
+          total_results?: number | null
+          updated_leads?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
           created_at: string
+          duplicate_behavior: string | null
           full_name: string | null
           id: string
           updated_at: string
@@ -144,6 +196,7 @@ export type Database = {
         Insert: {
           avatar_url?: string | null
           created_at?: string
+          duplicate_behavior?: string | null
           full_name?: string | null
           id: string
           updated_at?: string
@@ -151,6 +204,7 @@ export type Database = {
         Update: {
           avatar_url?: string | null
           created_at?: string
+          duplicate_behavior?: string | null
           full_name?: string | null
           id?: string
           updated_at?: string
