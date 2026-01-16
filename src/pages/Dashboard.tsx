@@ -68,24 +68,22 @@ export default function Dashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user!.id);
 
-      // Carregar contagem de buscas
+      // Carregar contagem de buscas (tabela correta: google_maps_searches)
       const { count: searchCount } = await supabase
-        .from('searches')
+        .from('google_maps_searches')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user!.id);
 
-      // Carregar total de prospects
-      const { data: searches } = await supabase
-        .from('searches')
-        .select('result_count')
+      // Carregar total de prospects (tabela correta: google_maps_leads)
+      const { count: totalProspects } = await supabase
+        .from('google_maps_leads')
+        .select('*', { count: 'exact', head: true })
         .eq('user_id', user!.id);
-      
-      const totalProspects = searches?.reduce((acc, s) => acc + (s.result_count || 0), 0) || 0;
 
       setStats({
         totalCampaigns: campaignCount || 0,
         totalSearches: searchCount || 0,
-        totalProspects,
+        totalProspects: totalProspects || 0,
       });
 
       // Carregar campanhas recentes
