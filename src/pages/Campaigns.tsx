@@ -24,6 +24,7 @@ import {
   Users
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 import { toast } from 'sonner';
 
 interface Campaign {
@@ -58,7 +59,7 @@ export default function Campaigns() {
 
       if (error) throw error;
 
-      // Get search counts for each campaign
+      // Obter contagens de busca para cada campanha
       const campaignsWithStats = await Promise.all(
         (campaignsData || []).map(async (campaign) => {
           const { data: searches } = await supabase
@@ -76,8 +77,8 @@ export default function Campaigns() {
 
       setCampaigns(campaignsWithStats);
     } catch (error) {
-      console.error('Error loading campaigns:', error);
-      toast.error('Failed to load campaigns');
+      console.error('Erro ao carregar campanhas:', error);
+      toast.error('Falha ao carregar campanhas');
     } finally {
       setLoading(false);
     }
@@ -95,34 +96,34 @@ export default function Campaigns() {
       if (error) throw error;
 
       setCampaigns(campaigns.filter(c => c.id !== deleteId));
-      toast.success('Campaign deleted');
+      toast.success('Campanha excluída');
     } catch (error) {
-      console.error('Error deleting campaign:', error);
-      toast.error('Failed to delete campaign');
+      console.error('Erro ao excluir campanha:', error);
+      toast.error('Falha ao excluir campanha');
     } finally {
       setDeleteId(null);
     }
   };
 
   return (
-    <AppShell title="Campaigns">
+    <AppShell title="Campanhas">
       <div className="space-y-6">
-        {/* Header */}
+        {/* Cabeçalho */}
         <div className="flex items-center justify-between">
           <div>
             <p className="text-muted-foreground">
-              Manage your prospect discovery campaigns.
+              Gerencie suas campanhas de descoberta de prospects.
             </p>
           </div>
           <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
             <Link to="/campaigns/new">
               <Plus className="mr-2 h-4 w-4" />
-              New Campaign
+              Nova Campanha
             </Link>
           </Button>
         </div>
 
-        {/* Campaigns List */}
+        {/* Lista de Campanhas */}
         {loading ? (
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {[1, 2, 3].map((i) => (
@@ -144,14 +145,14 @@ export default function Campaigns() {
           <Card className="border-border bg-card">
             <CardContent className="py-16 text-center">
               <FolderOpen className="mx-auto h-16 w-16 text-muted-foreground/50" />
-              <h3 className="mt-4 text-xl font-medium text-foreground">No campaigns yet</h3>
+              <h3 className="mt-4 text-xl font-medium text-foreground">Nenhuma campanha ainda</h3>
               <p className="mt-2 text-muted-foreground">
-                Create your first campaign to start discovering prospects.
+                Crie sua primeira campanha para começar a descobrir prospects.
               </p>
               <Button asChild className="mt-6 bg-primary text-primary-foreground hover:bg-primary/90">
                 <Link to="/campaigns/new">
                   <Plus className="mr-2 h-4 w-4" />
-                  Create Campaign
+                  Criar Campanha
                 </Link>
               </Button>
             </CardContent>
@@ -192,7 +193,7 @@ export default function Campaigns() {
                   <div className="mt-4 flex items-center gap-4 text-sm text-muted-foreground">
                     <div className="flex items-center gap-1">
                       <Search className="h-4 w-4" />
-                      <span>{campaign.searchCount} searches</span>
+                      <span>{campaign.searchCount} buscas</span>
                     </div>
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
@@ -202,7 +203,7 @@ export default function Campaigns() {
                   
                   <div className="mt-4 flex items-center gap-1 text-xs text-muted-foreground">
                     <Clock className="h-3 w-3" />
-                    {format(new Date(campaign.created_at), 'MMM d, yyyy')}
+                    {format(new Date(campaign.created_at), "d 'de' MMM, yyyy", { locale: ptBR })}
                   </div>
                 </CardContent>
               </Card>
@@ -211,24 +212,24 @@ export default function Campaigns() {
         )}
       </div>
 
-      {/* Delete Confirmation Dialog */}
+      {/* Diálogo de Confirmação de Exclusão */}
       <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
         <AlertDialogContent className="bg-card border-border">
           <AlertDialogHeader>
-            <AlertDialogTitle className="text-foreground">Delete Campaign</AlertDialogTitle>
+            <AlertDialogTitle className="text-foreground">Excluir Campanha</AlertDialogTitle>
             <AlertDialogDescription className="text-muted-foreground">
-              This will permanently delete this campaign and all its searches. This action cannot be undone.
+              Isso excluirá permanentemente esta campanha e todas as suas buscas. Esta ação não pode ser desfeita.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel className="border-border text-foreground hover:bg-secondary">
-              Cancel
+              Cancelar
             </AlertDialogCancel>
             <AlertDialogAction 
               onClick={handleDelete}
               className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
             >
-              Delete
+              Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

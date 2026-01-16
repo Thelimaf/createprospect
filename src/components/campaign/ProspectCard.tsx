@@ -54,10 +54,10 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
   const [linkedInMessage, setLinkedInMessage] = useState('');
   const [copied, setCopied] = useState(false);
 
-  // Parse enrichment data
+  // Analisar dados de enriquecimento
   const person = result.enrichment_data?.person;
   const company = result.enrichment_data?.company;
-  const displayName = result.name || person?.name || company?.name || 'Unknown';
+  const displayName = result.name || person?.name || company?.name || 'Desconhecido';
   const displayUrl = result.url || result.enrichment_data?.url || '';
   const position = person?.position;
   const companyName = person?.company?.name || company?.name;
@@ -94,8 +94,8 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
 
       setMessage(data.message);
     } catch (error: any) {
-      console.error('Error generating message:', error);
-      toast.error(error.message || 'Failed to generate message');
+      console.error('Erro ao gerar mensagem:', error);
+      toast.error(error.message || 'Falha ao gerar mensagem');
     } finally {
       setLoading(false);
     }
@@ -104,7 +104,7 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
   const copyToClipboard = async (text: string) => {
     await navigator.clipboard.writeText(text);
     setCopied(true);
-    toast.success('Copied to clipboard');
+    toast.success('Copiado para a área de transferência');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -144,7 +144,7 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
         </CardContent>
       </Card>
 
-      {/* Detail Dialog */}
+      {/* Diálogo de Detalhes */}
       <Dialog open={open} onOpenChange={setOpen}>
         <DialogContent className="max-w-2xl bg-card border-border">
           <DialogHeader>
@@ -161,12 +161,12 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
               </div>
             </DialogTitle>
             <DialogDescription className="sr-only">
-              Prospect details and outreach options
+              Detalhes do prospect e opções de alcance
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4">
-            {/* Details */}
+            {/* Detalhes */}
             <div className="flex flex-wrap gap-2">
               {companyName && (
                 <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
@@ -195,12 +195,12 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
               >
                 <a href={displayUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-2 h-4 w-4" />
-                  View Profile
+                  Ver Perfil
                 </a>
               </Button>
             )}
 
-            {/* Outreach Tabs */}
+            {/* Abas de Alcance */}
             <Tabs defaultValue="email" className="w-full">
               <TabsList className="w-full bg-secondary">
                 <TabsTrigger value="email" className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
@@ -227,7 +227,7 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
                         className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                        {copied ? 'Copied!' : 'Copy to Clipboard'}
+                        {copied ? 'Copiado!' : 'Copiar'}
                       </Button>
                       <Button
                         variant="outline"
@@ -236,7 +236,7 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
                         className="border-border text-foreground hover:bg-secondary"
                       >
                         {generatingEmail && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Regenerate
+                        Regenerar
                       </Button>
                     </div>
                   </div>
@@ -249,12 +249,12 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
                     {generatingEmail ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
+                        Gerando...
                       </>
                     ) : (
                       <>
                         <Mail className="mr-2 h-4 w-4" />
-                        Generate Email
+                        Gerar Email
                       </>
                     )}
                   </Button>
@@ -275,7 +275,7 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
                         className="bg-primary text-primary-foreground hover:bg-primary/90"
                       >
                         {copied ? <Check className="mr-2 h-4 w-4" /> : <Copy className="mr-2 h-4 w-4" />}
-                        {copied ? 'Copied!' : 'Copy to Clipboard'}
+                        {copied ? 'Copiado!' : 'Copiar'}
                       </Button>
                       <Button
                         variant="outline"
@@ -284,7 +284,7 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
                         className="border-border text-foreground hover:bg-secondary"
                       >
                         {generatingLinkedIn && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Regenerate
+                        Regenerar
                       </Button>
                     </div>
                   </div>
@@ -297,12 +297,12 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
                     {generatingLinkedIn ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
+                        Gerando...
                       </>
                     ) : (
                       <>
                         <Linkedin className="mr-2 h-4 w-4" />
-                        Generate LinkedIn Message
+                        Gerar Mensagem LinkedIn
                       </>
                     )}
                   </Button>

@@ -14,6 +14,7 @@ import {
   Clock
 } from 'lucide-react';
 import { format } from 'date-fns';
+import { ptBR } from 'date-fns/locale';
 
 interface Stats {
   totalCampaigns: number;
@@ -42,19 +43,19 @@ export default function Dashboard() {
 
   const loadDashboardData = async () => {
     try {
-      // Load campaigns count
+      // Carregar contagem de campanhas
       const { count: campaignCount } = await supabase
         .from('campaigns')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user!.id);
 
-      // Load searches count
+      // Carregar contagem de buscas
       const { count: searchCount } = await supabase
         .from('searches')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user!.id);
 
-      // Load total prospects
+      // Carregar total de prospects
       const { data: searches } = await supabase
         .from('searches')
         .select('result_count')
@@ -68,7 +69,7 @@ export default function Dashboard() {
         totalProspects,
       });
 
-      // Load recent campaigns
+      // Carregar campanhas recentes
       const { data: campaigns } = await supabase
         .from('campaigns')
         .select('id, name, goal, created_at')
@@ -78,38 +79,38 @@ export default function Dashboard() {
 
       setRecentCampaigns(campaigns || []);
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error('Erro ao carregar dados do painel:', error);
     } finally {
       setLoading(false);
     }
   };
 
   const statCards = [
-    { title: 'Total Campaigns', value: stats.totalCampaigns, icon: FolderOpen, color: 'text-primary' },
-    { title: 'Total Searches', value: stats.totalSearches, icon: Search, color: 'text-accent' },
-    { title: 'Prospects Found', value: stats.totalProspects, icon: Users, color: 'text-purple-500' },
+    { title: 'Total de Campanhas', value: stats.totalCampaigns, icon: FolderOpen, color: 'text-primary' },
+    { title: 'Total de Buscas', value: stats.totalSearches, icon: Search, color: 'text-accent' },
+    { title: 'Prospects Encontrados', value: stats.totalProspects, icon: Users, color: 'text-purple-500' },
   ];
 
   return (
-    <AppShell title="Dashboard">
+    <AppShell title="Painel">
       <div className="space-y-8">
-        {/* Welcome Section */}
+        {/* Seção de Boas-vindas */}
         <div className="flex items-center justify-between">
           <div>
             <h2 className="text-2xl font-bold text-foreground">
-              Welcome back{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name.split(' ')[0]}` : ''}!
+              Bem-vindo de volta{user?.user_metadata?.full_name ? `, ${user.user_metadata.full_name.split(' ')[0]}` : ''}!
             </h2>
-            <p className="text-muted-foreground">Here's what's happening with your campaigns.</p>
+            <p className="text-muted-foreground">Veja o que está acontecendo com suas campanhas.</p>
           </div>
           <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
             <Link to="/campaigns/new">
               <Plus className="mr-2 h-4 w-4" />
-              New Campaign
+              Nova Campanha
             </Link>
           </Button>
         </div>
 
-        {/* Stats Cards */}
+        {/* Cards de Estatísticas */}
         <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {statCards.map((stat) => (
             <Card key={stat.title} className="border-border bg-card">
@@ -124,7 +125,7 @@ export default function Dashboard() {
                   {loading ? (
                     <div className="h-9 w-16 animate-pulse rounded bg-secondary" />
                   ) : (
-                    stat.value.toLocaleString()
+                    stat.value.toLocaleString('pt-BR')
                   )}
                 </div>
               </CardContent>
@@ -132,13 +133,13 @@ export default function Dashboard() {
           ))}
         </div>
 
-        {/* Recent Campaigns */}
+        {/* Campanhas Recentes */}
         <Card className="border-border bg-card">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-foreground">Recent Campaigns</CardTitle>
+            <CardTitle className="text-foreground">Campanhas Recentes</CardTitle>
             <Button variant="ghost" asChild className="text-muted-foreground hover:text-foreground">
               <Link to="/campaigns">
-                View all
+                Ver todas
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
             </Button>
@@ -159,14 +160,14 @@ export default function Dashboard() {
             ) : recentCampaigns.length === 0 ? (
               <div className="py-8 text-center">
                 <FolderOpen className="mx-auto h-12 w-12 text-muted-foreground/50" />
-                <h3 className="mt-4 text-lg font-medium text-foreground">No campaigns yet</h3>
+                <h3 className="mt-4 text-lg font-medium text-foreground">Nenhuma campanha ainda</h3>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  Create your first campaign to start discovering prospects.
+                  Crie sua primeira campanha para começar a descobrir prospects.
                 </p>
                 <Button asChild className="mt-4 bg-primary text-primary-foreground hover:bg-primary/90">
                   <Link to="/campaigns/new">
                     <Plus className="mr-2 h-4 w-4" />
-                    Create Campaign
+                    Criar Campanha
                   </Link>
                 </Button>
               </div>
@@ -187,7 +188,7 @@ export default function Dashboard() {
                     </div>
                     <div className="flex items-center gap-1 text-sm text-muted-foreground">
                       <Clock className="h-4 w-4" />
-                      {format(new Date(campaign.created_at), 'MMM d')}
+                      {format(new Date(campaign.created_at), "d 'de' MMM", { locale: ptBR })}
                     </div>
                   </Link>
                 ))}

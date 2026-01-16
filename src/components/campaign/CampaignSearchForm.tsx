@@ -33,7 +33,7 @@ export function CampaignSearchForm({ campaignId }: CampaignSearchFormProps) {
 
   const handleSearch = async () => {
     if (!query.trim()) {
-      toast.error('Please enter a search query');
+      toast.error('Por favor, insira uma consulta de busca');
       return;
     }
 
@@ -53,15 +53,15 @@ export function CampaignSearchForm({ campaignId }: CampaignSearchFormProps) {
 
       if (error) throw error;
 
-      toast.success('Search started!', {
-        description: 'Results will appear in 30-60 seconds.',
+      toast.success('Busca iniciada!', {
+        description: 'Os resultados aparecerão em 30-60 segundos.',
       });
 
       setQuery('');
       setCriteria([]);
     } catch (error: any) {
-      console.error('Search error:', error);
-      toast.error(error.message || 'Failed to create search');
+      console.error('Erro na busca:', error);
+      toast.error(error.message || 'Falha ao criar busca');
     } finally {
       setLoading(false);
     }
@@ -72,33 +72,33 @@ export function CampaignSearchForm({ campaignId }: CampaignSearchFormProps) {
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-foreground">
           <Search className="h-5 w-5 text-primary" />
-          Search Prospects
+          Buscar Prospects
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Search Query */}
+        {/* Consulta de Busca */}
         <div className="space-y-2">
-          <Label htmlFor="query" className="text-foreground">Search Query</Label>
+          <Label htmlFor="query" className="text-foreground">Consulta de Busca</Label>
           <Input
             id="query"
-            placeholder="e.g., CTOs at Series A startups in San Francisco"
+            placeholder="ex: CTOs em startups Series A em São Paulo"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             className="bg-input border-border text-foreground placeholder:text-muted-foreground"
           />
           <p className="text-xs text-muted-foreground">
-            Use natural language to describe who you're looking for.
+            Use linguagem natural para descrever quem você está procurando.
           </p>
         </div>
 
-        {/* Criteria */}
+        {/* Critérios */}
         <div className="space-y-2">
           <Label className="text-foreground">
-            Filter Criteria <span className="text-muted-foreground">(optional)</span>
+            Critérios de Filtro <span className="text-muted-foreground">(opcional)</span>
           </Label>
           <div className="flex gap-2">
             <Input
-              placeholder="e.g., Has a LinkedIn profile"
+              placeholder="ex: Tem perfil no LinkedIn"
               value={criterionInput}
               onChange={(e) => setCriterionInput(e.target.value)}
               onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), addCriterion())}
@@ -135,10 +135,10 @@ export function CampaignSearchForm({ campaignId }: CampaignSearchFormProps) {
           )}
         </div>
 
-        {/* Result Count */}
+        {/* Contagem de Resultados */}
         <div className="space-y-3">
           <div className="flex items-center justify-between">
-            <Label className="text-foreground">Max Results</Label>
+            <Label className="text-foreground">Máximo de Resultados</Label>
             <span className="text-sm font-medium text-primary">{count[0]}</span>
           </div>
           <Slider
@@ -150,11 +150,11 @@ export function CampaignSearchForm({ campaignId }: CampaignSearchFormProps) {
             className="w-full"
           />
           <p className="text-xs text-muted-foreground">
-            Choose how many prospects to find (5-50).
+            Escolha quantos prospects encontrar (5-50).
           </p>
         </div>
 
-        {/* Submit */}
+        {/* Enviar */}
         <Button
           onClick={handleSearch}
           disabled={loading || !query.trim()}
@@ -163,12 +163,12 @@ export function CampaignSearchForm({ campaignId }: CampaignSearchFormProps) {
           {loading ? (
             <>
               <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-              Starting Search...
+              Iniciando Busca...
             </>
           ) : (
             <>
               <Search className="mr-2 h-4 w-4" />
-              Search Prospects
+              Buscar Prospects
             </>
           )}
         </Button>

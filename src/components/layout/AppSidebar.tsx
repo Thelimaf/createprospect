@@ -17,9 +17,9 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 
 const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Campaigns', href: '/campaigns', icon: FolderOpen },
-  { name: 'New Campaign', href: '/campaigns/new', icon: Plus },
+  { name: 'Painel', href: '/dashboard', icon: Home },
+  { name: 'Campanhas', href: '/campaigns', icon: FolderOpen },
+  { name: 'Nova Campanha', href: '/campaigns/new', icon: Plus },
 ];
 
 export function AppSidebar() {
@@ -38,7 +38,7 @@ export function AppSidebar() {
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel className="text-muted-foreground">Navigation</SidebarGroupLabel>
+          <SidebarGroupLabel className="text-muted-foreground">Navegação</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {navigation.map((item) => (
@@ -80,6 +80,7 @@ export function AppSidebar() {
             size="icon"
             onClick={signOut}
             className="text-muted-foreground hover:text-foreground"
+            title="Sair"
           >
             <LogOut className="h-4 w-4" />
           </Button>

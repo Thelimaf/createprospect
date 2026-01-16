@@ -17,20 +17,20 @@ type Step = 1 | 2 | 3;
 const tones = [
   { 
     value: 'professional', 
-    label: 'Professional', 
-    description: 'Business-appropriate, concise and direct',
+    label: 'Profissional', 
+    description: 'Apropriado para negócios, conciso e direto',
     icon: Briefcase 
   },
   { 
     value: 'casual', 
     label: 'Casual', 
-    description: 'Friendly and conversational',
+    description: 'Amigável e conversacional',
     icon: Smile 
   },
   { 
     value: 'friendly', 
-    label: 'Friendly', 
-    description: 'Warm, personable and enthusiastic',
+    label: 'Amigável', 
+    description: 'Caloroso, pessoal e entusiasmado',
     icon: Heart 
   },
 ];
@@ -41,7 +41,7 @@ export default function CampaignNew() {
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
   
-  // Form data
+  // Dados do formulário
   const [name, setName] = useState('');
   const [goal, setGoal] = useState('');
   const [context, setContext] = useState('');
@@ -87,20 +87,20 @@ export default function CampaignNew() {
 
       if (error) throw error;
 
-      toast.success('Campaign created!');
+      toast.success('Campanha criada!');
       navigate(`/campaigns/${data.id}`);
     } catch (error) {
-      console.error('Error creating campaign:', error);
-      toast.error('Failed to create campaign');
+      console.error('Erro ao criar campanha:', error);
+      toast.error('Falha ao criar campanha');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <AppShell title="Create Campaign">
+    <AppShell title="Criar Campanha">
       <div className="mx-auto max-w-2xl">
-        {/* Progress Steps */}
+        {/* Etapas de Progresso */}
         <div className="mb-8 flex items-center justify-center gap-2">
           {[1, 2, 3].map((s) => (
             <div key={s} className="flex items-center">
@@ -126,22 +126,22 @@ export default function CampaignNew() {
           ))}
         </div>
 
-        {/* Step Content */}
+        {/* Conteúdo da Etapa */}
         <Card className="border-border bg-card">
           {step === 1 && (
             <>
               <CardHeader>
-                <CardTitle className="text-foreground">Name your campaign</CardTitle>
+                <CardTitle className="text-foreground">Nomeie sua campanha</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Give your campaign a memorable name to identify it later.
+                  Dê um nome memorável para identificá-la depois.
                 </CardDescription>
               </CardHeader>
               <CardContent>
                 <div className="space-y-2">
-                  <Label htmlFor="name" className="text-foreground">Campaign Name</Label>
+                  <Label htmlFor="name" className="text-foreground">Nome da Campanha</Label>
                   <Input
                     id="name"
-                    placeholder="e.g., Q1 Sales Outreach"
+                    placeholder="ex: Prospecção Q1 Vendas"
                     value={name}
                     onChange={(e) => setName(e.target.value)}
                     className="bg-input border-border text-foreground placeholder:text-muted-foreground"
@@ -154,17 +154,17 @@ export default function CampaignNew() {
           {step === 2 && (
             <>
               <CardHeader>
-                <CardTitle className="text-foreground">Define your goal</CardTitle>
+                <CardTitle className="text-foreground">Defina seu objetivo</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Describe what you're trying to achieve and provide context about your company.
+                  Descreva o que você está tentando alcançar e forneça contexto sobre sua empresa.
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="space-y-2">
-                  <Label htmlFor="goal" className="text-foreground">Campaign Goal</Label>
+                  <Label htmlFor="goal" className="text-foreground">Objetivo da Campanha</Label>
                   <Textarea
                     id="goal"
-                    placeholder="e.g., Find CTOs at Series A startups who might need our DevOps automation platform"
+                    placeholder="ex: Encontrar CTOs em startups Series A que possam precisar da nossa plataforma de automação DevOps"
                     value={goal}
                     onChange={(e) => setGoal(e.target.value)}
                     rows={3}
@@ -173,19 +173,19 @@ export default function CampaignNew() {
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="context" className="text-foreground">
-                    About You / Your Company{' '}
-                    <span className="text-muted-foreground">(optional)</span>
+                    Sobre Você / Sua Empresa{' '}
+                    <span className="text-muted-foreground">(opcional)</span>
                   </Label>
                   <Textarea
                     id="context"
-                    placeholder="e.g., We're a DevOps automation platform that helps engineering teams deploy 10x faster..."
+                    placeholder="ex: Somos uma plataforma de automação DevOps que ajuda equipes de engenharia a fazer deploy 10x mais rápido..."
                     value={context}
                     onChange={(e) => setContext(e.target.value)}
                     rows={3}
                     className="bg-input border-border text-foreground placeholder:text-muted-foreground resize-none"
                   />
                   <p className="text-xs text-muted-foreground">
-                    This helps AI generate more personalized outreach messages.
+                    Isso ajuda a IA a gerar mensagens de alcance mais personalizadas.
                   </p>
                 </div>
               </CardContent>
@@ -195,9 +195,9 @@ export default function CampaignNew() {
           {step === 3 && (
             <>
               <CardHeader>
-                <CardTitle className="text-foreground">Choose your tone</CardTitle>
+                <CardTitle className="text-foreground">Escolha seu tom</CardTitle>
                 <CardDescription className="text-muted-foreground">
-                  Select the tone for AI-generated outreach messages.
+                  Selecione o tom para mensagens de alcance geradas por IA.
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -228,7 +228,7 @@ export default function CampaignNew() {
             </>
           )}
 
-          {/* Navigation */}
+          {/* Navegação */}
           <div className="flex items-center justify-between border-t border-border p-6">
             <Button
               variant="ghost"
@@ -237,7 +237,7 @@ export default function CampaignNew() {
               className="text-muted-foreground hover:text-foreground"
             >
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
+              Voltar
             </Button>
             
             {step < 3 ? (
@@ -246,7 +246,7 @@ export default function CampaignNew() {
                 disabled={!canProceed()}
                 className="bg-primary text-primary-foreground hover:bg-primary/90"
               >
-                Continue
+                Continuar
                 <ArrowRight className="ml-2 h-4 w-4" />
               </Button>
             ) : (
@@ -259,7 +259,7 @@ export default function CampaignNew() {
                   <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
                 ) : (
                   <>
-                    Create Campaign
+                    Criar Campanha
                     <Check className="ml-2 h-4 w-4" />
                   </>
                 )}

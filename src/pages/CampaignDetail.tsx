@@ -43,7 +43,7 @@ export default function CampaignDetail() {
 
       if (error) {
         if (error.code === 'PGRST116') {
-          toast.error('Campaign not found');
+          toast.error('Campanha não encontrada');
           navigate('/campaigns');
           return;
         }
@@ -52,8 +52,8 @@ export default function CampaignDetail() {
 
       setCampaign(data);
     } catch (error) {
-      console.error('Error loading campaign:', error);
-      toast.error('Failed to load campaign');
+      console.error('Erro ao carregar campanha:', error);
+      toast.error('Falha ao carregar campanha');
     } finally {
       setLoading(false);
     }
@@ -74,21 +74,21 @@ export default function CampaignDetail() {
   }
 
   const toneLabels: Record<string, string> = {
-    professional: 'Professional',
+    professional: 'Profissional',
     casual: 'Casual',
-    friendly: 'Friendly',
+    friendly: 'Amigável',
   };
 
   return (
     <AppShell title={campaign.name}>
       <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-        {/* Campaign Info Sidebar */}
+        {/* Sidebar de Informações da Campanha */}
         <div className="space-y-4">
           <Card className="border-border bg-card">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 text-foreground">
                 <Target className="h-5 w-5 text-primary" />
-                Campaign Goal
+                Objetivo da Campanha
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -101,7 +101,7 @@ export default function CampaignDetail() {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-foreground">
                   <Briefcase className="h-5 w-5 text-primary" />
-                  Context
+                  Contexto
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -113,7 +113,7 @@ export default function CampaignDetail() {
           <Card className="border-border bg-card">
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-muted-foreground">Tone</span>
+                <span className="text-sm text-muted-foreground">Tom</span>
                 <Badge variant="secondary" className="bg-secondary text-secondary-foreground">
                   {toneLabels[campaign.tone] || campaign.tone}
                 </Badge>
@@ -122,7 +122,7 @@ export default function CampaignDetail() {
           </Card>
         </div>
 
-        {/* Main Content */}
+        {/* Conteúdo Principal */}
         <div className="space-y-6">
           <CampaignSearchForm campaignId={campaign.id} />
           <CampaignResults campaign={campaign} />
