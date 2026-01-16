@@ -99,22 +99,30 @@ serve(async (req) => {
     }
 
     // Create PIX charge with Abacate Pay
-    const abacateResponse = await fetch('https://api.abacatepay.com/v1/pixQrCode/create', {
+    const abacateResponse = await fetch('https://api.abacatepay.com/v1/billing/create', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${abacateApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        amount: 2790, // R$ 27,90 em centavos
-        expiresIn: 1800, // 30 minutos
-        description: 'ProspectAI - Plano Starter Mensal',
+        frequency: 'ONE_TIME',
+        methods: ['PIX'],
+        products: [
+          {
+            externalId: 'starter-plan',
+            name: 'ProspectAI - Plano Starter Mensal',
+            quantity: 1,
+            price: 2790, // R$ 27,90 em centavos
+          }
+        ],
         customer: {
           name: customer_name,
-          cellphone: customer_phone,
+          cellphone: customer_phone.replace(/\D/g, ''),
           email: customer_email,
-          taxId: customer_cpf,
+          taxId: customer_cpf.replace(/\D/g, ''),
         },
+        completionUrl: `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app')}/dashboard?payment=success`,
         metadata: {
           user_id: user.id,
           plan: 'starter',
@@ -122,30 +130,45 @@ serve(async (req) => {
       }),
     });
 
-    const abacateData = await abacateResponse.json();
-    console.log('Abacate Pay response:', JSON.stringify(abacateData));
+    // Handle non-JSON responses gracefully
+    const responseText = await abacateResponse.text();
+    console.log('Abacate Pay raw response:', responseText);
+    
+    let abacateData;
+    try {
+      abacateData = JSON.parse(responseText);
+    } catch (parseError) {
+      console.error('Failed to parse Abacate response:', responseText);
+      return new Response(
+        JSON.stringify({ error: 'Erro na resposta do gateway de pagamento' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+    
+    console.log('Abacate Pay parsed response:', JSON.stringify(abacateData));
 
     if (!abacateResponse.ok || abacateData.error) {
       console.error('Abacate Pay error:', abacateData);
       return new Response(
-        JSON.stringify({ error: 'Erro ao criar cobrança PIX. Tente novamente.' }),
+        JSON.stringify({ error: abacateData.error || 'Erro ao criar cobrança PIX. Tente novamente.' }),
         { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    const pixData = abacateData.data;
+    const billingData = abacateData.data;
+    console.log('Billing data:', JSON.stringify(billingData));
 
-    // Save payment record
+    // Save payment record - billing API returns different structure
     const { error: insertError } = await supabase
       .from('pix_payments')
       .insert({
         user_id: user.id,
-        abacate_charge_id: pixData.id,
+        abacate_charge_id: billingData.id,
         amount_brl: 27.90,
         status: 'PENDING',
-        br_code: pixData.brCode,
-        br_code_base64: pixData.brCodeBase64,
-        expires_at: pixData.expiresAt,
+        br_code: billingData.url, // Use billing URL as br_code for now
+        br_code_base64: null, // Will be populated when user opens the payment
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes from now
         customer_name,
         customer_email,
         customer_phone,
@@ -160,15 +183,14 @@ serve(async (req) => {
       );
     }
 
-    console.log('PIX payment created successfully:', pixData.id);
+    console.log('PIX payment created successfully:', billingData.id);
 
     return new Response(
       JSON.stringify({
         success: true,
-        charge_id: pixData.id,
-        br_code: pixData.brCode,
-        br_code_base64: pixData.brCodeBase64,
-        expires_at: pixData.expiresAt,
+        charge_id: billingData.id,
+        payment_url: billingData.url, // URL to redirect user to pay
+        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
         amount: 27.90,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
