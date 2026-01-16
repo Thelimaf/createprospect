@@ -6,6 +6,14 @@ import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { 
   MessageCircle, 
   Mail, 
@@ -17,7 +25,9 @@ import {
   Users,
   UserCheck,
   UserX,
-  Clock
+  Clock,
+  Plus,
+  Briefcase
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -56,6 +66,17 @@ interface Lead {
   reviews_count: number | null;
   status: string;
   last_contact_date: string | null;
+  campaign_id: string | null;
+}
+
+interface Campaign {
+  id: string;
+  name: string;
+}
+
+interface GoogleMapsLeadsListProps {
+  campaignId?: string;
+  campaignName?: string;
 }
 
 const statusConfig = {
@@ -68,7 +89,7 @@ const statusConfig = {
 
 const defaultWhatsAppTemplate = "Olá! Vim através do Google e gostaria de apresentar nossa solução para *{business_name}*. Podemos conversar?";
 
-export function GoogleMapsLeadsList() {
+export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLeadsListProps) {
   const { user } = useAuth();
   const isMobile = useIsMobile();
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -76,15 +97,29 @@ export function GoogleMapsLeadsList() {
   const [whatsappTemplate, setWhatsappTemplate] = useState(defaultWhatsAppTemplate);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [cityFilter, setCityFilter] = useState("");
+  
+  // Add to campaign dialog state
+  const [addToCampaignOpen, setAddToCampaignOpen] = useState(false);
+  const [selectedLead, setSelectedLead] = useState<Lead | null>(null);
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
+  const [userCampaigns, setUserCampaigns] = useState<Campaign[]>([]);
+  const [campaignNames, setCampaignNames] = useState<Record<string, string>>({});
 
   useEffect(() => {
     if (!user) return;
     
     fetchLeads();
+    if (!campaignId) {
+      fetchUserCampaigns();
+    }
 
-    // Subscribe to realtime updates
+    // Subscribe to realtime updates with campaign filter
+    const filter = campaignId 
+      ? `user_id=eq.${user.id},campaign_id=eq.${campaignId}`
+      : `user_id=eq.${user.id}`;
+
     const channel = supabase
-      .channel("google_maps_leads_changes")
+      .channel(`google_maps_leads_${campaignId || 'all'}`)
       .on(
         "postgres_changes",
         {
@@ -93,8 +128,17 @@ export function GoogleMapsLeadsList() {
           table: "google_maps_leads",
           filter: `user_id=eq.${user.id}`,
         },
-        () => {
-          fetchLeads();
+        (payload) => {
+          // If we're filtering by campaign, only refetch if the change is relevant
+          if (campaignId) {
+            const newRecord = payload.new as Lead | undefined;
+            const oldRecord = payload.old as { campaign_id?: string } | undefined;
+            if (newRecord?.campaign_id === campaignId || oldRecord?.campaign_id === campaignId) {
+              fetchLeads();
+            }
+          } else {
+            fetchLeads();
+          }
         }
       )
       .subscribe();
@@ -102,24 +146,58 @@ export function GoogleMapsLeadsList() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user]);
+  }, [user, campaignId]);
 
   const fetchLeads = async () => {
     if (!user) return;
     
-    const { data, error } = await supabase
+    let query = supabase
       .from("google_maps_leads")
       .select("*")
       .eq("user_id", user.id)
       .order("created_at", { ascending: false });
+
+    // If campaignId is provided, filter by campaign
+    if (campaignId) {
+      query = query.eq("campaign_id", campaignId);
+    }
+
+    const { data, error } = await query;
 
     if (error) {
       console.error("Error fetching leads:", error);
       toast.error("Erro ao carregar leads");
     } else {
       setLeads(data || []);
+      // Fetch campaign names for leads with campaign_id (only for standalone page)
+      if (!campaignId && data) {
+        const campaignIds = [...new Set(data.map(l => l.campaign_id).filter(Boolean))];
+        if (campaignIds.length > 0) {
+          const { data: campaigns } = await supabase
+            .from("campaigns")
+            .select("id, name")
+            .in("id", campaignIds);
+          if (campaigns) {
+            const names: Record<string, string> = {};
+            campaigns.forEach(c => { names[c.id] = c.name; });
+            setCampaignNames(names);
+          }
+        }
+      }
     }
     setIsLoading(false);
+  };
+
+  const fetchUserCampaigns = async () => {
+    if (!user) return;
+    
+    const { data } = await supabase
+      .from("campaigns")
+      .select("id, name")
+      .eq("user_id", user.id)
+      .order("created_at", { ascending: false });
+    
+    setUserCampaigns(data || []);
   };
 
   const filteredLeads = useMemo(() => {
@@ -206,9 +284,44 @@ export function GoogleMapsLeadsList() {
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `leads_google_maps_${new Date().toISOString().split("T")[0]}.csv`;
+    
+    // Custom filename based on campaign
+    const timestamp = new Date().toISOString().split("T")[0];
+    const filename = campaignName 
+      ? `leads-${campaignName.replace(/[^a-zA-Z0-9]/g, '_')}-${timestamp}.csv`
+      : `leads_google_maps_${timestamp}.csv`;
+    
+    link.download = filename;
     link.click();
     toast.success("CSV exportado com sucesso!");
+  };
+
+  const openAddToCampaignDialog = (lead: Lead) => {
+    setSelectedLead(lead);
+    setSelectedCampaignId("");
+    setAddToCampaignOpen(true);
+  };
+
+  const handleAddToCampaign = async () => {
+    if (!selectedLead || !selectedCampaignId) return;
+
+    const { error } = await supabase
+      .from("google_maps_leads")
+      .update({ 
+        campaign_id: selectedCampaignId,
+        updated_at: new Date().toISOString()
+      })
+      .eq("id", selectedLead.id);
+
+    if (error) {
+      toast.error("Erro ao adicionar lead à campanha");
+    } else {
+      const campaign = userCampaigns.find(c => c.id === selectedCampaignId);
+      toast.success(`Lead adicionado à campanha "${campaign?.name}"`);
+      setAddToCampaignOpen(false);
+      setSelectedLead(null);
+      setSelectedCampaignId("");
+    }
   };
 
   const renderStars = (rating: number | null) => {
@@ -360,9 +473,30 @@ export function GoogleMapsLeadsList() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredLeads.map((lead) => (
-            <Card key={lead.id} className="bg-card border-border hover:border-primary/50 transition-colors">
+            <Card key={lead.id} className="bg-card border-border hover:border-primary/50 transition-colors relative">
+              {/* Campaign Badge */}
+              <div className="absolute top-2 right-2">
+                {lead.campaign_id ? (
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs bg-primary/10 text-primary border-primary/30 max-w-[100px] truncate"
+                    title={campaignNames[lead.campaign_id] || campaignName || "Campanha"}
+                  >
+                    <Briefcase className="h-3 w-3 mr-1" />
+                    {campaignNames[lead.campaign_id] || campaignName || "Campanha"}
+                  </Badge>
+                ) : (
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs bg-muted text-muted-foreground border-border"
+                  >
+                    Avulso
+                  </Badge>
+                )}
+              </div>
+
               <CardContent className="pt-4">
-                <div className="flex items-start justify-between mb-3">
+                <div className="flex items-start justify-between mb-3 pr-24">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground truncate">{lead.business_name}</h3>
                     {lead.category && (
@@ -444,6 +578,19 @@ export function GoogleMapsLeadsList() {
                       Site
                     </Button>
                   )}
+
+                  {/* Add to Campaign button - only show on standalone page for leads without campaign */}
+                  {!campaignId && !lead.campaign_id && userCampaigns.length > 0 && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => openAddToCampaignDialog(lead)}
+                      className="text-primary border-primary/30 hover:bg-primary/10"
+                    >
+                      <Plus className="mr-1 h-4 w-4" />
+                      Campanha
+                    </Button>
+                  )}
                 </div>
 
                 {/* Status Change Buttons */}
@@ -481,6 +628,38 @@ export function GoogleMapsLeadsList() {
           ))}
         </div>
       )}
+
+      {/* Add to Campaign Dialog */}
+      <Dialog open={addToCampaignOpen} onOpenChange={setAddToCampaignOpen}>
+        <DialogContent className="bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="text-foreground">Adicionar Lead à Campanha</DialogTitle>
+            <DialogDescription className="text-muted-foreground">
+              Selecione uma campanha para vincular "{selectedLead?.business_name}"
+            </DialogDescription>
+          </DialogHeader>
+          <Select value={selectedCampaignId} onValueChange={setSelectedCampaignId}>
+            <SelectTrigger className="bg-input border-border text-foreground">
+              <SelectValue placeholder="Selecione uma campanha" />
+            </SelectTrigger>
+            <SelectContent>
+              {userCampaigns.map((campaign) => (
+                <SelectItem key={campaign.id} value={campaign.id}>
+                  {campaign.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setAddToCampaignOpen(false)}>
+              Cancelar
+            </Button>
+            <Button onClick={handleAddToCampaign} disabled={!selectedCampaignId}>
+              Adicionar
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

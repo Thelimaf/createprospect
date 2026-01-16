@@ -9,6 +9,8 @@ import { toast } from "sonner";
 
 interface GoogleMapsScraperProps {
   onSearchComplete?: () => void;
+  campaignId?: string;
+  campaignName?: string;
 }
 
 const exampleSearches = [
@@ -19,7 +21,7 @@ const exampleSearches = [
   "Salões de beleza em Cascavel",
 ];
 
-export function GoogleMapsScraper({ onSearchComplete }: GoogleMapsScraperProps) {
+export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }: GoogleMapsScraperProps) {
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(50);
   const [isLoading, setIsLoading] = useState(false);
@@ -36,12 +38,16 @@ export function GoogleMapsScraper({ onSearchComplete }: GoogleMapsScraperProps) 
     
     try {
       const { data, error } = await supabase.functions.invoke("scrape-google-maps", {
-        body: { query: finalQuery, limit },
+        body: { query: finalQuery, limit, campaignId },
       });
 
       if (error) throw error;
 
-      toast.success(data.message);
+      if (campaignName) {
+        toast.success(`Busca iniciada para campanha "${campaignName}" - ${data.count} leads encontrados`);
+      } else {
+        toast.success(data.message);
+      }
       setQuery("");
       onSearchComplete?.();
     } catch (error: any) {
