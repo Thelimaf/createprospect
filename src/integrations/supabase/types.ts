@@ -21,6 +21,7 @@ export type Database = {
           goal: string
           id: string
           name: string
+          quick_replies: Json | null
           tone: string | null
           updated_at: string
           user_id: string
@@ -31,6 +32,7 @@ export type Database = {
           goal: string
           id?: string
           name: string
+          quick_replies?: Json | null
           tone?: string | null
           updated_at?: string
           user_id: string
@@ -41,6 +43,7 @@ export type Database = {
           goal?: string
           id?: string
           name?: string
+          quick_replies?: Json | null
           tone?: string | null
           updated_at?: string
           user_id?: string
