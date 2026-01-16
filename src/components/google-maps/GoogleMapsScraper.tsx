@@ -78,15 +78,30 @@ export function GoogleMapsScraper({ onSearchComplete }: GoogleMapsScraperProps) 
 
         <div className="space-y-2">
           <Label htmlFor="limit" className="text-foreground">Quantidade máxima</Label>
-          <Input
-            id="limit"
-            type="number"
-            min={10}
-            max={200}
-            value={limit}
-            onChange={(e) => setLimit(Number(e.target.value))}
-            className="bg-input border-border text-foreground"
-          />
+          <div className="space-y-3">
+            <div className="flex items-center gap-4">
+              <input
+                id="limit"
+                type="range"
+                min={10}
+                max={100}
+                value={limit}
+                onChange={(e) => setLimit(Number(e.target.value))}
+                aria-label="Quantidade máxima de resultados"
+                aria-valuemin={10}
+                aria-valuemax={100}
+                aria-valuenow={limit}
+                className="flex-1 h-2 bg-muted rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
+              />
+              <span className="px-3 py-1 rounded-md bg-primary/10 text-primary font-medium text-sm min-w-[3rem] text-center">
+                {limit}
+              </span>
+            </div>
+            <div className="flex justify-between text-xs text-muted-foreground">
+              <span>10</span>
+              <span>100</span>
+            </div>
+          </div>
         </div>
 
         <Button 
@@ -115,7 +130,9 @@ export function GoogleMapsScraper({ onSearchComplete }: GoogleMapsScraperProps) 
                 key={example}
                 onClick={() => {
                   setQuery(example);
-                  handleSearch(example);
+                  toast.success("Campo preenchido! Clique em Buscar Leads para iniciar", {
+                    duration: 2000,
+                  });
                 }}
                 disabled={isLoading}
                 className="text-xs px-3 py-1.5 rounded-full bg-secondary text-secondary-foreground hover:bg-primary hover:text-primary-foreground transition-colors disabled:opacity-50"
