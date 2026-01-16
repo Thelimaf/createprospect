@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 import { Link, useSearchParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
