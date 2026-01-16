@@ -22,6 +22,25 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useIsMobile } from "@/hooks/use-mobile";
+
+// Normalize phone to format 55DDDNUMBER
+const normalizePhone = (phone: string): string => {
+  const digits = phone.replace(/\D/g, "");
+  return digits.startsWith("55") ? digits : `55${digits}`;
+};
+
+// Build WhatsApp URL - uses web.whatsapp.com on desktop to avoid api.whatsapp.com redirect blocking
+const buildWhatsAppUrl = (phone: string, text: string, isMobile: boolean): string => {
+  const normalizedPhone = normalizePhone(phone);
+  const encodedText = encodeURIComponent(text);
+  
+  if (isMobile) {
+    return `https://wa.me/${normalizedPhone}?text=${encodedText}`;
+  }
+  // Desktop: use web.whatsapp.com directly to avoid api.whatsapp.com redirect
+  return `https://web.whatsapp.com/send?phone=${normalizedPhone}&text=${encodedText}`;
+};
 
 interface Lead {
   id: string;
@@ -51,6 +70,7 @@ const defaultWhatsAppTemplate = "Olá! Vim através do Google e gostaria de apre
 
 export function GoogleMapsLeadsList() {
   const { user } = useAuth();
+  const isMobile = useIsMobile();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [whatsappTemplate, setWhatsappTemplate] = useState(defaultWhatsAppTemplate);
@@ -155,16 +175,20 @@ export function GoogleMapsLeadsList() {
       .replace(/{category}/g, lead.category || "")
       .replace(/{city}/g, lead.city || "");
 
-    const phone = lead.phone.startsWith("55") ? lead.phone : `55${lead.phone}`;
-    const url = `https://wa.me/${phone}?text=${encodeURIComponent(message)}`;
-    window.open(url, "_blank");
+    const url = buildWhatsAppUrl(lead.phone, message, isMobile);
+    const newWindow = window.open(url, "_blank");
+    
+    if (!newWindow) {
+      toast.error("Pop-up bloqueado. Permita pop-ups para abrir o WhatsApp.");
+    }
   };
 
   const exportToCsv = () => {
     const headers = ["Nome", "Telefone", "Email", "Endereço", "Status", "Link WhatsApp"];
     const rows = filteredLeads.map((lead) => {
-      const phone = lead.phone?.startsWith("55") ? lead.phone : `55${lead.phone}`;
-      const whatsappUrl = lead.phone ? `https://wa.me/${phone}` : "";
+      const normalizedPhone = lead.phone ? normalizePhone(lead.phone) : "";
+      // Use web.whatsapp.com for CSV export to avoid blocking on desktop
+      const whatsappUrl = lead.phone ? `https://web.whatsapp.com/send?phone=${normalizedPhone}` : "";
       return [
         lead.business_name,
         lead.phone || "",
