@@ -47,6 +47,92 @@ export type Database = {
         }
         Relationships: []
       }
+      google_maps_leads: {
+        Row: {
+          address: string | null
+          business_name: string
+          campaign_id: string | null
+          category: string | null
+          city: string | null
+          created_at: string
+          email: string | null
+          google_maps_url: string | null
+          id: string
+          last_contact_date: string | null
+          latitude: number | null
+          longitude: number | null
+          notes: string | null
+          phone: string | null
+          place_id: string | null
+          rating: number | null
+          reviews_count: number | null
+          state: string | null
+          status: string
+          updated_at: string
+          user_id: string
+          website: string | null
+          zip_code: string | null
+        }
+        Insert: {
+          address?: string | null
+          business_name: string
+          campaign_id?: string | null
+          category?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          google_maps_url?: string | null
+          id?: string
+          last_contact_date?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          phone?: string | null
+          place_id?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          user_id: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Update: {
+          address?: string | null
+          business_name?: string
+          campaign_id?: string | null
+          category?: string | null
+          city?: string | null
+          created_at?: string
+          email?: string | null
+          google_maps_url?: string | null
+          id?: string
+          last_contact_date?: string | null
+          latitude?: number | null
+          longitude?: number | null
+          notes?: string | null
+          phone?: string | null
+          place_id?: string | null
+          rating?: number | null
+          reviews_count?: number | null
+          state?: string | null
+          status?: string
+          updated_at?: string
+          user_id?: string
+          website?: string | null
+          zip_code?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "google_maps_leads_campaign_id_fkey"
+            columns: ["campaign_id"]
+            isOneToOne: false
+            referencedRelation: "campaigns"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       profiles: {
         Row: {
           avatar_url: string | null
