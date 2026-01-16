@@ -253,8 +253,8 @@ const HeroSection = () => {
             variants={fadeUp}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight"
           >
-            Encontre Clientes Locais em{" "}
-            <span className="text-gradient-hero">Segundos</span> com Google Maps
+            Prospete Clientes com{" "}
+            <span className="text-gradient-hero">Inteligência</span>
           </motion.h1>
 
           {/* Subheadline */}
@@ -262,8 +262,7 @@ const HeroSection = () => {
             variants={fadeUp}
             className="text-lg sm:text-xl text-gray-400 max-w-2xl mx-auto"
           >
-            Gere listas de empresas com telefone e WhatsApp prontas para prospecção.
-            Sem scraping manual, sem anúncios, sem complicação.
+            Use IA para encontrar clientes por região e começar a vender em minutos.
           </motion.p>
 
           {/* CTAs */}
