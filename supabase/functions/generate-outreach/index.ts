@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    // Verify the user is authenticated
+    // Verificar se o usuário está autenticado
     const supabaseClient = createClient(
       Deno.env.get('SUPABASE_URL') ?? '',
       Deno.env.get('SUPABASE_ANON_KEY') ?? '',
@@ -26,7 +26,7 @@ serve(async (req) => {
     const { data: { user } } = await supabaseClient.auth.getUser();
 
     if (!user) {
-      return new Response(JSON.stringify({ error: 'Unauthorized' }), {
+      return new Response(JSON.stringify({ error: 'Não autorizado' }), {
         status: 401,
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       });
@@ -36,54 +36,58 @@ serve(async (req) => {
 
     const LOVABLE_API_KEY = Deno.env.get('LOVABLE_API_KEY');
     if (!LOVABLE_API_KEY) {
-      throw new Error('LOVABLE_API_KEY is not configured');
+      throw new Error('LOVABLE_API_KEY não está configurada');
     }
 
-    console.log('Generating outreach for:', { 
+    console.log('Gerando alcance para:', { 
       campaignGoal: campaign.goal, 
       prospectName: prospect.name,
       messageType 
     });
 
     const toneInstructions: Record<string, string> = {
-      professional: 'Keep a professional, business-appropriate tone. Be concise and direct.',
-      casual: 'Use a friendly, conversational tone. Feel free to be more relaxed.',
-      friendly: 'Be warm and personable. Show genuine interest and enthusiasm.'
+      professional: 'Mantenha um tom profissional e apropriado para negócios. Seja conciso e direto.',
+      casual: 'Use um tom amigável e conversacional. Sinta-se à vontade para ser mais descontraído.',
+      friendly: 'Seja caloroso e pessoal. Mostre interesse genuíno e entusiasmo.'
     };
 
     const lengthInstructions = messageType === 'email' 
-      ? 'Write 3-4 short paragraphs. Include a subject line at the start.'
-      : 'Keep it under 300 characters for LinkedIn connection request, or under 1000 characters for a LinkedIn message.';
+      ? 'Escreva 3-4 parágrafos curtos. Inclua uma linha de assunto no início.'
+      : 'Mantenha abaixo de 300 caracteres para convite de conexão do LinkedIn, ou abaixo de 1000 caracteres para uma mensagem do LinkedIn.';
 
-    const systemPrompt = `You are an expert at writing personalized outreach messages that get responses.
-Your messages are:
-- Highly personalized based on the recipient's background
-- Clear about the value proposition
-- Concise and easy to read
-- Have a clear call-to-action
+    const systemPrompt = `Você é um especialista em escrever mensagens de alcance personalizadas que obtêm respostas.
+Suas mensagens são:
+- Altamente personalizadas com base no histórico do destinatário
+- Claras sobre a proposta de valor
+- Concisas e fáceis de ler
+- Têm um call-to-action claro
+
+IMPORTANTE: Escreva SEMPRE em português brasileiro.
 
 ${toneInstructions[campaign.tone] || toneInstructions.professional}
 ${lengthInstructions}`;
 
-    const userPrompt = `Write a ${messageType === 'email' ? 'cold email' : 'LinkedIn message'} for the following:
+    const userPrompt = `Escreva ${messageType === 'email' ? 'um email frio' : 'uma mensagem do LinkedIn'} para o seguinte:
 
-CAMPAIGN GOAL: ${campaign.goal}
+OBJETIVO DA CAMPANHA: ${campaign.goal}
 
-${campaign.context ? `ABOUT ME/MY COMPANY: ${campaign.context}` : ''}
+${campaign.context ? `SOBRE MIM/MINHA EMPRESA: ${campaign.context}` : ''}
 
-RECIPIENT INFORMATION:
-- Name: ${prospect.name}
-${prospect.position ? `- Position: ${prospect.position}` : ''}
-${prospect.company ? `- Company: ${prospect.company}` : ''}
-${prospect.location ? `- Location: ${prospect.location}` : ''}
+INFORMAÇÕES DO DESTINATÁRIO:
+- Nome: ${prospect.name}
+${prospect.position ? `- Cargo: ${prospect.position}` : ''}
+${prospect.company ? `- Empresa: ${prospect.company}` : ''}
+${prospect.location ? `- Localização: ${prospect.location}` : ''}
 ${prospect.description ? `- Background: ${prospect.description}` : ''}
 
-Write a personalized ${messageType === 'email' ? 'email (with subject line)' : 'LinkedIn message'} that:
-1. References something specific from their background
-2. Clearly explains why I'm reaching out
-3. Has a simple, clear call-to-action
+Escreva ${messageType === 'email' ? 'um email personalizado (com linha de assunto)' : 'uma mensagem do LinkedIn personalizada'} que:
+1. Faça referência a algo específico do background deles
+2. Explique claramente por que estou entrando em contato
+3. Tenha um call-to-action simples e claro
 
-${messageType === 'email' ? 'Format: Start with "Subject: [subject line]" on the first line, then the email body.' : ''}`;
+${messageType === 'email' ? 'Formato: Comece com "Assunto: [linha de assunto]" na primeira linha, depois o corpo do email.' : ''}
+
+IMPORTANTE: A mensagem DEVE ser escrita em português brasileiro.`;
 
     const response = await fetch('https://ai.gateway.lovable.dev/v1/chat/completions', {
       method: 'POST',
@@ -102,38 +106,38 @@ ${messageType === 'email' ? 'Format: Start with "Subject: [subject line]" on the
 
     if (!response.ok) {
       if (response.status === 429) {
-        return new Response(JSON.stringify({ error: 'Rate limit exceeded. Please try again later.' }), {
+        return new Response(JSON.stringify({ error: 'Limite de taxa excedido. Tente novamente mais tarde.' }), {
           status: 429,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
       if (response.status === 402) {
-        return new Response(JSON.stringify({ error: 'AI credits exhausted. Please add credits to continue.' }), {
+        return new Response(JSON.stringify({ error: 'Créditos de IA esgotados. Adicione créditos para continuar.' }), {
           status: 402,
           headers: { ...corsHeaders, 'Content-Type': 'application/json' },
         });
       }
       const errorText = await response.text();
-      console.error('AI gateway error:', response.status, errorText);
-      throw new Error('Failed to generate message');
+      console.error('Erro do gateway de IA:', response.status, errorText);
+      throw new Error('Falha ao gerar mensagem');
     }
 
     const data = await response.json();
     const generatedMessage = data.choices?.[0]?.message?.content;
 
     if (!generatedMessage) {
-      throw new Error('No message generated');
+      throw new Error('Nenhuma mensagem gerada');
     }
 
-    console.log('Message generated successfully');
+    console.log('Mensagem gerada com sucesso');
 
     return new Response(JSON.stringify({ message: generatedMessage }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
 
   } catch (error) {
-    console.error('Error in generate-outreach:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+    console.error('Erro em generate-outreach:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Erro desconhecido';
     return new Response(JSON.stringify({ error: errorMessage }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },

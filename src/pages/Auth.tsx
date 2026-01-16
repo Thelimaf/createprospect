@@ -10,8 +10,8 @@ import { toast } from 'sonner';
 import { z } from 'zod';
 
 const authSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(6, 'Password must be at least 6 characters'),
+  email: z.string().email('Por favor, insira um email válido'),
+  password: z.string().min(6, 'A senha deve ter pelo menos 6 caracteres'),
 });
 
 export default function Auth() {
@@ -48,14 +48,14 @@ export default function Auth() {
         });
         if (error) {
           if (error.message.includes('Invalid login credentials')) {
-            toast.error('Invalid email or password');
+            toast.error('Email ou senha inválidos');
           } else {
             toast.error(error.message);
           }
           setLoading(false);
           return;
         }
-        toast.success('Welcome back!');
+        toast.success('Bem-vindo de volta!');
       } else {
         const { error } = await supabase.auth.signUp({
           email,
@@ -69,24 +69,24 @@ export default function Auth() {
         });
         if (error) {
           if (error.message.includes('already registered')) {
-            toast.error('This email is already registered. Please sign in instead.');
+            toast.error('Este email já está cadastrado. Por favor, faça login.');
           } else {
             toast.error(error.message);
           }
           setLoading(false);
           return;
         }
-        toast.success('Account created! Welcome to ProspectAI.');
+        toast.success('Conta criada! Bem-vindo ao ProspectAI.');
       }
     } catch (error) {
-      toast.error('An unexpected error occurred');
+      toast.error('Ocorreu um erro inesperado');
       setLoading(false);
     }
   };
 
   return (
     <div className="flex min-h-screen">
-      {/* Left side - Form */}
+      {/* Lado esquerdo - Formulário */}
       <div className="flex w-full flex-col justify-center px-8 lg:w-1/2 lg:px-12">
         <div className="mx-auto w-full max-w-md">
           <Link 
@@ -94,7 +94,7 @@ export default function Auth() {
             className="mb-8 inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
           >
             <ArrowLeft className="h-4 w-4" />
-            Back to home
+            Voltar para início
           </Link>
 
           <div className="flex items-center gap-2 mb-8">
@@ -105,22 +105,22 @@ export default function Auth() {
           </div>
 
           <h1 className="text-3xl font-bold text-foreground">
-            {isLogin ? 'Welcome back' : 'Create your account'}
+            {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
           </h1>
           <p className="mt-2 text-muted-foreground">
             {isLogin 
-              ? 'Sign in to continue to your dashboard' 
-              : 'Start discovering prospects with AI'}
+              ? 'Entre para continuar ao seu painel' 
+              : 'Comece a descobrir prospects com IA'}
           </p>
 
           <form onSubmit={handleSubmit} className="mt-8 space-y-5">
             {!isLogin && (
               <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-foreground">Full Name</Label>
+                <Label htmlFor="fullName" className="text-foreground">Nome Completo</Label>
                 <Input
                   id="fullName"
                   type="text"
-                  placeholder="John Doe"
+                  placeholder="João Silva"
                   value={fullName}
                   onChange={(e) => setFullName(e.target.value)}
                   className="bg-input border-border text-foreground placeholder:text-muted-foreground"
@@ -132,7 +132,7 @@ export default function Auth() {
               <Input
                 id="email"
                 type="email"
-                placeholder="you@example.com"
+                placeholder="voce@exemplo.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
@@ -140,7 +140,7 @@ export default function Auth() {
               />
             </div>
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground">Password</Label>
+              <Label htmlFor="password" className="text-foreground">Senha</Label>
               <Input
                 id="password"
                 type="password"
@@ -159,37 +159,37 @@ export default function Auth() {
               {loading ? (
                 <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
               ) : isLogin ? (
-                'Sign In'
+                'Entrar'
               ) : (
-                'Create Account'
+                'Criar Conta'
               )}
             </Button>
           </form>
 
           <p className="mt-6 text-center text-sm text-muted-foreground">
-            {isLogin ? "Don't have an account? " : 'Already have an account? '}
+            {isLogin ? "Não tem uma conta? " : 'Já tem uma conta? '}
             <button
               type="button"
               onClick={() => setIsLogin(!isLogin)}
               className="font-medium text-primary hover:text-primary/80 transition-colors"
             >
-              {isLogin ? 'Sign up' : 'Sign in'}
+              {isLogin ? 'Cadastre-se' : 'Entrar'}
             </button>
           </p>
         </div>
       </div>
 
-      {/* Right side - Gradient */}
+      {/* Lado direito - Gradiente */}
       <div className="relative hidden lg:block lg:w-1/2">
         <div className="absolute inset-0 bg-gradient-hero opacity-90" />
         <div className="absolute inset-0 flex items-center justify-center p-12">
           <div className="max-w-lg text-center">
             <h2 className="text-4xl font-bold text-white">
-              Find your ideal customers faster
+              Encontre seus clientes ideais mais rápido
             </h2>
             <p className="mt-4 text-lg text-white/80">
-              AI-powered prospect discovery that helps you build targeted campaigns 
-              and generate personalized outreach at scale.
+              Descoberta de prospects com IA que ajuda você a criar campanhas 
+              direcionadas e gerar alcance personalizado em escala.
             </p>
           </div>
         </div>

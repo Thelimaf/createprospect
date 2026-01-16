@@ -47,7 +47,7 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
   useEffect(() => {
     loadSearches();
 
-    // Subscribe to realtime updates
+    // Inscrever para atualizações em tempo real
     const searchChannel = supabase
       .channel('campaign-searches')
       .on('postgres_changes', { 
@@ -100,12 +100,12 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
 
       setSearches(data || []);
 
-      // Auto-select first search if none selected
+      // Auto-selecionar primeira busca se nenhuma selecionada
       if (!selectedSearchId && data && data.length > 0) {
         setSelectedSearchId(data[0].id);
       }
     } catch (error) {
-      console.error('Error loading searches:', error);
+      console.error('Erro ao carregar buscas:', error);
     } finally {
       setLoading(false);
     }
@@ -123,7 +123,7 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
 
       setResults(data || []);
     } catch (error) {
-      console.error('Error loading results:', error);
+      console.error('Erro ao carregar resultados:', error);
     }
   };
 
@@ -144,13 +144,13 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
   const getStatusLabel = (status: string) => {
     switch (status) {
       case 'completed':
-        return 'Completed';
+        return 'Concluído';
       case 'processing':
-        return 'Processing...';
+        return 'Processando...';
       case 'timeout':
-        return 'Timed out';
+        return 'Tempo esgotado';
       case 'error':
-        return 'Error';
+        return 'Erro';
       default:
         return status;
     }
@@ -162,7 +162,7 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
         <CardContent className="py-8">
           <div className="flex items-center justify-center gap-2 text-muted-foreground">
             <Loader2 className="h-5 w-5 animate-spin" />
-            <span>Loading searches...</span>
+            <span>Carregando buscas...</span>
           </div>
         </CardContent>
       </Card>
@@ -174,9 +174,9 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
       <Card className="border-border bg-card">
         <CardContent className="py-12 text-center">
           <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
-          <h3 className="mt-4 text-lg font-medium text-foreground">No searches yet</h3>
+          <h3 className="mt-4 text-lg font-medium text-foreground">Nenhuma busca ainda</h3>
           <p className="mt-2 text-sm text-muted-foreground">
-            Use the search form above to find prospects.
+            Use o formulário acima para buscar prospects.
           </p>
         </CardContent>
       </Card>
@@ -188,12 +188,12 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
 
   return (
     <div className="space-y-6">
-      {/* Search Tabs */}
+      {/* Abas de Busca */}
       <Card className="border-border bg-card">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-foreground">
             <Users className="h-5 w-5 text-primary" />
-            Search Results
+            Resultados da Busca
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -221,7 +221,7 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
         </CardContent>
       </Card>
 
-      {/* Selected Search Info */}
+      {/* Info da Busca Selecionada */}
       {selectedSearch && (
         <Card className="border-border bg-card">
           <CardContent className="py-4">
@@ -232,7 +232,7 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
                   <p className="font-medium text-foreground">{selectedSearch.query}</p>
                   <p className="text-sm text-muted-foreground">
                     {getStatusLabel(selectedSearch.status)}
-                    {selectedSearch.status === 'completed' && ` · ${selectedSearch.result_count} prospects found`}
+                    {selectedSearch.status === 'completed' && ` · ${selectedSearch.result_count} prospects encontrados`}
                   </p>
                 </div>
               </div>
@@ -241,7 +241,7 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
         </Card>
       )}
 
-      {/* Results Grid */}
+      {/* Grid de Resultados */}
       {filteredResults.length > 0 ? (
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {filteredResults.map((result) => (
@@ -252,9 +252,9 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
         <Card className="border-border bg-card">
           <CardContent className="py-12 text-center">
             <Loader2 className="mx-auto h-8 w-8 animate-spin text-primary" />
-            <h3 className="mt-4 text-lg font-medium text-foreground">Searching for prospects...</h3>
+            <h3 className="mt-4 text-lg font-medium text-foreground">Buscando prospects...</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              This usually takes 30-60 seconds. Results will appear automatically.
+              Isso geralmente leva 30-60 segundos. Os resultados aparecerão automaticamente.
             </p>
           </CardContent>
         </Card>
@@ -262,9 +262,9 @@ export function CampaignResults({ campaign }: CampaignResultsProps) {
         <Card className="border-border bg-card">
           <CardContent className="py-12 text-center">
             <Users className="mx-auto h-12 w-12 text-muted-foreground/50" />
-            <h3 className="mt-4 text-lg font-medium text-foreground">No prospects found</h3>
+            <h3 className="mt-4 text-lg font-medium text-foreground">Nenhum prospect encontrado</h3>
             <p className="mt-2 text-sm text-muted-foreground">
-              Try adjusting your search query or criteria.
+              Tente ajustar sua consulta ou critérios de busca.
             </p>
           </CardContent>
         </Card>

@@ -15,23 +15,23 @@ import { useAuth } from '@/contexts/AuthContext';
 const features = [
   {
     icon: Search,
-    title: 'AI-Powered Search',
-    description: 'Find prospects using natural language queries powered by advanced AI.',
+    title: 'Busca com IA',
+    description: 'Encontre prospects usando consultas em linguagem natural com IA avançada.',
   },
   {
     icon: Target,
-    title: 'Precision Targeting',
-    description: 'Define criteria to filter and find exactly the prospects you need.',
+    title: 'Segmentação Precisa',
+    description: 'Defina critérios para filtrar e encontrar exatamente os prospects que você precisa.',
   },
   {
     icon: Users,
-    title: 'Rich Profiles',
-    description: 'Get enriched data including positions, companies, and contact info.',
+    title: 'Perfis Completos',
+    description: 'Obtenha dados enriquecidos incluindo cargos, empresas e informações de contato.',
   },
   {
     icon: MessageSquare,
-    title: 'AI Outreach',
-    description: 'Generate personalized emails and messages with AI assistance.',
+    title: 'Alcance com IA',
+    description: 'Gere emails e mensagens personalizadas com assistência de IA.',
   },
 ];
 
@@ -40,7 +40,7 @@ export default function Landing() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Navigation */}
+      {/* Navegação */}
       <nav className="fixed top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-xl">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-6">
           <Link to="/" className="flex items-center gap-2">
@@ -53,18 +53,18 @@ export default function Landing() {
             {user ? (
               <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
                 <Link to="/dashboard">
-                  Go to Dashboard
+                  Ir para o Painel
                   <ArrowRight className="ml-2 h-4 w-4" />
                 </Link>
               </Button>
             ) : (
               <>
                 <Button variant="ghost" asChild className="text-muted-foreground hover:text-foreground">
-                  <Link to="/auth">Sign In</Link>
+                  <Link to="/auth">Entrar</Link>
                 </Button>
                 <Button asChild className="bg-primary text-primary-foreground hover:bg-primary/90">
                   <Link to="/auth">
-                    Get Started
+                    Começar
                     <ArrowRight className="ml-2 h-4 w-4" />
                   </Link>
                 </Button>
@@ -74,9 +74,9 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* Hero Section */}
+      {/* Seção Hero */}
       <section className="relative overflow-hidden pt-32 pb-20">
-        {/* Background gradient */}
+        {/* Gradiente de fundo */}
         <div className="absolute inset-0 -z-10">
           <div className="absolute left-1/2 top-0 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-gradient-hero opacity-20 blur-[120px]" />
         </div>
@@ -89,13 +89,13 @@ export default function Landing() {
             </div>
             
             <h1 className="animate-fade-up text-5xl font-bold tracking-tight text-foreground sm:text-7xl">
-              Discover prospects
-              <span className="block gradient-text">with AI precision</span>
+              Descubra prospects
+              <span className="block gradient-text">com precisão de IA</span>
             </h1>
             
             <p className="mt-6 animate-fade-up text-lg text-muted-foreground" style={{ animationDelay: '0.1s' }}>
-              Build targeted campaigns, find high-quality leads, and generate 
-              personalized outreach—all powered by intelligent AI search.
+              Crie campanhas direcionadas, encontre leads de alta qualidade e gere 
+              alcance personalizado—tudo com busca inteligente por IA.
             </p>
             
             <div className="mt-10 flex animate-fade-up justify-center gap-4" style={{ animationDelay: '0.2s' }}>
@@ -105,17 +105,17 @@ export default function Landing() {
                 className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow"
               >
                 <Link to="/auth">
-                  Start Free Trial
+                  Começar Teste Grátis
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
               <Button variant="outline" size="lg" className="border-border text-foreground hover:bg-secondary">
-                Watch Demo
+                Ver Demo
               </Button>
             </div>
           </div>
 
-          {/* Hero Image / Preview */}
+          {/* Imagem/Preview do Hero */}
           <div className="mt-20 animate-fade-up" style={{ animationDelay: '0.3s' }}>
             <div className="relative mx-auto max-w-5xl">
               <div className="overflow-hidden rounded-xl border border-border bg-gradient-card shadow-strong">
@@ -147,22 +147,22 @@ export default function Landing() {
                   </div>
                 </div>
               </div>
-              {/* Glow effect */}
+              {/* Efeito de brilho */}
               <div className="absolute -inset-4 -z-10 rounded-2xl bg-gradient-hero opacity-20 blur-2xl" />
             </div>
           </div>
         </div>
       </section>
 
-      {/* Features Section */}
+      {/* Seção de Funcionalidades */}
       <section className="py-24 border-t border-border">
         <div className="mx-auto max-w-7xl px-6">
           <div className="text-center">
             <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
-              Everything you need for prospect discovery
+              Tudo que você precisa para descoberta de prospects
             </h2>
             <p className="mt-4 text-lg text-muted-foreground">
-              Powerful tools to find, qualify, and reach your ideal customers.
+              Ferramentas poderosas para encontrar, qualificar e alcançar seus clientes ideais.
             </p>
           </div>
 
@@ -184,17 +184,17 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* CTA Section */}
+      {/* Seção CTA */}
       <section className="py-24">
         <div className="mx-auto max-w-7xl px-6">
           <div className="relative overflow-hidden rounded-2xl border border-border bg-gradient-card p-12 text-center">
             <div className="absolute inset-0 bg-gradient-hero opacity-5" />
             <div className="relative">
               <h2 className="text-3xl font-bold text-foreground sm:text-4xl">
-                Ready to find your next customer?
+                Pronto para encontrar seu próximo cliente?
               </h2>
               <p className="mt-4 text-lg text-muted-foreground">
-                Join thousands of sales teams using ProspectAI to accelerate their pipeline.
+                Junte-se a milhares de equipes de vendas usando ProspectAI para acelerar seu pipeline.
               </p>
               <Button 
                 asChild 
@@ -202,7 +202,7 @@ export default function Landing() {
                 className="mt-8 bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow"
               >
                 <Link to="/auth">
-                  Get Started Free
+                  Começar Grátis
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
@@ -211,11 +211,11 @@ export default function Landing() {
         </div>
       </section>
 
-      {/* Footer */}
+      {/* Rodapé */}
       <footer className="border-t border-border py-8">
         <div className="mx-auto max-w-7xl px-6 text-center">
           <p className="text-sm text-muted-foreground">
-            © {new Date().getFullYear()} ProspectAI. All rights reserved.
+            © {new Date().getFullYear()} ProspectAI. Todos os direitos reservados.
           </p>
         </div>
       </footer>
