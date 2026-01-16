@@ -92,7 +92,12 @@ export function KanbanCard({
       <div className="flex items-start justify-between gap-2 mb-2">
         <div className="flex items-center gap-1 flex-1 min-w-0">
           <GripVertical className="h-4 w-4 text-muted-foreground/50 shrink-0" />
-          <h4 className="font-semibold text-sm truncate">{lead.business_name}</h4>
+          <h4 
+            className="font-semibold text-sm line-clamp-2 leading-tight" 
+            title={lead.business_name}
+          >
+            {lead.business_name}
+          </h4>
         </div>
         <div className="flex items-center gap-1 shrink-0">
           {needsFollowUp && (

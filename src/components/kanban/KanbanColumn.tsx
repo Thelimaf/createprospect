@@ -60,7 +60,7 @@ export function KanbanColumn({
         'flex flex-col rounded-xl border transition-all duration-200',
         config.bgClass,
         isOver && 'ring-2 ring-accent ring-offset-2 ring-offset-background border-accent',
-        isCollapsed ? 'w-16' : 'w-72 min-w-72'
+        isCollapsed ? 'w-16' : 'w-80 min-w-80 flex-shrink-0'
       )}
     >
       {/* Header */}
