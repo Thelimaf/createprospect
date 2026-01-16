@@ -13,6 +13,9 @@ import CampaignDetail from "@/pages/CampaignDetail";
 import GoogleMapsLeads from "@/pages/GoogleMapsLeads";
 import Settings from "@/pages/Settings";
 import SearchHistory from "@/pages/SearchHistory";
+import Pricing from "@/pages/Pricing";
+import Checkout from "@/pages/Checkout";
+import Billing from "@/pages/Billing";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +37,9 @@ const App = () => (
             <Route path="/google-maps-leads" element={<GoogleMapsLeads />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/searches" element={<SearchHistory />} />
+            <Route path="/pricing" element={<Pricing />} />
+            <Route path="/checkout" element={<Checkout />} />
+            <Route path="/billing" element={<Billing />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
