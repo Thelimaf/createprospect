@@ -37,7 +37,8 @@ const authSchema = z.object({
 });
 
 export default function Auth() {
-  const [isLogin, setIsLogin] = useState(true);
+const [isLogin, setIsLogin] = useState(true);
+  const [isForgotPassword, setIsForgotPassword] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
@@ -51,7 +52,7 @@ export default function Auth() {
     }
   }, [user, navigate]);
 
-  const handleGoogleSignIn = async () => {
+const handleGoogleSignIn = async () => {
     setLoading(true);
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
@@ -61,6 +62,34 @@ export default function Auth() {
     });
     if (error) {
       toast.error('Erro ao fazer login com Google');
+      setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    if (!email) {
+      toast.error('Por favor, insira seu email');
+      return;
+    }
+
+    setLoading(true);
+
+    try {
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email },
+      });
+
+      if (error) throw error;
+
+      toast.success('Se o email existir, você receberá um link de recuperação.');
+      setIsForgotPassword(false);
+      setEmail('');
+    } catch (error: any) {
+      console.error('Error sending reset email:', error);
+      toast.error('Erro ao enviar email de recuperação');
+    } finally {
       setLoading(false);
     }
   };
@@ -140,98 +169,159 @@ export default function Auth() {
             <span className="text-2xl font-bold text-foreground">ProspectAI</span>
           </div>
 
-          <h1 className="text-3xl font-bold text-foreground">
-            {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
-          </h1>
-          <p className="mt-2 text-muted-foreground">
-            {isLogin 
-              ? 'Entre para continuar ao seu painel' 
-              : 'Comece a descobrir prospects com IA'}
-          </p>
+{isForgotPassword ? (
+            // Forgot Password Mode
+            <>
+              <h1 className="text-3xl font-bold text-foreground">
+                Recuperar Senha
+              </h1>
+              <p className="mt-2 text-muted-foreground">
+                Digite seu email para receber o link de recuperação
+              </p>
 
-          <Button
-            type="button"
-            variant="outline"
-            className="mt-8 w-full gap-3 bg-white text-gray-700 border-border hover:bg-gray-50"
-            onClick={handleGoogleSignIn}
-            disabled={loading}
-          >
-            <GoogleIcon />
-            Continuar com Google
-          </Button>
+              <form onSubmit={handleForgotPassword} className="mt-8 space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-foreground">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="voce@exemplo.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground"
+                  />
+                </div>
+                <Button 
+                  type="submit" 
+                  className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
+                  disabled={loading}
+                >
+                  {loading ? 'Enviando...' : 'Enviar Link de Recuperação'}
+                </Button>
+              </form>
 
-          <div className="relative my-6">
-            <div className="absolute inset-0 flex items-center">
-              <Separator className="w-full" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-              <span className="bg-background px-2 text-muted-foreground">ou</span>
-            </div>
-          </div>
+              <p className="mt-4 text-center text-sm text-muted-foreground">
+                <button
+                  type="button"
+                  className="font-medium text-primary hover:text-primary/80 transition-colors"
+                  onClick={() => {
+                    setIsForgotPassword(false);
+                    setEmail('');
+                  }}
+                >
+                  ← Voltar ao login
+                </button>
+              </p>
+            </>
+          ) : (
+            // Login/Signup Mode
+            <>
+              <h1 className="text-3xl font-bold text-foreground">
+                {isLogin ? 'Bem-vindo de volta' : 'Crie sua conta'}
+              </h1>
+              <p className="mt-2 text-muted-foreground">
+                {isLogin 
+                  ? 'Entre para continuar ao seu painel' 
+                  : 'Comece a descobrir prospects com IA'}
+              </p>
 
-          <form onSubmit={handleSubmit} className="space-y-5">
-            {!isLogin && (
-              <div className="space-y-2">
-                <Label htmlFor="fullName" className="text-foreground">Nome Completo</Label>
-                <Input
-                  id="fullName"
-                  type="text"
-                  placeholder="João Silva"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  className="bg-input border-border text-foreground placeholder:text-muted-foreground"
-                />
+              <Button
+                type="button"
+                variant="outline"
+                className="mt-8 w-full gap-3 bg-white text-gray-700 border-border hover:bg-gray-50"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+              >
+                <GoogleIcon />
+                Continuar com Google
+              </Button>
+
+              <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                  <Separator className="w-full" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-background px-2 text-muted-foreground">ou</span>
+                </div>
               </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="email" className="text-foreground">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="voce@exemplo.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground"
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password" className="text-foreground">Senha</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                className="bg-input border-border text-foreground placeholder:text-muted-foreground"
-              />
-            </div>
-            <Button 
-              type="submit" 
-              className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
-              disabled={loading}
-            >
-              {loading ? (
-                <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
-              ) : isLogin ? (
-                'Entrar'
-              ) : (
-                'Criar Conta'
-              )}
-            </Button>
-          </form>
 
-          <p className="mt-4 text-center text-sm text-muted-foreground">
-            {isLogin ? "Não tem uma conta? " : 'Já tem uma conta? '}
-            <button
-              type="button"
-              onClick={() => setIsLogin(!isLogin)}
-              className="font-medium text-primary hover:text-primary/80 transition-colors"
-            >
-              {isLogin ? 'Cadastre-se' : 'Entrar'}
-            </button>
-          </p>
+              <form onSubmit={handleSubmit} className="space-y-5">
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="fullName" className="text-foreground">Nome Completo</Label>
+                    <Input
+                      id="fullName"
+                      type="text"
+                      placeholder="João Silva"
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      className="bg-input border-border text-foreground placeholder:text-muted-foreground"
+                    />
+                  </div>
+                )}
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-foreground">Email</Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    placeholder="voce@exemplo.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password" className="text-foreground">Senha</Label>
+                    {isLogin && (
+                      <button
+                        type="button"
+                        className="text-sm text-primary hover:text-primary/80 transition-colors"
+                        onClick={() => setIsForgotPassword(true)}
+                      >
+                        Esqueci minha senha
+                      </button>
+                    )}
+                  </div>
+                  <Input
+                    id="password"
+                    type="password"
+                    placeholder="••••••••"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    className="bg-input border-border text-foreground placeholder:text-muted-foreground"
+                  />
+                </div>
+                <Button 
+                  type="submit"
+                  className="w-full bg-primary text-primary-foreground hover:bg-primary/90"
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary-foreground border-t-transparent" />
+                  ) : isLogin ? (
+                    'Entrar'
+                  ) : (
+                    'Criar Conta'
+                  )}
+                </Button>
+              </form>
+
+              <p className="mt-4 text-center text-sm text-muted-foreground">
+                {isLogin ? "Não tem uma conta? " : 'Já tem uma conta? '}
+                <button
+                  type="button"
+                  onClick={() => setIsLogin(!isLogin)}
+                  className="font-medium text-primary hover:text-primary/80 transition-colors"
+                >
+                  {isLogin ? 'Cadastre-se' : 'Entrar'}
+                </button>
+              </p>
+            </>
+          )}
         </div>
       </div>
 

@@ -17,6 +17,7 @@ import Pricing from "@/pages/Pricing";
 import Checkout from "@/pages/Checkout";
 import Billing from "@/pages/Billing";
 import NotFound from "@/pages/NotFound";
+import ResetPassword from "@/pages/ResetPassword";
 
 const queryClient = new QueryClient();
 
@@ -39,7 +40,8 @@ const App = () => (
             <Route path="/searches" element={<SearchHistory />} />
             <Route path="/pricing" element={<Pricing />} />
             <Route path="/checkout" element={<Checkout />} />
-            <Route path="/billing" element={<Billing />} />
+<Route path="/billing" element={<Billing />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>
