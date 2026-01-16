@@ -184,6 +184,60 @@ export type Database = {
         }
         Relationships: []
       }
+      pix_payments: {
+        Row: {
+          abacate_charge_id: string
+          amount_brl: number
+          br_code: string | null
+          br_code_base64: string | null
+          created_at: string | null
+          customer_cpf: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          expires_at: string | null
+          id: string
+          paid_at: string | null
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          abacate_charge_id: string
+          amount_brl: number
+          br_code?: string | null
+          br_code_base64?: string | null
+          created_at?: string | null
+          customer_cpf: string
+          customer_email: string
+          customer_name: string
+          customer_phone: string
+          expires_at?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          abacate_charge_id?: string
+          amount_brl?: number
+          br_code?: string | null
+          br_code_base64?: string | null
+          created_at?: string | null
+          customer_cpf?: string
+          customer_email?: string
+          customer_name?: string
+          customer_phone?: string
+          expires_at?: string | null
+          id?: string
+          paid_at?: string | null
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -298,6 +352,107 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      subscription_plans: {
+        Row: {
+          created_at: string | null
+          features: Json | null
+          id: string
+          limits: Json | null
+          name: string
+          price_brl: number
+          slug: string
+        }
+        Insert: {
+          created_at?: string | null
+          features?: Json | null
+          id?: string
+          limits?: Json | null
+          name: string
+          price_brl?: number
+          slug: string
+        }
+        Update: {
+          created_at?: string | null
+          features?: Json | null
+          id?: string
+          limits?: Json | null
+          name?: string
+          price_brl?: number
+          slug?: string
+        }
+        Relationships: []
+      }
+      user_subscriptions: {
+        Row: {
+          created_at: string | null
+          current_period_end: string | null
+          current_period_start: string | null
+          id: string
+          plan_id: string
+          status: string
+          updated_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id: string
+          status?: string
+          updated_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          current_period_end?: string | null
+          current_period_start?: string | null
+          id?: string
+          plan_id?: string
+          status?: string
+          updated_at?: string | null
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_subscriptions_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "subscription_plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      user_usage: {
+        Row: {
+          created_at: string | null
+          id: string
+          last_search_at: string | null
+          reset_date: string | null
+          searches_used_lifetime: number | null
+          searches_used_monthly: number | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          last_search_at?: string | null
+          reset_date?: string | null
+          searches_used_lifetime?: number | null
+          searches_used_monthly?: number | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          last_search_at?: string | null
+          reset_date?: string | null
+          searches_used_lifetime?: number | null
+          searches_used_monthly?: number | null
+          user_id?: string
+        }
+        Relationships: []
       }
     }
     Views: {

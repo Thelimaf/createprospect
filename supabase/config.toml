@@ -8,3 +8,21 @@ verify_jwt = false
 
 [functions.generate-outreach]
 verify_jwt = false
+
+[functions.generate-whatsapp]
+verify_jwt = false
+
+[functions.scrape-google-maps]
+verify_jwt = false
+
+[functions.create-pix-payment]
+verify_jwt = false
+
+[functions.check-pix-payment]
+verify_jwt = false
+
+[functions.check-user-limits]
+verify_jwt = false
+
+[functions.increment-search-usage]
+verify_jwt = false
