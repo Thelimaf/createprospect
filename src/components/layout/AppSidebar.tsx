@@ -1,4 +1,4 @@
-import { Home, FolderOpen, Plus, LogOut, Sparkles } from 'lucide-react';
+import { Home, FolderOpen, Plus, LogOut, Sparkles, MapPin } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -20,6 +20,7 @@ const navigation = [
   { name: 'Painel', href: '/dashboard', icon: Home },
   { name: 'Campanhas', href: '/campaigns', icon: FolderOpen },
   { name: 'Nova Campanha', href: '/campaigns/new', icon: Plus },
+  { name: 'Leads Google Maps', href: '/google-maps-leads', icon: MapPin },
 ];
 
 export function AppSidebar() {
