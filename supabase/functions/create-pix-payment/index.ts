@@ -98,34 +98,43 @@ serve(async (req) => {
       );
     }
 
-    // Create PIX charge with Abacate Pay
-    const abacateResponse = await fetch('https://api.abacatepay.com/v1/billing/create', {
+    // Format phone for Abacate Pay: (11) 4002-8922
+    const phoneDigits = customer_phone.replace(/\D/g, '');
+    const formattedPhone = phoneDigits.length === 11
+      ? `(${phoneDigits.slice(0, 2)}) ${phoneDigits.slice(2, 7)}-${phoneDigits.slice(7)}`
+      : `(${phoneDigits.slice(0, 2)}) ${phoneDigits.slice(2, 6)}-${phoneDigits.slice(6)}`;
+
+    // Format CPF for Abacate Pay: 123.456.789-01
+    const cpfDigits = customer_cpf.replace(/\D/g, '');
+    const formattedCpf = `${cpfDigits.slice(0, 3)}.${cpfDigits.slice(3, 6)}.${cpfDigits.slice(6, 9)}-${cpfDigits.slice(9)}`;
+
+    console.log('Calling Abacate Pay API with:', {
+      amount: 2790,
+      customer_name,
+      customer_email,
+      formattedPhone,
+      formattedCpf,
+    });
+
+    // Create PIX charge with Abacate Pay - using pixQrCode/create endpoint
+    const abacateResponse = await fetch('https://api.abacatepay.com/v1/pixQrCode/create', {
       method: 'POST',
       headers: {
         'Authorization': `Bearer ${abacateApiKey}`,
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        frequency: 'ONE_TIME',
-        methods: ['PIX'],
-        products: [
-          {
-            externalId: 'starter-plan',
-            name: 'ProspectAI - Plano Starter Mensal',
-            quantity: 1,
-            price: 2790, // R$ 27,90 em centavos
-          }
-        ],
+        amount: 2790, // R$ 27,90 em centavos
+        expiresIn: 1800, // 30 minutos em segundos
+        description: 'ProspectAI - Plano Starter Mensal',
         customer: {
           name: customer_name,
-          cellphone: customer_phone.replace(/\D/g, ''),
+          cellphone: formattedPhone,
           email: customer_email,
-          taxId: customer_cpf.replace(/\D/g, ''),
+          taxId: formattedCpf,
         },
-        completionUrl: `${Deno.env.get('SUPABASE_URL')?.replace('.supabase.co', '.lovable.app')}/dashboard?payment=success`,
         metadata: {
-          user_id: user.id,
-          plan: 'starter',
+          externalId: user.id,
         },
       }),
     });
@@ -147,7 +156,7 @@ serve(async (req) => {
     
     console.log('Abacate Pay parsed response:', JSON.stringify(abacateData));
 
-    if (!abacateResponse.ok || abacateData.error) {
+    if (!abacateResponse.ok || (abacateData.error && abacateData.error !== '<unknown>')) {
       console.error('Abacate Pay error:', abacateData);
       return new Response(
         JSON.stringify({ error: abacateData.error || 'Erro ao criar cobrança PIX. Tente novamente.' }),
@@ -155,20 +164,28 @@ serve(async (req) => {
       );
     }
 
-    const billingData = abacateData.data;
-    console.log('Billing data:', JSON.stringify(billingData));
+    const pixData = abacateData.data;
+    console.log('PIX data:', JSON.stringify(pixData));
 
-    // Save payment record - billing API returns different structure
+    if (!pixData || !pixData.id || !pixData.brCode) {
+      console.error('Invalid PIX data from Abacate Pay:', pixData);
+      return new Response(
+        JSON.stringify({ error: 'Resposta inválida do gateway de pagamento' }),
+        { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Save payment record
     const { error: insertError } = await supabase
       .from('pix_payments')
       .insert({
         user_id: user.id,
-        abacate_charge_id: billingData.id,
+        abacate_charge_id: pixData.id,
         amount_brl: 27.90,
         status: 'PENDING',
-        br_code: billingData.url, // Use billing URL as br_code for now
-        br_code_base64: null, // Will be populated when user opens the payment
-        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(), // 30 minutes from now
+        br_code: pixData.brCode,
+        br_code_base64: pixData.brCodeBase64,
+        expires_at: pixData.expiresAt,
         customer_name,
         customer_email,
         customer_phone,
@@ -183,14 +200,15 @@ serve(async (req) => {
       );
     }
 
-    console.log('PIX payment created successfully:', billingData.id);
+    console.log('PIX payment created successfully:', pixData.id);
 
     return new Response(
       JSON.stringify({
         success: true,
-        charge_id: billingData.id,
-        payment_url: billingData.url, // URL to redirect user to pay
-        expires_at: new Date(Date.now() + 30 * 60 * 1000).toISOString(),
+        charge_id: pixData.id,
+        br_code: pixData.brCode,
+        br_code_base64: pixData.brCodeBase64,
+        expires_at: pixData.expiresAt,
         amount: 27.90,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
