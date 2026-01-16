@@ -2,16 +2,28 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Search, Loader2, MapPin, Plus } from "lucide-react";
+import { Search, Loader2, MapPin, Plus, Sparkles } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+
+interface Campaign {
+  id: string;
+  name: string;
+  goal: string;
+  context: string | null;
+  tone: string;
+}
 
 interface GoogleMapsScraperProps {
   onSearchComplete?: () => void;
   campaignId?: string;
   campaignName?: string;
+  campaign?: Campaign;
+  whatsappTemplate?: string;
+  onWhatsappTemplateChange?: (template: string) => void;
 }
 
 const exampleSearches = [
@@ -22,7 +34,14 @@ const exampleSearches = [
   "Salões de beleza em Cascavel",
 ];
 
-export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }: GoogleMapsScraperProps) {
+export function GoogleMapsScraper({ 
+  onSearchComplete, 
+  campaignId, 
+  campaignName,
+  campaign,
+  whatsappTemplate = '',
+  onWhatsappTemplateChange
+}: GoogleMapsScraperProps) {
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(20);
   const [isLoading, setIsLoading] = useState(false);
@@ -33,6 +52,9 @@ export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }
   const [totalLoaded, setTotalLoaded] = useState(0);
   const [hasMore, setHasMore] = useState(false);
   const [isLoadingMore, setIsLoadingMore] = useState(false);
+  
+  // AI generation state
+  const [isGeneratingMessage, setIsGeneratingMessage] = useState(false);
 
   const handleSearch = async (searchQuery?: string) => {
     const finalQuery = searchQuery || query;
@@ -101,6 +123,39 @@ export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }
       toast.error(error.message || "Erro ao carregar mais leads");
     } finally {
       setIsLoadingMore(false);
+    }
+  };
+
+  const handleGenerateWhatsAppMessage = async () => {
+    if (!campaign) {
+      toast.error("Campanha não encontrada");
+      return;
+    }
+
+    setIsGeneratingMessage(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("generate-whatsapp", {
+        body: { 
+          campaign: {
+            goal: campaign.goal,
+            context: campaign.context,
+            tone: campaign.tone,
+          }
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.message) {
+        onWhatsappTemplateChange?.(data.message);
+        toast.success("Mensagem gerada com sucesso!");
+      }
+    } catch (error: any) {
+      console.error("Error generating message:", error);
+      toast.error(error.message || "Erro ao gerar mensagem");
+    } finally {
+      setIsGeneratingMessage(false);
     }
   };
 
@@ -214,6 +269,41 @@ export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }
           <p className="text-sm text-center text-muted-foreground py-2">
             ✓ Todos os resultados foram carregados
           </p>
+        )}
+
+        {/* WhatsApp Template Section - Only show when campaign is provided */}
+        {campaign && (
+          <div className="pt-4 border-t border-border space-y-3">
+            <div className="flex items-center justify-between">
+              <Label htmlFor="whatsapp-template" className="text-foreground">
+                Template WhatsApp
+              </Label>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={handleGenerateWhatsAppMessage}
+                disabled={isGeneratingMessage}
+                className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/10"
+              >
+                {isGeneratingMessage ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                <span className="ml-1 text-xs">Gerar com IA</span>
+              </Button>
+            </div>
+            <Textarea
+              id="whatsapp-template"
+              value={whatsappTemplate}
+              onChange={(e) => onWhatsappTemplateChange?.(e.target.value)}
+              placeholder="Olá {nome}! Vi sua empresa no Google Maps..."
+              className="min-h-[100px] bg-input border-border text-foreground placeholder:text-muted-foreground"
+            />
+            <p className="text-xs text-muted-foreground">
+              Use <code className="px-1 py-0.5 rounded bg-muted">{"{nome}"}</code> para inserir o nome do negócio automaticamente
+            </p>
+          </div>
         )}
 
         <div className="pt-4 border-t border-border">

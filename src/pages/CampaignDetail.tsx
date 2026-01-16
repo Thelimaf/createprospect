@@ -1,17 +1,16 @@
 import { useEffect, useState } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
-import { CampaignSearchForm } from '@/components/campaign/CampaignSearchForm';
-import { CampaignResults } from '@/components/campaign/CampaignResults';
 import { GoogleMapsScraper } from '@/components/google-maps/GoogleMapsScraper';
 import { GoogleMapsLeadsList } from '@/components/google-maps/GoogleMapsLeadsList';
+import { KanbanBoard } from '@/components/kanban/KanbanBoard';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
-import { Target, Briefcase, ChevronRight, Eye, Search, MapPin, MessageSquare } from 'lucide-react';
+import { Target, Briefcase, ChevronRight, Eye, MapPin, MessageSquare, LayoutList, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface Campaign {
@@ -25,9 +24,10 @@ interface Campaign {
 
 const tabLabels: Record<string, string> = {
   overview: 'Visão Geral',
-  prospects: 'Buscar Prospects',
-  'google-maps': 'Buscar no Google Maps',
+  leads: 'Leads',
 };
+
+type LeadsViewMode = 'kanban' | 'list';
 
 export default function CampaignDetail() {
   const { id } = useParams<{ id: string }>();
@@ -37,12 +37,22 @@ export default function CampaignDetail() {
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState("overview");
   const [tabLoading, setTabLoading] = useState(false);
+  const [leadsViewMode, setLeadsViewMode] = useState<LeadsViewMode>(() => {
+    const saved = localStorage.getItem('campaignLeadsViewMode');
+    return (saved as LeadsViewMode) || 'kanban';
+  });
+  const [whatsappTemplate, setWhatsappTemplate] = useState('');
 
   useEffect(() => {
     if (user && id) {
       loadCampaign();
     }
   }, [user, id]);
+
+  // Save view mode preference
+  useEffect(() => {
+    localStorage.setItem('campaignLeadsViewMode', leadsViewMode);
+  }, [leadsViewMode]);
 
   const loadCampaign = async () => {
     try {
@@ -74,7 +84,6 @@ export default function CampaignDetail() {
   const handleTabChange = (value: string) => {
     setTabLoading(true);
     setActiveTab(value);
-    // Simulate tab content loading
     setTimeout(() => setTabLoading(false), 200);
   };
 
@@ -113,18 +122,14 @@ export default function CampaignDetail() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={handleTabChange} className="w-full space-y-6">
-        <TabsList className="grid w-full grid-cols-3 bg-muted/50">
+        <TabsList className="grid w-full grid-cols-2 bg-muted/50">
           <TabsTrigger value="overview" className="flex items-center gap-2 data-[state=active]:bg-background">
             <Eye className="h-4 w-4" />
             <span className="hidden sm:inline">Visão Geral</span>
           </TabsTrigger>
-          <TabsTrigger value="prospects" className="flex items-center gap-2 data-[state=active]:bg-background">
-            <Search className="h-4 w-4" />
-            <span className="hidden sm:inline">Buscar Prospects</span>
-          </TabsTrigger>
-          <TabsTrigger value="google-maps" className="flex items-center gap-2 data-[state=active]:bg-background">
+          <TabsTrigger value="leads" className="flex items-center gap-2 data-[state=active]:bg-background">
             <MapPin className="h-4 w-4" />
-            <span className="hidden sm:inline">Google Maps</span>
+            <span className="hidden sm:inline">Leads</span>
           </TabsTrigger>
         </TabsList>
 
@@ -181,32 +186,12 @@ export default function CampaignDetail() {
           )}
         </TabsContent>
 
-        {/* Prospects Tab (Exa API) */}
-        <TabsContent value="prospects" className="space-y-6">
-          {tabLoading ? (
-            <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-              <Skeleton className="h-[400px]" />
-              <Skeleton className="h-[400px]" />
-            </div>
-          ) : (
-            <div className="grid gap-6 lg:grid-cols-[300px_1fr]">
-              <CampaignSearchForm campaignId={campaign.id} />
-              <CampaignResults campaign={campaign} />
-            </div>
-          )}
-        </TabsContent>
-
-        {/* Google Maps Tab */}
-        <TabsContent value="google-maps" className="space-y-6">
+        {/* Leads Tab */}
+        <TabsContent value="leads" className="space-y-6">
           {tabLoading ? (
             <div className="space-y-6">
               <Skeleton className="h-24" />
-              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <Skeleton className="h-[400px]" />
-                <div className="lg:col-span-2">
-                  <Skeleton className="h-[400px]" />
-                </div>
-              </div>
+              <Skeleton className="h-[500px]" />
             </div>
           ) : (
             <div className="space-y-6">
@@ -227,19 +212,54 @@ export default function CampaignDetail() {
                 </CardContent>
               </Card>
 
-              {/* Scraper + Leads List */}
+              {/* Scraper Section */}
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <div className="lg:col-span-1">
                   <GoogleMapsScraper 
                     campaignId={campaign.id} 
                     campaignName={campaign.name}
+                    campaign={campaign}
+                    whatsappTemplate={whatsappTemplate}
+                    onWhatsappTemplateChange={setWhatsappTemplate}
                   />
                 </div>
-                <div className="lg:col-span-2">
-                  <GoogleMapsLeadsList 
-                    campaignId={campaign.id}
-                    campaignName={campaign.name}
-                  />
+                
+                {/* Leads View with Toggle */}
+                <div className="lg:col-span-2 space-y-4">
+                  {/* View Toggle */}
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-lg font-semibold text-foreground">
+                      Leads da Campanha
+                    </h3>
+                    <Tabs value={leadsViewMode} onValueChange={(v) => setLeadsViewMode(v as LeadsViewMode)}>
+                      <TabsList className="grid w-auto grid-cols-2">
+                        <TabsTrigger value="kanban" className="flex items-center gap-2 px-3">
+                          <LayoutDashboard className="h-4 w-4" />
+                          <span className="hidden sm:inline">Kanban</span>
+                        </TabsTrigger>
+                        <TabsTrigger value="list" className="flex items-center gap-2 px-3">
+                          <LayoutList className="h-4 w-4" />
+                          <span className="hidden sm:inline">Lista</span>
+                        </TabsTrigger>
+                      </TabsList>
+                    </Tabs>
+                  </div>
+
+                  {/* Leads Content */}
+                  <div className="min-h-[500px]">
+                    {leadsViewMode === 'kanban' ? (
+                      <KanbanBoard 
+                        campaignId={campaign.id}
+                        campaignName={campaign.name}
+                        whatsappTemplate={whatsappTemplate}
+                      />
+                    ) : (
+                      <GoogleMapsLeadsList 
+                        campaignId={campaign.id}
+                        campaignName={campaign.name}
+                      />
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
