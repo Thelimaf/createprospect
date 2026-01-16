@@ -2,19 +2,20 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { ExternalLink, RefreshCw, Clock, CheckCircle, Copy, Check } from 'lucide-react';
+import { RefreshCw, Clock, CheckCircle, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
 interface PixPaymentProps {
   chargeId: string;
-  paymentUrl: string;
+  brCode: string;
+  brCodeBase64: string;
   expiresAt: string;
   amount: number;
 }
 
-export function PixPayment({ chargeId, paymentUrl, expiresAt, amount }: PixPaymentProps) {
+export function PixPayment({ chargeId, brCode, brCodeBase64, expiresAt, amount }: PixPaymentProps) {
   const [status, setStatus] = useState<'PENDING' | 'PAID' | 'EXPIRED'>('PENDING');
   const [checking, setChecking] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -105,21 +106,16 @@ export function PixPayment({ chargeId, paymentUrl, expiresAt, amount }: PixPayme
     }
   }, [status, chargeId]);
 
-  // Copy payment URL to clipboard
+  // Copy PIX code to clipboard
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(paymentUrl);
+      await navigator.clipboard.writeText(brCode);
       setCopied(true);
-      toast.success('Link copiado!');
+      toast.success('Código PIX copiado!');
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('Erro ao copiar');
     }
-  };
-
-  // Open payment URL in new tab
-  const handleOpenPayment = () => {
-    window.open(paymentUrl, '_blank', 'noopener,noreferrer');
   };
 
   if (status === 'PAID') {
@@ -178,6 +174,15 @@ export function PixPayment({ chargeId, paymentUrl, expiresAt, amount }: PixPayme
           </div>
         </div>
 
+        {/* QR Code */}
+        <div className="flex justify-center">
+          <img 
+            src={brCodeBase64} 
+            alt="QR Code PIX" 
+            className="w-48 h-48 rounded-lg border border-border"
+          />
+        </div>
+
         {/* Timer */}
         <div className="flex items-center justify-center gap-2 text-sm">
           <Clock className="h-4 w-4 text-muted-foreground" />
@@ -185,24 +190,14 @@ export function PixPayment({ chargeId, paymentUrl, expiresAt, amount }: PixPayme
           <span className="font-mono font-bold">{timeLeft}</span>
         </div>
 
-        {/* Pay Button */}
-        <Button 
-          onClick={handleOpenPayment}
-          className="w-full"
-          size="lg"
-        >
-          <ExternalLink className="h-4 w-4 mr-2" />
-          Pagar com PIX
-        </Button>
-
-        {/* Copy link */}
+        {/* PIX code copy */}
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">
-            Ou copie o link de pagamento:
+            Ou copie o código PIX:
           </label>
           <div className="flex gap-2">
             <div className="flex-1 bg-muted rounded-lg p-3 text-xs font-mono break-all max-h-20 overflow-y-auto">
-              {paymentUrl}
+              {brCode}
             </div>
             <Button
               variant="outline"

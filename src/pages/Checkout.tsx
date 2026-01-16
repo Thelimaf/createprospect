@@ -60,7 +60,8 @@ export default function Checkout() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [pixData, setPixData] = useState<{
     charge_id: string;
-    payment_url: string;
+    br_code: string;
+    br_code_base64: string;
     expires_at: string;
     amount: number;
   } | null>(null);
@@ -177,7 +178,8 @@ export default function Checkout() {
           {pixData ? (
             <PixPayment
               chargeId={pixData.charge_id}
-              paymentUrl={pixData.payment_url}
+              brCode={pixData.br_code}
+              brCodeBase64={pixData.br_code_base64}
               expiresAt={pixData.expires_at}
               amount={pixData.amount}
             />
