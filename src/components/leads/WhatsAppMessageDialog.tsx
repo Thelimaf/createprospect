@@ -222,7 +222,7 @@ export function WhatsAppMessageDialog({
           </p>
         </DialogHeader>
 
-        <div className="space-y-4">
+        <div className="space-y-5">
           {/* Lead Summary Card */}
           <Card className="bg-secondary/50 border-border">
             <CardContent className="p-4">
@@ -254,11 +254,46 @@ export function WhatsAppMessageDialog({
             </CardContent>
           </Card>
 
-          {/* Quick Replies */}
-          <div className="space-y-2">
-            <p className="text-sm font-medium text-foreground">Respostas Rápidas</p>
+          {/* Message Textarea */}
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium text-foreground">
+                Mensagem gerada por IA
+              </p>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={generateMessage}
+                disabled={isGenerating}
+                className="h-8 px-3 text-primary hover:text-primary hover:bg-primary/10 border-primary/30"
+              >
+                {isGenerating ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <Sparkles className="h-4 w-4" />
+                )}
+                <span className="ml-1.5 text-xs">Gerar Nova</span>
+              </Button>
+            </div>
+            <Textarea
+              ref={textareaRef}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              onSelect={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart)}
+              placeholder="Digite sua mensagem..."
+              className="min-h-[150px] bg-input border-border resize-none"
+              disabled={isGenerating}
+            />
+            <p className="text-xs text-muted-foreground text-right">
+              {message.length}/500 caracteres
+            </p>
+          </div>
+
+          {/* Quick Replies - Below Textarea */}
+          <div className="space-y-3 pt-2 border-t border-border">
+            <p className="text-sm font-medium text-foreground pt-2">Inserir texto rápido:</p>
             <ScrollArea className="w-full">
-              <div className="flex gap-2 pb-2">
+              <div className="flex flex-wrap gap-2 pb-2">
                 {quickReplies.map((qr, index) => (
                   <Tooltip key={index}>
                     <TooltipTrigger asChild>
@@ -283,41 +318,6 @@ export function WhatsAppMessageDialog({
                 ))}
               </div>
             </ScrollArea>
-          </div>
-
-          {/* Message Textarea */}
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <p className="text-sm font-medium text-foreground">
-                Mensagem gerada por IA
-              </p>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={generateMessage}
-                disabled={isGenerating}
-                className="h-7 px-2 text-primary hover:text-primary hover:bg-primary/10"
-              >
-                {isGenerating ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Sparkles className="h-4 w-4" />
-                )}
-                <span className="ml-1 text-xs">Gerar Nova</span>
-              </Button>
-            </div>
-            <Textarea
-              ref={textareaRef}
-              value={message}
-              onChange={(e) => setMessage(e.target.value)}
-              onSelect={(e) => setCursorPosition((e.target as HTMLTextAreaElement).selectionStart)}
-              placeholder="Digite sua mensagem..."
-              className="min-h-[120px] bg-input border-border resize-none"
-              disabled={isGenerating}
-            />
-            <p className="text-xs text-muted-foreground text-right">
-              {message.length}/500 caracteres
-            </p>
           </div>
 
           {/* Action Buttons */}

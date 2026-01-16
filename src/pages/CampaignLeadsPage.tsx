@@ -149,7 +149,7 @@ export default function CampaignLeadsPage() {
 
   // Search state
   const [searchQuery, setSearchQuery] = useState('');
-  const [limit, setLimit] = useState([20]);
+  const [limit, setLimit] = useState([10]);
   const [isSearching, setIsSearching] = useState(false);
   const [isFirstSearch, setIsFirstSearch] = useState(true);
 
@@ -560,38 +560,56 @@ export default function CampaignLeadsPage() {
       <Card className="border-border bg-card mb-6">
         <CardHeader className="pb-4">
           <CardTitle className="flex items-center gap-2 text-lg">
-            <MapPin className="h-5 w-5 text-primary" />
+            <Search className="h-5 w-5 text-primary" />
             Buscar Leads
           </CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="flex-1">
-              <Input
-                placeholder="O que você procura?"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                className="h-11"
-              />
-            </div>
-            <div className="flex items-center gap-3 min-w-[180px]">
-              <Label className="text-sm text-muted-foreground shrink-0">Qtd:</Label>
+        <CardContent className="space-y-5 p-6">
+          {/* Input de busca - largura total */}
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 h-5 w-5 text-muted-foreground" />
+            <Input
+              placeholder='O que você procura? Ex: "Dentistas em Londrina"'
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+              className="h-12 pl-12 text-base border-2 border-muted-foreground/20 focus:border-primary"
+            />
+          </div>
+
+          {/* Quantidade de leads */}
+          <div className="flex items-center gap-4">
+            <Label className="text-sm text-muted-foreground shrink-0 min-w-[140px]">
+              Quantidade de leads:
+            </Label>
+            <div className="flex-1 flex items-center gap-3">
+              <span className="text-xs text-muted-foreground">5</span>
               <Slider
                 value={limit}
                 onValueChange={setLimit}
                 min={5}
-                max={100}
-                step={5}
+                max={20}
+                step={1}
                 className="flex-1"
               />
-              <Badge variant="secondary" className="shrink-0">{limit[0]}</Badge>
+              <span className="text-xs text-muted-foreground">20</span>
             </div>
-            <Button onClick={handleSearch} disabled={isSearching || isChecking} className="h-11">
+            <Badge variant="default" className="text-base px-3 py-1 min-w-[40px] justify-center">
+              {limit[0]}
+            </Badge>
+          </div>
+
+          {/* Botão centralizado */}
+          <div className="flex justify-center pt-2">
+            <Button 
+              onClick={handleSearch} 
+              disabled={isSearching || isChecking} 
+              className="h-12 px-8 text-base"
+            >
               {isSearching ? (
-                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                <Loader2 className="h-5 w-5 animate-spin mr-2" />
               ) : (
-                <Search className="h-4 w-4 mr-2" />
+                <Search className="h-5 w-5 mr-2" />
               )}
               Buscar Leads
             </Button>
