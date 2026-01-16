@@ -206,11 +206,12 @@ const HeroSection = () => {
 
   return (
     <section className="relative min-h-screen flex items-center justify-center overflow-hidden bg-landing pt-20">
-      {/* Animated gradient background */}
+      {/* Animated purple blur orbs */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-1/4 -left-1/4 w-[600px] h-[600px] rounded-full bg-[hsl(250_95%_70%/0.2)] blur-[120px] animate-pulse" />
-        <div className="absolute bottom-1/4 -right-1/4 w-[500px] h-[500px] rounded-full bg-[hsl(170_95%_50%/0.15)] blur-[100px] animate-pulse" style={{ animationDelay: "1s" }} />
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-gradient-to-br from-[hsl(250_95%_70%/0.1)] to-[hsl(170_95%_50%/0.1)] blur-[150px]" />
+        <div className="absolute top-1/4 -left-1/4 w-[600px] h-[600px] rounded-full bg-[hsl(250_95%_70%/0.25)] blur-[120px] animate-blur-1" />
+        <div className="absolute bottom-1/4 -right-1/4 w-[500px] h-[500px] rounded-full bg-[hsl(270_90%_65%/0.2)] blur-[100px] animate-blur-2" />
+        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[700px] h-[700px] rounded-full bg-[hsl(280_85%_60%/0.15)] blur-[150px] animate-blur-3" />
+        <div className="absolute top-[10%] right-[20%] w-[400px] h-[400px] rounded-full bg-[hsl(260_90%_65%/0.18)] blur-[100px] animate-blur-2" style={{ animationDelay: "5s" }} />
       </div>
 
       {/* Floating icons */}
@@ -222,7 +223,7 @@ const HeroSection = () => {
         </div>
         <div className="absolute top-1/3 right-[15%] animate-float-delayed">
           <div className="w-14 h-14 rounded-2xl glass-card flex items-center justify-center">
-            <MessageCircle className="w-7 h-7 text-landing-accent" />
+            <MessageCircle className="w-7 h-7 text-purple-light" />
           </div>
         </div>
         <div className="absolute bottom-1/3 left-[15%] animate-float-slow">
@@ -242,7 +243,7 @@ const HeroSection = () => {
           {/* Badge */}
           <motion.div variants={fadeUp} className="inline-flex">
             <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card text-sm text-gray-300">
-              <Sparkles className="w-4 h-4 text-landing-accent" />
+              <Sparkles className="w-4 h-4 text-purple-light" />
               Prospecção inteligente com Google Maps
             </span>
           </motion.div>
@@ -273,7 +274,7 @@ const HeroSection = () => {
             <Link to="/auth">
               <Button
                 size="lg"
-                className="bg-landing-primary hover:opacity-90 text-white text-lg px-8 py-6 glow-primary group"
+                className="bg-landing-primary hover:opacity-90 text-white text-lg px-8 py-6 glow-purple group"
               >
                 Começar Grátis
                 <ArrowRight className="w-5 h-5 ml-2 group-hover:translate-x-1 transition-transform" />
@@ -292,15 +293,15 @@ const HeroSection = () => {
           {/* Trust indicators */}
           <motion.div
             variants={fadeUp}
-            className="flex items-center justify-center gap-6 text-sm text-gray-400 pt-4"
+            className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-sm text-gray-400 pt-4"
           >
-            <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-landing-accent" />
+            <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(250_95%_70%/0.1)] border border-[hsl(250_95%_70%/0.2)]">
+              <Check className="w-4 h-4 text-landing-primary" />
               Sem cartão de crédito
             </span>
-            <span className="flex items-center gap-2">
-              <Check className="w-4 h-4 text-landing-accent" />
-              Até 60 leads grátis
+            <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(250_95%_70%/0.1)] border border-[hsl(250_95%_70%/0.2)]">
+              <Check className="w-4 h-4 text-landing-primary" />
+              Até 60 clientes reais para testar agora
             </span>
           </motion.div>
         </motion.div>
@@ -321,6 +322,9 @@ const HeroSection = () => {
 
 // Problem vs Solution section
 const ProblemSolutionSection = () => {
+  const solutionRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(solutionRef, { once: false, amount: 0.3 });
+
   const problems = [
     "Prospecção manual é lenta e cansativa",
     "Google Maps desorganizado, sem exportação",
@@ -363,29 +367,39 @@ const ProblemSolutionSection = () => {
           </motion.div>
 
           {/* Solution */}
-          <motion.div
-            variants={slideInRight}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.6 }}
-            className="glass-card rounded-2xl p-8 border border-[hsl(170_95%_50%/0.2)] glow-accent"
-          >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-[hsl(170_95%_50%/0.2)] flex items-center justify-center">
-                <Check className="w-5 h-5 text-landing-accent" />
+          <div ref={solutionRef} className="relative">
+            {/* Animated blur behind solution card */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: isInView ? 0.6 : 0 }}
+              transition={{ duration: 0.8 }}
+              className="absolute -inset-8 bg-[hsl(250_95%_70%/0.3)] blur-[80px] rounded-full"
+            />
+            
+            <motion.div
+              variants={slideInRight}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              transition={{ duration: 0.6 }}
+              className="relative glass-card rounded-2xl p-8 border border-[hsl(250_95%_70%/0.3)] glow-purple"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-[hsl(250_95%_70%/0.2)] flex items-center justify-center">
+                  <Check className="w-5 h-5 text-landing-primary" />
+                </div>
+                <h3 className="text-xl font-semibold text-white">A Solução</h3>
               </div>
-              <h3 className="text-xl font-semibold text-white">A Solução</h3>
-            </div>
-            <ul className="space-y-4">
-              {solutions.map((solution, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <Check className="w-5 h-5 text-landing-accent mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-300">{solution}</span>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
+              <ul className="space-y-4">
+                {solutions.map((solution, index) => (
+                  <li key={index} className="flex items-start gap-3">
+                    <Check className="w-5 h-5 text-landing-primary mt-0.5 flex-shrink-0" />
+                    <span className="text-gray-300">{solution}</span>
+                  </li>
+                ))}
+              </ul>
+            </motion.div>
+          </div>
         </div>
       </div>
     </section>
@@ -448,10 +462,10 @@ const HowItWorksSection = () => {
               )}
 
               <div className="glass-card rounded-2xl p-8 text-center hover:-translate-y-2 transition-transform duration-300">
-                <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[hsl(250_95%_70%/0.2)] to-[hsl(170_95%_50%/0.2)] flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[hsl(250_95%_70%/0.2)] to-[hsl(280_85%_65%/0.2)] flex items-center justify-center">
                   <step.icon className="w-8 h-8 text-landing-primary" />
                 </div>
-                <div className="text-sm text-landing-accent mb-2">
+                <div className="text-sm text-purple-light mb-2">
                   Passo {index + 1}
                 </div>
                 <h3 className="text-xl font-semibold text-white mb-2">
@@ -479,7 +493,7 @@ const BenefitsSection = () => {
   return (
     <section className="py-24 bg-landing relative overflow-hidden">
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(250_95%_70%/0.05)] to-[hsl(170_95%_50%/0.05)]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(250_95%_70%/0.05)] to-[hsl(280_85%_65%/0.05)]" />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="grid lg:grid-cols-2 gap-12 items-center">
@@ -504,8 +518,8 @@ const BenefitsSection = () => {
                   transition={{ delay: index * 0.1 }}
                   className="flex items-center gap-4"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[hsl(170_95%_50%/0.2)] flex items-center justify-center flex-shrink-0">
-                    <Check className="w-4 h-4 text-landing-accent" />
+                  <div className="w-6 h-6 rounded-full bg-[hsl(250_95%_70%/0.2)] flex items-center justify-center flex-shrink-0">
+                    <Check className="w-4 h-4 text-landing-primary" />
                   </div>
                   <span className="text-lg text-gray-300">{benefit}</span>
                 </motion.li>
@@ -546,7 +560,7 @@ const BenefitsSection = () => {
                         {["(11) 99999-1234", "(11) 98888-5678", "(11) 97777-9012"][i - 1]}
                       </div>
                     </div>
-                    <Button size="sm" className="bg-landing-accent hover:opacity-90 text-black">
+                    <Button size="sm" className="bg-landing-primary hover:opacity-90 text-white">
                       <MessageCircle className="w-4 h-4" />
                     </Button>
                   </div>
@@ -583,10 +597,10 @@ const MetricsSection = () => {
             <motion.div
               key={index}
               variants={scaleIn}
-              className="glass-card rounded-2xl p-6 text-center hover:glow-accent transition-shadow duration-300"
+              className="glass-card rounded-2xl p-6 text-center hover:glow-purple transition-shadow duration-300"
             >
-              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-[hsl(170_95%_50%/0.1)] flex items-center justify-center">
-                <metric.icon className="w-6 h-6 text-landing-accent" />
+              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-[hsl(250_95%_70%/0.1)] flex items-center justify-center">
+                <metric.icon className="w-6 h-6 text-landing-primary" />
               </div>
               <div className="text-3xl font-bold text-white mb-1">
                 <AnimatedCounter
@@ -674,7 +688,7 @@ const PricingSection = () => {
               {freePlan.features.map((feature, index) => (
                 <li key={index} className="flex items-center gap-3">
                   {feature.included ? (
-                    <Check className="w-5 h-5 text-landing-accent flex-shrink-0" />
+                    <Check className="w-5 h-5 text-landing-primary flex-shrink-0" />
                   ) : (
                     <X className="w-5 h-5 text-red-400/60 flex-shrink-0" />
                   )}
@@ -702,11 +716,11 @@ const PricingSection = () => {
             whileInView="visible"
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="relative glass-card rounded-2xl p-8 border-2 border-[hsl(170_95%_50%/0.5)] glow-accent hover:-translate-y-2 transition-transform duration-300"
+            className="relative glass-card rounded-2xl p-8 border-2 border-[hsl(250_95%_70%/0.5)] glow-purple hover:-translate-y-2 transition-transform duration-300"
           >
             {/* Popular badge */}
             <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-              <span className="px-4 py-1 rounded-full gradient-primary-accent text-white text-sm font-medium">
+              <span className="px-4 py-1 rounded-full gradient-purple text-white text-sm font-medium">
                 Mais Popular
               </span>
             </div>
@@ -723,7 +737,7 @@ const PricingSection = () => {
             <ul className="space-y-4 mb-8">
               {starterPlan.features.map((feature, index) => (
                 <li key={index} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-landing-accent flex-shrink-0" />
+                  <Check className="w-5 h-5 text-landing-primary flex-shrink-0" />
                   <span className="text-gray-300">{feature.text}</span>
                 </li>
               ))}
@@ -731,13 +745,11 @@ const PricingSection = () => {
 
             {/* Payment methods */}
             <div className="flex items-center justify-center gap-4 mb-6">
-              <span className="text-xs text-gray-500 px-2 py-1 rounded bg-landing">PIX</span>
-              <span className="text-xs text-gray-500 px-2 py-1 rounded bg-landing">Boleto</span>
-              <span className="text-xs text-gray-500 px-2 py-1 rounded bg-landing">Cartão</span>
+              <span className="text-xs text-gray-400 px-3 py-1.5 rounded-full bg-[hsl(250_95%_70%/0.1)] border border-[hsl(250_95%_70%/0.2)]">PIX</span>
             </div>
 
             <Link to="/checkout?plan=starter" className="block">
-              <Button className="w-full bg-landing-primary hover:opacity-90 text-white glow-primary">
+              <Button className="w-full bg-landing-primary hover:opacity-90 text-white glow-purple">
                 Assinar Agora
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -806,7 +818,7 @@ const FAQSection = () => {
                   value={`item-${index}`}
                   className="glass-card rounded-xl border-none px-6"
                 >
-                  <AccordionTrigger className="text-left text-white hover:text-landing-accent hover:no-underline py-4">
+                  <AccordionTrigger className="text-left text-white hover:text-landing-primary hover:no-underline py-4">
                     {faq.question}
                   </AccordionTrigger>
                   <AccordionContent className="text-gray-400 pb-4">
@@ -834,7 +846,7 @@ const FinalCTASection = () => {
   return (
     <section ref={ref} className="py-32 relative overflow-hidden">
       {/* Gradient background */}
-      <div className="absolute inset-0 gradient-primary-accent opacity-90" />
+      <div className="absolute inset-0 gradient-purple opacity-90" />
       
       {/* Parallax overlay */}
       <motion.div

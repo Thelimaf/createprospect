@@ -111,8 +111,12 @@
   }
 
   /* Premium landing page utilities */
-  .glow-accent {
-    box-shadow: 0 0 30px hsl(170 95% 50% / 0.3);
+  .glow-purple {
+    box-shadow: 0 0 30px hsl(250 95% 70% / 0.4);
+  }
+
+  .glow-purple-lg {
+    box-shadow: 0 0 50px hsl(250 95% 70% / 0.5);
   }
 
   .glow-primary {
@@ -127,17 +131,17 @@
     border: 1px solid hsl(230 15% 20% / 0.5);
   }
 
-  .gradient-primary-accent {
+  .gradient-purple {
     background: linear-gradient(135deg, 
       hsl(250 95% 70%) 0%, 
-      hsl(170 95% 50%) 100%);
+      hsl(280 85% 65%) 100%);
   }
 
   .text-gradient-hero {
     background: linear-gradient(90deg, 
       hsl(250 95% 75%), 
-      hsl(280 90% 70%), 
-      hsl(170 95% 55%));
+      hsl(270 90% 70%), 
+      hsl(280 85% 65%));
     background-size: 200% auto;
     -webkit-background-clip: text;
     background-clip: text;
@@ -160,6 +164,25 @@
     50% { transform: translateY(-8px); }
   }
 
+  /* Animated blur orb movements */
+  @keyframes blur-move-1 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    25% { transform: translate(100px, 50px) scale(1.1); }
+    50% { transform: translate(50px, 100px) scale(0.95); }
+    75% { transform: translate(-50px, 50px) scale(1.05); }
+  }
+
+  @keyframes blur-move-2 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    33% { transform: translate(-80px, 60px) scale(1.1); }
+    66% { transform: translate(60px, -40px) scale(0.9); }
+  }
+
+  @keyframes blur-move-3 {
+    0%, 100% { transform: translate(0, 0) scale(1); }
+    50% { transform: translate(-30px, 80px) scale(1.15); }
+  }
+
   .animate-float {
     animation: float 4s ease-in-out infinite;
   }
@@ -172,6 +195,18 @@
   .animate-float-slow {
     animation: float 6s ease-in-out infinite;
     animation-delay: 2s;
+  }
+
+  .animate-blur-1 {
+    animation: blur-move-1 20s ease-in-out infinite;
+  }
+
+  .animate-blur-2 {
+    animation: blur-move-2 25s ease-in-out infinite;
+  }
+
+  .animate-blur-3 {
+    animation: blur-move-3 18s ease-in-out infinite;
   }
 
   /* Landing page specific colors */
@@ -187,8 +222,8 @@
     color: hsl(250 95% 70%);
   }
 
-  .text-landing-accent {
-    color: hsl(170 95% 50%);
+  .text-purple-light {
+    color: hsl(270 90% 75%);
   }
 
   .border-landing {
@@ -199,7 +234,7 @@
     background-color: hsl(250 95% 70%);
   }
 
-  .bg-landing-accent {
-    background-color: hsl(170 95% 50%);
+  .border-purple {
+    border-color: hsl(250 95% 70%);
   }
 }
