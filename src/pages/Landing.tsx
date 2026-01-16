@@ -4,12 +4,13 @@ import {
   Sparkles, 
   Search, 
   Users, 
-  ArrowRight,
+  Mail, 
+  ArrowRight, 
+  Zap,
   Target,
   MessageSquare 
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import NeuralNetworkHero from '@/components/ui/neural-network-hero';
 
 const features = [
   {
@@ -73,19 +74,82 @@ export default function Landing() {
         </div>
       </nav>
 
-      {/* Seção Hero com Neural Network */}
-      <NeuralNetworkHero
-        title="Descubra prospects"
-        titleHighlight="com precisão de IA"
-        description="Crie campanhas direcionadas, encontre leads de alta qualidade e gere alcance personalizado—tudo com busca inteligente por IA."
-        badgeText="Powered by Studio Mamute"
-        badgeLabel="Novo"
-        ctaButtons={[
-          { text: "Começar Teste Grátis", href: "/auth", primary: true },
-          { text: "Ver Preços", href: "/pricing" }
-        ]}
-        microDetails={["Busca com IA", "Google Maps", "WhatsApp 1-click"]}
-      />
+      {/* Seção Hero */}
+      <section className="relative overflow-hidden pt-32 pb-20">
+        {/* Gradiente de fundo */}
+        <div className="absolute inset-0 -z-10">
+          <div className="absolute left-1/2 top-0 h-[600px] w-[600px] -translate-x-1/2 rounded-full bg-gradient-hero opacity-20 blur-[120px]" />
+        </div>
+
+        <div className="mx-auto max-w-7xl px-6">
+          <div className="mx-auto max-w-3xl text-center">
+            <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-4 py-2 text-sm text-muted-foreground">
+              <Zap className="h-4 w-4 text-accent" />
+              <span>Powered by Studio Mamute</span>
+            </div>
+            
+            <h1 className="animate-fade-up text-5xl font-bold tracking-tight text-foreground sm:text-7xl">
+              Descubra prospects
+              <span className="block gradient-text">com precisão de IA</span>
+            </h1>
+            
+            <p className="mt-6 animate-fade-up text-lg text-muted-foreground" style={{ animationDelay: '0.1s' }}>
+              Crie campanhas direcionadas, encontre leads de alta qualidade e gere 
+              alcance personalizado—tudo com busca inteligente por IA.
+            </p>
+            
+            <div className="mt-10 flex animate-fade-up justify-center gap-4" style={{ animationDelay: '0.2s' }}>
+              <Button 
+                asChild 
+                size="lg" 
+                className="bg-primary text-primary-foreground hover:bg-primary/90 shadow-glow"
+              >
+                <Link to="/auth">
+                  Começar Teste Grátis
+                  <ArrowRight className="ml-2 h-5 w-5" />
+                </Link>
+              </Button>
+            </div>
+          </div>
+
+          {/* Imagem/Preview do Hero */}
+          <div className="mt-20 animate-fade-up" style={{ animationDelay: '0.3s' }}>
+            <div className="relative mx-auto max-w-5xl">
+              <div className="overflow-hidden rounded-xl border border-border bg-gradient-card shadow-strong">
+                <div className="flex h-10 items-center gap-2 border-b border-border px-4">
+                  <div className="h-3 w-3 rounded-full bg-destructive/50" />
+                  <div className="h-3 w-3 rounded-full bg-yellow-500/50" />
+                  <div className="h-3 w-3 rounded-full bg-green-500/50" />
+                </div>
+                <div className="p-8">
+                  <div className="flex gap-4">
+                    <div className="flex-1 space-y-4">
+                      <div className="h-8 w-48 rounded-lg bg-secondary" />
+                      <div className="h-4 w-full rounded bg-secondary/50" />
+                      <div className="h-4 w-3/4 rounded bg-secondary/50" />
+                    </div>
+                    <div className="w-64 space-y-3">
+                      {[1, 2, 3].map((i) => (
+                        <div key={i} className="rounded-lg border border-border bg-card p-4">
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-primary/20" />
+                            <div className="flex-1 space-y-2">
+                              <div className="h-3 w-24 rounded bg-secondary" />
+                              <div className="h-2 w-16 rounded bg-secondary/50" />
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              {/* Efeito de brilho */}
+              <div className="absolute -inset-4 -z-10 rounded-2xl bg-gradient-hero opacity-20 blur-2xl" />
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Seção de Funcionalidades */}
       <section className="py-24 border-t border-border">
