@@ -388,6 +388,77 @@ export default function CampaignDetail() {
                 </CardContent>
               </Card>
             </motion.div>
+
+            {/* Leads Preview Section - Shows after search */}
+            {totalLeads > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.2 }}
+              >
+                <Card className="border-border bg-card">
+                  <CardHeader className="flex flex-row items-center justify-between pb-4">
+                    <div className="flex items-center gap-3">
+                      <Users className="h-5 w-5 text-primary" />
+                      <CardTitle className="text-lg text-foreground">
+                        {totalLeads} leads encontrados
+                      </CardTitle>
+                    </div>
+                    <Button asChild size="sm">
+                      <Link to={`/campaigns/${id}/leads`}>
+                        Ver Todos os Leads
+                        <ArrowRight className="ml-2 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    {/* Quick preview of leads */}
+                    <div className="space-y-2">
+                      {leadsPreview.slice(0, 5).map((lead) => (
+                        <div 
+                          key={lead.id} 
+                          className="flex items-center justify-between p-3 rounded-lg bg-muted/30 hover:bg-muted/50 transition-colors"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="font-medium text-foreground truncate">{lead.business_name}</p>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                              {lead.phone && <span>{lead.phone}</span>}
+                              {lead.city && <span>• {lead.city}</span>}
+                            </div>
+                          </div>
+                          <Badge
+                            variant="outline"
+                            className={
+                              lead.status === 'new'
+                                ? 'bg-blue-500/20 text-blue-400 border-blue-500/30'
+                                : lead.status === 'contacted'
+                                ? 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30'
+                                : lead.status === 'interested'
+                                ? 'bg-green-500/20 text-green-400 border-green-500/30'
+                                : 'bg-muted text-muted-foreground'
+                            }
+                          >
+                            {lead.status === 'new'
+                              ? 'Novo'
+                              : lead.status === 'contacted'
+                              ? 'Contactado'
+                              : lead.status === 'interested'
+                              ? 'Interessado'
+                              : lead.status}
+                          </Badge>
+                        </div>
+                      ))}
+                      
+                      {totalLeads > 5 && (
+                        <p className="text-center text-sm text-muted-foreground pt-2">
+                          +{totalLeads - 5} outros leads
+                        </p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            )}
           </div>
         </TabsContent>
 
