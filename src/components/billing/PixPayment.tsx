@@ -2,23 +2,22 @@ import { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { supabase } from '@/integrations/supabase/client';
-import { Copy, Check, RefreshCw, Clock, CheckCircle } from 'lucide-react';
+import { ExternalLink, RefreshCw, Clock, CheckCircle, Copy, Check } from 'lucide-react';
 import { toast } from 'sonner';
 import { useNavigate } from 'react-router-dom';
 import confetti from 'canvas-confetti';
 
 interface PixPaymentProps {
   chargeId: string;
-  brCode: string;
-  brCodeBase64: string;
+  paymentUrl: string;
   expiresAt: string;
   amount: number;
 }
 
-export function PixPayment({ chargeId, brCode, brCodeBase64, expiresAt, amount }: PixPaymentProps) {
+export function PixPayment({ chargeId, paymentUrl, expiresAt, amount }: PixPaymentProps) {
   const [status, setStatus] = useState<'PENDING' | 'PAID' | 'EXPIRED'>('PENDING');
-  const [copied, setCopied] = useState(false);
   const [checking, setChecking] = useState(false);
+  const [copied, setCopied] = useState(false);
   const [timeLeft, setTimeLeft] = useState('');
   const navigate = useNavigate();
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
@@ -106,16 +105,21 @@ export function PixPayment({ chargeId, brCode, brCodeBase64, expiresAt, amount }
     }
   }, [status, chargeId]);
 
-  // Copy to clipboard
+  // Copy payment URL to clipboard
   const handleCopy = async () => {
     try {
-      await navigator.clipboard.writeText(brCode);
+      await navigator.clipboard.writeText(paymentUrl);
       setCopied(true);
-      toast.success('Código copiado!');
+      toast.success('Link copiado!');
       setTimeout(() => setCopied(false), 2000);
     } catch {
       toast.error('Erro ao copiar');
     }
+  };
+
+  // Open payment URL in new tab
+  const handleOpenPayment = () => {
+    window.open(paymentUrl, '_blank', 'noopener,noreferrer');
   };
 
   if (status === 'PAID') {
@@ -164,24 +168,6 @@ export function PixPayment({ chargeId, brCode, brCodeBase64, expiresAt, amount }
   return (
     <Card>
       <CardContent className="pt-6 space-y-6">
-        {/* QR Code */}
-        <div className="flex justify-center">
-          <div className="bg-white p-4 rounded-lg">
-            <img 
-              src={brCodeBase64} 
-              alt="QR Code PIX" 
-              className="w-48 h-48"
-            />
-          </div>
-        </div>
-
-        {/* Timer */}
-        <div className="flex items-center justify-center gap-2 text-sm">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          <span className="text-muted-foreground">Expira em:</span>
-          <span className="font-mono font-bold">{timeLeft}</span>
-        </div>
-
         {/* Amount */}
         <div className="text-center">
           <div className="text-3xl font-bold">
@@ -192,14 +178,31 @@ export function PixPayment({ chargeId, brCode, brCodeBase64, expiresAt, amount }
           </div>
         </div>
 
-        {/* Copy code */}
+        {/* Timer */}
+        <div className="flex items-center justify-center gap-2 text-sm">
+          <Clock className="h-4 w-4 text-muted-foreground" />
+          <span className="text-muted-foreground">Expira em:</span>
+          <span className="font-mono font-bold">{timeLeft}</span>
+        </div>
+
+        {/* Pay Button */}
+        <Button 
+          onClick={handleOpenPayment}
+          className="w-full"
+          size="lg"
+        >
+          <ExternalLink className="h-4 w-4 mr-2" />
+          Pagar com PIX
+        </Button>
+
+        {/* Copy link */}
         <div className="space-y-2">
           <label className="text-sm text-muted-foreground">
-            Ou copie o código PIX:
+            Ou copie o link de pagamento:
           </label>
           <div className="flex gap-2">
             <div className="flex-1 bg-muted rounded-lg p-3 text-xs font-mono break-all max-h-20 overflow-y-auto">
-              {brCode}
+              {paymentUrl}
             </div>
             <Button
               variant="outline"
