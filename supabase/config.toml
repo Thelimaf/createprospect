@@ -1,1 +1,10 @@
 project_id = "hixkhrhvvensttvzdojg"
+
+[functions.create-search]
+verify_jwt = false
+
+[functions.exa-webhook]
+verify_jwt = false
+
+[functions.generate-outreach]
+verify_jwt = false
