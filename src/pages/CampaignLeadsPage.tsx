@@ -492,7 +492,7 @@ export default function CampaignLeadsPage() {
                       onToggleCollapse={() => toggleColumnCollapse(column.id)}
                       selectedLeadId={selectedLeadId}
                       onSelectLead={setSelectedLeadId}
-                      onWhatsAppClick={(lead) => handleWhatsAppClick(lead)}
+                      onWhatsAppClick={(lead: any) => handleWhatsAppClick(lead)}
                       whatsappMessage=""
                     />
                   ))}

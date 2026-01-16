@@ -10,6 +10,7 @@ import Dashboard from "@/pages/Dashboard";
 import Campaigns from "@/pages/Campaigns";
 import CampaignNew from "@/pages/CampaignNew";
 import CampaignDetail from "@/pages/CampaignDetail";
+import CampaignLeadsPage from "@/pages/CampaignLeadsPage";
 import GoogleMapsLeads from "@/pages/GoogleMapsLeads";
 import Settings from "@/pages/Settings";
 import SearchHistory from "@/pages/SearchHistory";
@@ -35,6 +36,7 @@ const App = () => (
             <Route path="/campaigns" element={<Campaigns />} />
             <Route path="/campaigns/new" element={<CampaignNew />} />
             <Route path="/campaigns/:id" element={<CampaignDetail />} />
+            <Route path="/campaigns/:id/leads" element={<CampaignLeadsPage />} />
             <Route path="/google-maps-leads" element={<GoogleMapsLeads />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/searches" element={<SearchHistory />} />
