@@ -11,6 +11,7 @@ import Campaigns from "@/pages/Campaigns";
 import CampaignNew from "@/pages/CampaignNew";
 import CampaignDetail from "@/pages/CampaignDetail";
 import GoogleMapsLeads from "@/pages/GoogleMapsLeads";
+import Settings from "@/pages/Settings";
 import NotFound from "@/pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="/campaigns/new" element={<CampaignNew />} />
             <Route path="/campaigns/:id" element={<CampaignDetail />} />
             <Route path="/google-maps-leads" element={<GoogleMapsLeads />} />
+            <Route path="/settings" element={<Settings />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </AuthProvider>

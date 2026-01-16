@@ -192,6 +192,14 @@ export function ProspectCard({ result, campaign }: ProspectCardProps) {
                 size="sm"
                 asChild
                 className="border-border text-foreground hover:bg-secondary"
+                onClick={() => {
+                  console.log('[ExternalLink]', {
+                    context: 'prospect_profile',
+                    method: 'direct_anchor',
+                    url: displayUrl,
+                    timestamp: new Date().toISOString(),
+                  });
+                }}
               >
                 <a href={displayUrl} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-2 h-4 w-4" />

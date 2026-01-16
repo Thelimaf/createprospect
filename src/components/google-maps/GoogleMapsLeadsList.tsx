@@ -3,7 +3,6 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
@@ -32,20 +31,16 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-// useIsMobile removed - using wa.me which works universally
-
-// Normalize phone to format 55DDDNUMBER
-const normalizePhone = (phone: string): string => {
-  const digits = phone.replace(/\D/g, "");
-  return digits.startsWith("55") ? digits : `55${digits}`;
-};
-
-// Build WhatsApp URL - uses wa.me which works universally on mobile and desktop
-const buildWhatsAppUrl = (phone: string, text: string): string => {
-  const normalizedPhone = normalizePhone(phone);
-  const encodedText = encodeURIComponent(text);
-  return `https://wa.me/${normalizedPhone}?text=${encodedText}`;
-};
+import { ExternalLinkButton } from "@/components/shared/ExternalLinkButton";
+import { IframeWarningBanner } from "@/components/shared/IframeWarningBanner";
+import { LeadUrlsTooltip } from "@/components/shared/LeadUrlsTooltip";
+import { 
+  normalizePhoneBR, 
+  buildWhatsAppUrl, 
+  ensureHttps, 
+  normalizeMapsUrl,
+  logExternalLinkAttempt 
+} from "@/lib/external-links";
 
 interface Lead {
   id: string;
@@ -108,10 +103,6 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
     }
 
     // Subscribe to realtime updates with campaign filter
-    const filter = campaignId 
-      ? `user_id=eq.${user.id},campaign_id=eq.${campaignId}`
-      : `user_id=eq.${user.id}`;
-
     const channel = supabase
       .channel(`google_maps_leads_${campaignId || 'all'}`)
       .on(
@@ -228,9 +219,14 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
     }
   };
 
-  // Update status when clicking WhatsApp link (called via onClick on the anchor wrapper)
+  // Update status when clicking WhatsApp link
   const handleWhatsAppContact = async (lead: Lead) => {
-    toast.info("Abrindo WhatsApp...", { duration: 1000 });
+    logExternalLinkAttempt({
+      context: 'whatsapp_contact',
+      method: 'direct_anchor',
+      url: buildWhatsAppUrl(lead.phone!, getWhatsAppMessage(lead)),
+      leadId: lead.id,
+    });
     
     await supabase
       .from("google_maps_leads")
@@ -253,7 +249,7 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
   const exportToCsv = () => {
     const headers = ["Nome", "Telefone", "Email", "Endereço", "Status", "Link WhatsApp"];
     const rows = filteredLeads.map((lead) => {
-      const normalizedPhone = lead.phone ? normalizePhone(lead.phone) : "";
+      const normalizedPhone = lead.phone ? normalizePhoneBR(lead.phone) : "";
       // Use wa.me for CSV export - universal format
       const whatsappUrl = lead.phone ? `https://wa.me/${normalizedPhone}` : "";
       return [
@@ -347,6 +343,9 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
 
   return (
     <div className="space-y-6">
+      {/* Iframe Warning Banner */}
+      <IframeWarningBanner />
+
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         <Card className="bg-card border-border">
@@ -463,8 +462,14 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {filteredLeads.map((lead) => (
             <Card key={lead.id} className="bg-card border-border hover:border-primary/50 transition-colors relative">
-              {/* Campaign Badge */}
-              <div className="absolute top-2 right-2">
+              {/* Campaign Badge & Info Tooltip */}
+              <div className="absolute top-2 right-2 flex items-center gap-1">
+                <LeadUrlsTooltip
+                  phone={lead.phone}
+                  googleMapsUrl={lead.google_maps_url}
+                  website={lead.website}
+                  whatsappMessage={getWhatsAppMessage(lead)}
+                />
                 {lead.campaign_id ? (
                   <Badge 
                     variant="outline" 
@@ -485,7 +490,7 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
               </div>
 
               <CardContent className="pt-4">
-                <div className="flex items-start justify-between mb-3 pr-24">
+                <div className="flex items-start justify-between mb-3 pr-28">
                   <div className="flex-1 min-w-0">
                     <h3 className="font-semibold text-foreground truncate">{lead.business_name}</h3>
                     {lead.category && (
@@ -522,78 +527,54 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
                   </p>
                 )}
 
-                {/* Action Buttons */}
+                {/* Action Buttons with ExternalLinkButton */}
                 <div className="flex flex-wrap gap-2 mt-4">
                   {lead.phone && (
-                    <Button
-                      size="sm"
-                      asChild
-                      onClick={() => handleWhatsAppContact(lead)}
+                    <ExternalLinkButton
+                      url={buildWhatsAppUrl(lead.phone, getWhatsAppMessage(lead))}
+                      label="WhatsApp"
+                      icon={<MessageCircle className="mr-1 h-4 w-4" />}
+                      toastLabel="Abrindo WhatsApp..."
+                      onBeforeOpen={() => handleWhatsAppContact(lead)}
+                      enableQr
+                      qrTitle="WhatsApp QR Code"
+                      context="lead_whatsapp"
+                      leadId={lead.id}
                       className="bg-green-600 hover:bg-green-700 text-white"
-                    >
-                      <a 
-                        href={buildWhatsAppUrl(lead.phone, getWhatsAppMessage(lead))}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                      >
-                        <MessageCircle className="mr-1 h-4 w-4" />
-                        WhatsApp
-                      </a>
-                    </Button>
+                    />
                   )}
                   
                   {lead.email && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      asChild
-                    >
-                      <a 
-                        href={`mailto:${lead.email}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => toast.info("Abrindo Email...", { duration: 1000 })}
-                      >
-                        <Mail className="mr-1 h-4 w-4" />
-                        Email
-                      </a>
-                    </Button>
+                    <ExternalLinkButton
+                      url={`mailto:${lead.email}`}
+                      label="Email"
+                      icon={<Mail className="mr-1 h-4 w-4" />}
+                      toastLabel="Abrindo Email..."
+                      context="lead_email"
+                      leadId={lead.id}
+                    />
                   )}
 
                   {lead.google_maps_url && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      asChild
-                    >
-                      <a 
-                        href={lead.google_maps_url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => toast.info("Abrindo Google Maps...", { duration: 1000 })}
-                      >
-                        <MapPin className="mr-1 h-4 w-4" />
-                        Maps
-                      </a>
-                    </Button>
+                    <ExternalLinkButton
+                      url={normalizeMapsUrl(lead.google_maps_url)}
+                      label="Maps"
+                      icon={<MapPin className="mr-1 h-4 w-4" />}
+                      toastLabel="Abrindo Google Maps..."
+                      context="lead_maps"
+                      leadId={lead.id}
+                    />
                   )}
 
                   {lead.website && (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      asChild
-                    >
-                      <a 
-                        href={lead.website}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={() => toast.info("Abrindo Site...", { duration: 1000 })}
-                      >
-                        <Globe className="mr-1 h-4 w-4" />
-                        Site
-                      </a>
-                    </Button>
+                    <ExternalLinkButton
+                      url={ensureHttps(lead.website)}
+                      label="Site"
+                      icon={<Globe className="mr-1 h-4 w-4" />}
+                      toastLabel="Abrindo Site..."
+                      context="lead_website"
+                      leadId={lead.id}
+                    />
                   )}
 
                   {/* Add to Campaign button - only show on standalone page for leads without campaign */}
