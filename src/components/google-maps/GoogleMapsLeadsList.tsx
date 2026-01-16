@@ -105,7 +105,7 @@ export function GoogleMapsLeadsList() {
   const filteredLeads = useMemo(() => {
     return leads.filter((lead) => {
       const matchesStatus = statusFilter === "all" || lead.status === statusFilter;
-      const matchesCity = !cityFilter || lead.city?.toLowerCase().includes(cityFilter.toLowerCase());
+      const matchesCity = cityFilter === "all" || !cityFilter || lead.city?.toLowerCase().includes(cityFilter.toLowerCase());
       return matchesStatus && matchesCity;
     });
   }, [leads, statusFilter, cityFilter]);
@@ -303,14 +303,14 @@ export function GoogleMapsLeadsList() {
           </SelectContent>
         </Select>
 
-        <Select value={cityFilter} onValueChange={setCityFilter}>
+        <Select value={cityFilter || "all"} onValueChange={(val) => setCityFilter(val === "all" ? "" : val)}>
           <SelectTrigger className="w-[180px] bg-input border-border text-foreground">
             <SelectValue placeholder="Filtrar por cidade" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Todas as cidades</SelectItem>
+            <SelectItem value="all">Todas as cidades</SelectItem>
             {cities.map((city) => (
-              <SelectItem key={city} value={city || ""}>{city}</SelectItem>
+              <SelectItem key={city} value={city || "unknown"}>{city}</SelectItem>
             ))}
           </SelectContent>
         </Select>
