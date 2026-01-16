@@ -85,7 +85,7 @@ export default function Landing() {
           <div className="mx-auto max-w-3xl text-center">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-border bg-secondary/50 px-4 py-2 text-sm text-muted-foreground">
               <Zap className="h-4 w-4 text-accent" />
-              <span>Powered by Exa AI</span>
+              <span>Powered by Studio Mamute</span>
             </div>
             
             <h1 className="animate-fade-up text-5xl font-bold tracking-tight text-foreground sm:text-7xl">
