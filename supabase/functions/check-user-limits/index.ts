@@ -6,6 +6,9 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Emails com acesso master (sem limites)
+const MASTER_EMAILS = ['anderson.ferlimajunior@gmail.com'];
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -34,6 +37,22 @@ serve(async (req) => {
       return new Response(
         JSON.stringify({ error: 'Token inválido' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Verificar se é usuário master (sem limites)
+    if (MASTER_EMAILS.includes(user.email || '')) {
+      console.log('Master user detected:', user.email);
+      return new Response(
+        JSON.stringify({ 
+          allowed: true, 
+          plan_name: 'master',
+          remaining_searches: 999999,
+          current_usage: 0,
+          limit: 999999,
+          message: null
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
