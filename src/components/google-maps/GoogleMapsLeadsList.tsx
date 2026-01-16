@@ -32,7 +32,7 @@ import {
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { useIsMobile } from "@/hooks/use-mobile";
+// useIsMobile removed - using wa.me which works universally
 
 // Normalize phone to format 55DDDNUMBER
 const normalizePhone = (phone: string): string => {
@@ -40,16 +40,11 @@ const normalizePhone = (phone: string): string => {
   return digits.startsWith("55") ? digits : `55${digits}`;
 };
 
-// Build WhatsApp URL - uses web.whatsapp.com on desktop to avoid api.whatsapp.com redirect blocking
-const buildWhatsAppUrl = (phone: string, text: string, isMobile: boolean): string => {
+// Build WhatsApp URL - uses wa.me which works universally on mobile and desktop
+const buildWhatsAppUrl = (phone: string, text: string): string => {
   const normalizedPhone = normalizePhone(phone);
   const encodedText = encodeURIComponent(text);
-  
-  if (isMobile) {
-    return `https://wa.me/${normalizedPhone}?text=${encodedText}`;
-  }
-  // Desktop: use web.whatsapp.com directly to avoid api.whatsapp.com redirect
-  return `https://web.whatsapp.com/send?phone=${normalizedPhone}&text=${encodedText}`;
+  return `https://wa.me/${normalizedPhone}?text=${encodedText}`;
 };
 
 interface Lead {
@@ -91,7 +86,6 @@ const defaultWhatsAppTemplate = "Olá! Vim através do Google e gostaria de apre
 
 export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLeadsListProps) {
   const { user } = useAuth();
-  const isMobile = useIsMobile();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [whatsappTemplate, setWhatsappTemplate] = useState(defaultWhatsAppTemplate);
@@ -234,10 +228,10 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
     }
   };
 
-  const handleWhatsAppClick = async (lead: Lead) => {
-    if (!lead.phone) return;
-
-    // Update status to contacted
+  // Update status when clicking WhatsApp link (called via onClick on the anchor wrapper)
+  const handleWhatsAppContact = async (lead: Lead) => {
+    toast.info("Abrindo WhatsApp...", { duration: 1000 });
+    
     await supabase
       .from("google_maps_leads")
       .update({ 
@@ -246,27 +240,22 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
         updated_at: new Date().toISOString() 
       })
       .eq("id", lead.id);
+  };
 
-    // Generate personalized message
-    const message = whatsappTemplate
+  // Generate WhatsApp message from template
+  const getWhatsAppMessage = (lead: Lead): string => {
+    return whatsappTemplate
       .replace(/{business_name}/g, lead.business_name)
       .replace(/{category}/g, lead.category || "")
       .replace(/{city}/g, lead.city || "");
-
-    const url = buildWhatsAppUrl(lead.phone, message, isMobile);
-    const newWindow = window.open(url, "_blank");
-    
-    if (!newWindow) {
-      toast.error("Pop-up bloqueado. Permita pop-ups para abrir o WhatsApp.");
-    }
   };
 
   const exportToCsv = () => {
     const headers = ["Nome", "Telefone", "Email", "Endereço", "Status", "Link WhatsApp"];
     const rows = filteredLeads.map((lead) => {
       const normalizedPhone = lead.phone ? normalizePhone(lead.phone) : "";
-      // Use web.whatsapp.com for CSV export to avoid blocking on desktop
-      const whatsappUrl = lead.phone ? `https://web.whatsapp.com/send?phone=${normalizedPhone}` : "";
+      // Use wa.me for CSV export - universal format
+      const whatsappUrl = lead.phone ? `https://wa.me/${normalizedPhone}` : "";
       return [
         lead.business_name,
         lead.phone || "",
@@ -538,11 +527,18 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
                   {lead.phone && (
                     <Button
                       size="sm"
-                      onClick={() => handleWhatsAppClick(lead)}
+                      asChild
+                      onClick={() => handleWhatsAppContact(lead)}
                       className="bg-green-600 hover:bg-green-700 text-white"
                     >
-                      <MessageCircle className="mr-1 h-4 w-4" />
-                      WhatsApp
+                      <a 
+                        href={buildWhatsAppUrl(lead.phone, getWhatsAppMessage(lead))}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                      >
+                        <MessageCircle className="mr-1 h-4 w-4" />
+                        WhatsApp
+                      </a>
                     </Button>
                   )}
                   
@@ -550,10 +546,17 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => window.open(`mailto:${lead.email}`, "_blank")}
+                      asChild
                     >
-                      <Mail className="mr-1 h-4 w-4" />
-                      Email
+                      <a 
+                        href={`mailto:${lead.email}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => toast.info("Abrindo Email...", { duration: 1000 })}
+                      >
+                        <Mail className="mr-1 h-4 w-4" />
+                        Email
+                      </a>
                     </Button>
                   )}
 
@@ -561,10 +564,17 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => window.open(lead.google_maps_url!, "_blank")}
+                      asChild
                     >
-                      <MapPin className="mr-1 h-4 w-4" />
-                      Maps
+                      <a 
+                        href={lead.google_maps_url}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => toast.info("Abrindo Google Maps...", { duration: 1000 })}
+                      >
+                        <MapPin className="mr-1 h-4 w-4" />
+                        Maps
+                      </a>
                     </Button>
                   )}
 
@@ -572,10 +582,17 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
                     <Button
                       size="sm"
                       variant="outline"
-                      onClick={() => window.open(lead.website!, "_blank")}
+                      asChild
                     >
-                      <Globe className="mr-1 h-4 w-4" />
-                      Site
+                      <a 
+                        href={lead.website}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        onClick={() => toast.info("Abrindo Site...", { duration: 1000 })}
+                      >
+                        <Globe className="mr-1 h-4 w-4" />
+                        Site
+                      </a>
                     </Button>
                   )}
 
