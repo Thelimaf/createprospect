@@ -2,6 +2,8 @@ import { AppShell } from "@/components/layout/AppShell";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { ExternalLinkButton } from "@/components/shared/ExternalLinkButton";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Label } from "@/components/ui/label";
 import { 
   MessageCircle, 
   MapPin, 
@@ -9,7 +11,10 @@ import {
   AlertTriangle,
   CheckCircle,
   XCircle,
-  Settings as SettingsIcon
+  Settings as SettingsIcon,
+  Copy,
+  RefreshCw,
+  HelpCircle
 } from "lucide-react";
 import { toast } from "sonner";
 import { useState } from "react";
@@ -18,14 +23,25 @@ import {
   testPopupBlocker, 
   isRunningInIframe 
 } from "@/lib/external-links";
+import { useDuplicateBehavior, DuplicateBehavior } from "@/hooks/useDuplicateBehavior";
 
 export default function Settings() {
+  const { behavior, updateBehavior, isLoading: behaviorLoading } = useDuplicateBehavior();
   const [testResults, setTestResults] = useState<{
     windowOpen?: boolean;
     iframe: boolean;
   }>({
     iframe: isRunningInIframe(),
   });
+
+  const handleBehaviorChange = async (value: DuplicateBehavior) => {
+    const success = await updateBehavior(value);
+    if (success) {
+      toast.success("Configuração salva");
+    } else {
+      toast.error("Erro ao salvar configuração");
+    }
+  };
 
   const handleWindowOpenTest = async () => {
     const testUrl = 'https://wa.me/5543999999999';
@@ -56,6 +72,63 @@ export default function Settings() {
             Configurações e testes da aplicação
           </p>
         </div>
+
+        {/* LAYER 9: Duplicate Behavior Settings */}
+        <Card className="bg-card border-border">
+          <CardHeader>
+            <CardTitle className="text-foreground flex items-center gap-2">
+              <Copy className="h-5 w-5" />
+              Comportamento de Duplicatas
+            </CardTitle>
+            <CardDescription className="text-muted-foreground">
+              Configure como o sistema deve lidar com leads duplicados durante as buscas
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <RadioGroup 
+              value={behavior} 
+              onValueChange={(v) => handleBehaviorChange(v as DuplicateBehavior)}
+              disabled={behaviorLoading}
+              className="space-y-4"
+            >
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                <RadioGroupItem value="ignore" id="ignore" className="mt-1" />
+                <div className="flex-1">
+                  <Label htmlFor="ignore" className="text-foreground font-medium cursor-pointer">
+                    Sempre ignorar duplicatas (padrão)
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Leads que já existem na base serão ignorados, mantendo os dados originais
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                <RadioGroupItem value="update" id="update" className="mt-1" />
+                <div className="flex-1">
+                  <Label htmlFor="update" className="text-foreground font-medium cursor-pointer flex items-center gap-2">
+                    <RefreshCw className="h-4 w-4 text-yellow-400" />
+                    Sempre atualizar dados de duplicatas
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Dados melhores (rating, reviews, telefone) serão mesclados automaticamente
+                  </p>
+                </div>
+              </div>
+              <div className="flex items-start space-x-3 p-3 rounded-lg border border-border hover:bg-muted/30 transition-colors">
+                <RadioGroupItem value="ask" id="ask" className="mt-1" />
+                <div className="flex-1">
+                  <Label htmlFor="ask" className="text-foreground font-medium cursor-pointer flex items-center gap-2">
+                    <HelpCircle className="h-4 w-4 text-blue-400" />
+                    Sempre perguntar o que fazer
+                  </Label>
+                  <p className="text-sm text-muted-foreground mt-1">
+                    Um diálogo será exibido perguntando como lidar com cada busca
+                  </p>
+                </div>
+              </div>
+            </RadioGroup>
+          </CardContent>
+        </Card>
 
         {/* External Links Test Card */}
         <Card className="bg-card border-border">

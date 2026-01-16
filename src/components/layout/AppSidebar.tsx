@@ -1,4 +1,4 @@
-import { Home, FolderOpen, Plus, LogOut, Sparkles, MapPin, Settings } from 'lucide-react';
+import { Home, FolderOpen, Plus, LogOut, Sparkles, MapPin, Settings, History, AlertTriangle } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -21,6 +21,8 @@ const navigation = [
   { name: 'Campanhas', href: '/campaigns', icon: FolderOpen },
   { name: 'Nova Campanha', href: '/campaigns/new', icon: Plus },
   { name: 'Leads Google Maps', href: '/google-maps-leads', icon: MapPin },
+  { name: 'Histórico de Buscas', href: '/searches', icon: History },
+  { name: 'Possíveis Duplicados', href: '/leads/duplicates', icon: AlertTriangle },
   { name: 'Configurações', href: '/settings', icon: Settings },
 ];
 
