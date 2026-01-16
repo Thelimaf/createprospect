@@ -109,9 +109,6 @@ export default function Landing() {
                   <ArrowRight className="ml-2 h-5 w-5" />
                 </Link>
               </Button>
-              <Button variant="outline" size="lg" className="border-border text-foreground hover:bg-secondary">
-                Ver Demo
-              </Button>
             </div>
           </div>
 
