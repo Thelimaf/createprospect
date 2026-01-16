@@ -88,7 +88,7 @@ export function CampaignSettingsTab({
     try {
       const { error } = await supabase
         .from('campaigns')
-        .update({ quick_replies: newReplies as unknown as Record<string, unknown>[] })
+        .update({ quick_replies: JSON.parse(JSON.stringify(newReplies)) })
         .eq('id', campaignId);
 
       if (error) throw error;
