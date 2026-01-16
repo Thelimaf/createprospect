@@ -28,13 +28,13 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
-    const { query, limit = 50, campaignId } = await req.json();
+    const { query, limit = 20, page = 1, campaignId } = await req.json();
 
     if (!query) {
       throw new Error("Query is required");
     }
 
-    console.log(`Scraping Google Maps for: "${query}" with limit ${limit}`);
+    console.log(`Scraping Google Maps for: "${query}" with limit ${limit}, page ${page}`);
 
     const serperApiKey = Deno.env.get("SERPER_API_KEY");
     if (!serperApiKey) {
@@ -50,7 +50,8 @@ serve(async (req) => {
       },
       body: JSON.stringify({
         q: query,
-        num: Math.min(limit, 100), // Serper has a max of 100 per request
+        num: Math.min(limit, 20), // Serper limit of 20 per request
+        page: page,
         hl: "pt",
         gl: "br",
       }),
@@ -129,11 +130,15 @@ serve(async (req) => {
 
     console.log(`Successfully upserted ${insertedCount} leads`);
 
+    const hasMore = places.length === 20;
+
     return new Response(
       JSON.stringify({
         success: true,
         message: `${insertedCount} leads encontrados e salvos`,
         count: insertedCount,
+        page: page,
+        hasMore: hasMore,
       }),
       {
         headers: { ...corsHeaders, "Content-Type": "application/json" },
