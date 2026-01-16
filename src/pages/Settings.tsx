@@ -66,7 +66,7 @@ export default function Settings() {
             </CardTitle>
             <CardDescription className="text-muted-foreground">
               Use estes botões para verificar se links externos estão funcionando no seu navegador/ambiente.
-              Se os links não abrirem, use as opções de "Copiar Link" ou "QR Code".
+              Se os links não abrirem, copie a URL manualmente.
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-6">
@@ -112,8 +112,6 @@ export default function Settings() {
                   label="Testar WhatsApp"
                   icon={<MessageCircle className="mr-1 h-4 w-4" />}
                   toastLabel="Abrindo WhatsApp..."
-                  enableQr
-                  qrTitle="WhatsApp QR Code"
                   context="settings_whatsapp_test"
                   className="bg-green-600 hover:bg-green-700 text-white"
                 />
@@ -175,9 +173,8 @@ export default function Settings() {
               <ul className="text-xs text-muted-foreground space-y-1">
                 <li>1. Clique em um dos botões de teste acima</li>
                 <li>2. Se o link abrir normalmente, tudo está funcionando</li>
-                <li>3. Se não abrir, clique em "Copiar Link" e cole em uma nova aba</li>
-                <li>4. Para WhatsApp, você também pode usar o "QR Code" para escanear com o celular</li>
-                <li>5. Se estiver em preview/iframe, abra a aplicação em nova aba para melhor experiência</li>
+                <li>3. Se não abrir, copie a URL e cole em uma nova aba</li>
+                <li>4. Se estiver em preview/iframe, abra a aplicação em nova aba para melhor experiência</li>
               </ul>
             </div>
           </CardContent>
