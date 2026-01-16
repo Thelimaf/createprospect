@@ -10,7 +10,7 @@ import {
   DragStartEvent,
   DragEndEvent,
 } from '@dnd-kit/core';
-import { Search, Filter, Loader2, Users } from 'lucide-react';
+import { Search, Loader2, Users } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import {
@@ -26,7 +26,6 @@ import { KanbanContextMenu } from './KanbanContextMenu';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
-import { cn } from '@/lib/utils';
 
 interface Lead {
   id: string;
@@ -44,9 +43,10 @@ interface Lead {
   category: string | null;
 }
 
-interface Campaign {
-  id: string;
-  name: string;
+interface KanbanBoardProps {
+  campaignId?: string;
+  campaignName?: string;
+  whatsappTemplate?: string;
 }
 
 const COLUMNS: KanbanColumnConfig[] = [
@@ -89,10 +89,9 @@ const COLUMNS: KanbanColumnConfig[] = [
 
 const defaultWhatsAppTemplate = `Olá! Vi sua empresa no Google Maps e gostaria de conhecer melhor seus serviços.`;
 
-export function KanbanBoard() {
+export function KanbanBoard({ campaignId, campaignName, whatsappTemplate }: KanbanBoardProps) {
   const { user } = useAuth();
   const [leads, setLeads] = useState<Lead[]>([]);
-  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
   const [activeId, setActiveId] = useState<string | null>(null);
@@ -101,10 +100,11 @@ export function KanbanBoard() {
 
   // Filters
   const [searchQuery, setSearchQuery] = useState('');
-  const [filterCampaign, setFilterCampaign] = useState<string>('all');
   const [filterCity, setFilterCity] = useState<string>('all');
   const [filterMinRating, setFilterMinRating] = useState<string>('all');
-  const [whatsappMessage, setWhatsappMessage] = useState(defaultWhatsAppTemplate);
+  
+  // Use provided template or default
+  const whatsappMessage = whatsappTemplate || defaultWhatsAppTemplate;
 
   // Sensors for drag and drop
   const sensors = useSensors(
@@ -116,16 +116,23 @@ export function KanbanBoard() {
     useSensor(KeyboardSensor)
   );
 
-  // Fetch leads
+  // Fetch leads - filter by campaignId if provided
   const fetchLeads = useCallback(async () => {
     if (!user) return;
 
     try {
-      const { data, error } = await supabase
+      let query = supabase
         .from('google_maps_leads')
         .select('*')
         .eq('user_id', user.id)
         .order('created_at', { ascending: false });
+
+      // Filter by campaign if campaignId is provided
+      if (campaignId) {
+        query = query.eq('campaign_id', campaignId);
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setLeads(data || []);
@@ -135,32 +142,13 @@ export function KanbanBoard() {
     } finally {
       setLoading(false);
     }
-  }, [user]);
-
-  // Fetch campaigns
-  const fetchCampaigns = useCallback(async () => {
-    if (!user) return;
-
-    try {
-      const { data, error } = await supabase
-        .from('campaigns')
-        .select('id, name')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-
-      if (error) throw error;
-      setCampaigns(data || []);
-    } catch (error) {
-      console.error('Error fetching campaigns:', error);
-    }
-  }, [user]);
+  }, [user, campaignId]);
 
   // Setup realtime subscription
   useEffect(() => {
     if (!user) return;
 
     fetchLeads();
-    fetchCampaigns();
 
     const channel = supabase
       .channel('kanban_leads_changes')
@@ -174,7 +162,11 @@ export function KanbanBoard() {
         },
         (payload) => {
           if (payload.eventType === 'INSERT') {
-            setLeads((prev) => [payload.new as Lead, ...prev]);
+            const newLead = payload.new as Lead;
+            // Only add if it matches campaign filter
+            if (!campaignId || newLead.campaign_id === campaignId) {
+              setLeads((prev) => [newLead, ...prev]);
+            }
           } else if (payload.eventType === 'UPDATE') {
             setLeads((prev) =>
               prev.map((lead) =>
@@ -191,7 +183,7 @@ export function KanbanBoard() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchLeads, fetchCampaigns]);
+  }, [user, fetchLeads, campaignId]);
 
   // Hotkeys for moving leads
   useEffect(() => {
@@ -323,11 +315,6 @@ export function KanbanBoard() {
         if (!matchesName && !matchesPhone) return false;
       }
 
-      // Campaign filter
-      if (filterCampaign !== 'all' && lead.campaign_id !== filterCampaign) {
-        return false;
-      }
-
       // City filter
       if (filterCity !== 'all' && lead.city !== filterCity) {
         return false;
@@ -341,7 +328,7 @@ export function KanbanBoard() {
 
       return true;
     });
-  }, [leads, searchQuery, filterCampaign, filterCity, filterMinRating]);
+  }, [leads, searchQuery, filterCity, filterMinRating]);
 
   // Group leads by status
   const leadsByStatus = useMemo(() => {
@@ -372,6 +359,7 @@ export function KanbanBoard() {
           <Users className="h-5 w-5 text-muted-foreground" />
           <span className="text-sm text-muted-foreground">
             Gerenciando <Badge variant="secondary">{filteredLeads.length}</Badge> leads
+            {campaignName && <span className="ml-1">em "{campaignName}"</span>}
           </span>
           {updating && (
             <div className="flex items-center gap-2 ml-4">
@@ -392,21 +380,6 @@ export function KanbanBoard() {
               className="pl-9"
             />
           </div>
-
-          <Select value={filterCampaign} onValueChange={setFilterCampaign}>
-            <SelectTrigger className="w-[180px]">
-              <Filter className="h-4 w-4 mr-2" />
-              <SelectValue placeholder="Campanha" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas campanhas</SelectItem>
-              {campaigns.map((c) => (
-                <SelectItem key={c.id} value={c.id}>
-                  {c.name}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
 
           <Select value={filterCity} onValueChange={setFilterCity}>
             <SelectTrigger className="w-[150px]">
