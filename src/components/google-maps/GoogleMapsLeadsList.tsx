@@ -536,8 +536,6 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
                       icon={<MessageCircle className="mr-1 h-4 w-4" />}
                       toastLabel="Abrindo WhatsApp..."
                       onBeforeOpen={() => handleWhatsAppContact(lead)}
-                      enableQr
-                      qrTitle="WhatsApp QR Code"
                       context="lead_whatsapp"
                       leadId={lead.id}
                       className="bg-green-600 hover:bg-green-700 text-white"
