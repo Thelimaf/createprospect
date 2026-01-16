@@ -3,7 +3,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Loader2, MapPin } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Search, Loader2, MapPin, Plus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -23,8 +24,15 @@ const exampleSearches = [
 
 export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }: GoogleMapsScraperProps) {
   const [query, setQuery] = useState("");
-  const [limit, setLimit] = useState(50);
+  const [limit, setLimit] = useState(20);
   const [isLoading, setIsLoading] = useState(false);
+  
+  // Pagination state
+  const [lastQuery, setLastQuery] = useState("");
+  const [currentPage, setCurrentPage] = useState(1);
+  const [totalLoaded, setTotalLoaded] = useState(0);
+  const [hasMore, setHasMore] = useState(false);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
 
   const handleSearch = async (searchQuery?: string) => {
     const finalQuery = searchQuery || query;
@@ -38,10 +46,16 @@ export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }
     
     try {
       const { data, error } = await supabase.functions.invoke("scrape-google-maps", {
-        body: { query: finalQuery, limit, campaignId },
+        body: { query: finalQuery, limit, page: 1, campaignId },
       });
 
       if (error) throw error;
+
+      // Reset pagination state for new search
+      setLastQuery(finalQuery);
+      setCurrentPage(1);
+      setTotalLoaded(data.count);
+      setHasMore(data.hasMore);
 
       if (campaignName) {
         toast.success(`Busca iniciada para campanha "${campaignName}" - ${data.count} leads encontrados`);
@@ -58,6 +72,38 @@ export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }
     }
   };
 
+  const handleLoadMore = async () => {
+    if (!lastQuery || isLoadingMore) return;
+
+    const nextPage = currentPage + 1;
+    setIsLoadingMore(true);
+    
+    try {
+      const { data, error } = await supabase.functions.invoke("scrape-google-maps", {
+        body: { query: lastQuery, limit: 20, page: nextPage, campaignId },
+      });
+
+      if (error) throw error;
+
+      setCurrentPage(nextPage);
+      setTotalLoaded(prev => prev + data.count);
+      setHasMore(data.hasMore);
+
+      if (data.hasMore) {
+        toast.success(`Mais ${data.count} leads carregados`);
+      } else {
+        toast.info("Todos os resultados foram carregados");
+      }
+
+      onSearchComplete?.();
+    } catch (error: any) {
+      console.error("Error loading more:", error);
+      toast.error(error.message || "Erro ao carregar mais leads");
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
+
   return (
     <Card className="bg-card border-border">
       <CardHeader>
@@ -70,6 +116,18 @@ export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Pagination info */}
+        {totalLoaded > 0 && (
+          <div className="flex flex-wrap gap-2 items-center justify-between p-3 rounded-lg bg-muted/50 border border-border">
+            <Badge variant="secondary" className="text-sm">
+              Total de leads carregados: {totalLoaded}
+            </Badge>
+            <span className="text-sm text-muted-foreground">
+              Mostrando {((currentPage - 1) * 20) + 1}-{Math.min(currentPage * 20, totalLoaded)} de muitos
+            </span>
+          </div>
+        )}
+
         <div className="space-y-2">
           <Label htmlFor="query" className="text-foreground">Busca</Label>
           <Input
@@ -83,19 +141,20 @@ export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="limit" className="text-foreground">Quantidade máxima</Label>
+          <Label htmlFor="limit" className="text-foreground">Quantidade por busca</Label>
           <div className="space-y-3">
             <div className="flex items-center gap-4">
               <input
                 id="limit"
                 type="range"
-                min={10}
-                max={100}
+                min={5}
+                max={20}
+                step={1}
                 value={limit}
                 onChange={(e) => setLimit(Number(e.target.value))}
-                aria-label="Quantidade máxima de resultados"
-                aria-valuemin={10}
-                aria-valuemax={100}
+                aria-label="Quantidade por busca"
+                aria-valuemin={5}
+                aria-valuemax={20}
                 aria-valuenow={limit}
                 className="flex-1 h-2 bg-muted rounded-full appearance-none cursor-pointer [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:w-4 [&::-webkit-slider-thumb]:h-4 [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-primary [&::-webkit-slider-thumb]:cursor-pointer [&::-moz-range-thumb]:w-4 [&::-moz-range-thumb]:h-4 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:bg-primary [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:cursor-pointer"
               />
@@ -104,8 +163,8 @@ export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }
               </span>
             </div>
             <div className="flex justify-between text-xs text-muted-foreground">
-              <span>10</span>
-              <span>100</span>
+              <span>5</span>
+              <span>20</span>
             </div>
           </div>
         </div>
@@ -127,6 +186,35 @@ export function GoogleMapsScraper({ onSearchComplete, campaignId, campaignName }
             </>
           )}
         </Button>
+
+        {/* Load More Button */}
+        {hasMore && lastQuery && (
+          <Button
+            onClick={handleLoadMore}
+            disabled={isLoadingMore}
+            variant="outline"
+            className="w-full"
+          >
+            {isLoadingMore ? (
+              <>
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                Carregando...
+              </>
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Carregar Mais 20 Leads
+              </>
+            )}
+          </Button>
+        )}
+
+        {/* All results loaded message */}
+        {totalLoaded > 0 && !hasMore && lastQuery && (
+          <p className="text-sm text-center text-muted-foreground py-2">
+            ✓ Todos os resultados foram carregados
+          </p>
+        )}
 
         <div className="pt-4 border-t border-border">
           <p className="text-sm text-muted-foreground mb-3">Exemplos de busca:</p>
