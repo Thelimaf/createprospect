@@ -1,4 +1,4 @@
-import { Home, FolderOpen, Plus, LogOut, Sparkles, Settings, History } from 'lucide-react';
+import { Home, FolderOpen, Plus, LogOut, Sparkles, Settings, History, CreditCard } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -15,12 +15,14 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
+import { PlanBadge } from '@/components/billing/PlanBadge';
 
 const navigation = [
   { name: 'Painel', href: '/dashboard', icon: Home },
   { name: 'Campanhas', href: '/campaigns', icon: FolderOpen },
   { name: 'Nova Campanha', href: '/campaigns/new', icon: Plus },
   { name: 'Histórico de Buscas', href: '/searches', icon: History },
+  { name: 'Plano e Cobrança', href: '/billing', icon: CreditCard },
   { name: 'Configurações', href: '/settings', icon: Settings },
 ];
 
@@ -37,6 +39,9 @@ export function AppSidebar() {
           </div>
           <span className="text-lg font-bold text-sidebar-foreground">ProspectAI</span>
         </Link>
+        <div className="mt-3">
+          <PlanBadge />
+        </div>
       </SidebarHeader>
       <SidebarContent>
         <SidebarGroup>

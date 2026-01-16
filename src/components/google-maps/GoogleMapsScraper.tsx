@@ -18,6 +18,8 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useDuplicateBehavior } from "@/hooks/useDuplicateBehavior";
 import { useNavigate } from "react-router-dom";
+import { useCheckLimit } from "@/hooks/useCheckLimit";
+import { UpgradeModal, UpgradeModalVariant } from "@/components/billing/UpgradeModal";
 
 interface Campaign {
   id: string;
@@ -64,6 +66,7 @@ export function GoogleMapsScraper({
 }: GoogleMapsScraperProps) {
   const navigate = useNavigate();
   const { behavior } = useDuplicateBehavior();
+  const { checkLimit, incrementUsage, isChecking } = useCheckLimit();
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(20);
   const [isLoading, setIsLoading] = useState(false);
@@ -82,6 +85,11 @@ export function GoogleMapsScraper({
   const [recentSearchDialogOpen, setRecentSearchDialogOpen] = useState(false);
   const [recentSearch, setRecentSearch] = useState<RecentSearch | null>(null);
   const [pendingQuery, setPendingQuery] = useState("");
+
+  // Upgrade modal state
+  const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
+  const [upgradeModalVariant, setUpgradeModalVariant] = useState<UpgradeModalVariant>('limit_reached');
+  const [pendingSearchAfterModal, setPendingSearchAfterModal] = useState<string | null>(null);
 
   const checkRecentSearch = async (searchQuery: string): Promise<boolean> => {
     if (behavior !== "ask") return false;
@@ -115,6 +123,9 @@ export function GoogleMapsScraper({
 
       if (error) throw error;
 
+      // Increment usage after successful search
+      await incrementUsage();
+
       // Reset pagination state for new search
       setLastQuery(searchQuery);
       setCurrentPage(1);
@@ -132,9 +143,17 @@ export function GoogleMapsScraper({
       onSearchComplete?.();
     } catch (error: any) {
       console.error("Error scraping:", error);
-      toast.error(error.message || "Erro ao buscar leads");
+      toast.error(error.message || "Erro ao buscar clientes");
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  const handleContinueLastSearch = async () => {
+    if (pendingSearchAfterModal) {
+      const mode = behavior === "update" ? "update" : "normal";
+      await executeSearch(pendingSearchAfterModal, mode);
+      setPendingSearchAfterModal(null);
     }
   };
 
@@ -143,6 +162,24 @@ export function GoogleMapsScraper({
     
     if (!finalQuery.trim()) {
       toast.error("Digite uma busca");
+      return;
+    }
+
+    // Check user limits before searching
+    const limitResult = await checkLimit();
+    
+    if (!limitResult.allowed) {
+      // Show upgrade modal for limit reached
+      setUpgradeModalVariant('limit_reached');
+      setUpgradeModalOpen(true);
+      return;
+    }
+
+    if (limitResult.is_last_search) {
+      // Show warning modal for last search
+      setPendingSearchAfterModal(finalQuery);
+      setUpgradeModalVariant('last_search');
+      setUpgradeModalOpen(true);
       return;
     }
 
@@ -356,6 +393,14 @@ export function GoogleMapsScraper({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Upgrade Modal */}
+      <UpgradeModal
+        open={upgradeModalOpen}
+        onOpenChange={setUpgradeModalOpen}
+        variant={upgradeModalVariant}
+        onContinueLastSearch={handleContinueLastSearch}
+      />
     </>
   );
 }

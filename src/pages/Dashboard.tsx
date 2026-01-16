@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,10 @@ import {
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { UsageBanner } from '@/components/billing/UsageBanner';
+import { UsageCard } from '@/components/billing/UsageCard';
+import { toast } from 'sonner';
+import confetti from 'canvas-confetti';
 
 interface Stats {
   totalCampaigns: number;
@@ -31,9 +35,24 @@ interface Campaign {
 
 export default function Dashboard() {
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
   const [stats, setStats] = useState<Stats>({ totalCampaigns: 0, totalSearches: 0, totalProspects: 0 });
   const [recentCampaigns, setRecentCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Check for payment success
+  useEffect(() => {
+    if (searchParams.get('payment') === 'success') {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+      });
+      toast.success('Parabéns! Você agora tem acesso completo ao Starter 🚀');
+      // Remove query param without reload
+      window.history.replaceState({}, '', '/dashboard');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (user) {
@@ -93,7 +112,8 @@ export default function Dashboard() {
 
   return (
     <AppShell title="Painel">
-      <div className="space-y-8">
+      <UsageBanner />
+      <div className="space-y-8 pt-4">
         {/* Seção de Boas-vindas */}
         <div className="flex items-center justify-between">
           <div>
@@ -132,6 +152,9 @@ export default function Dashboard() {
             </Card>
           ))}
         </div>
+
+        {/* Usage Card */}
+        <UsageCard />
 
         {/* Campanhas Recentes */}
         <Card className="border-border bg-card">
