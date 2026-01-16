@@ -59,18 +59,25 @@ export default function Campaigns() {
 
       if (error) throw error;
 
-      // Obter contagens de busca para cada campanha
+      // Obter contagens de busca e leads para cada campanha
       const campaignsWithStats = await Promise.all(
         (campaignsData || []).map(async (campaign) => {
-          const { data: searches } = await supabase
-            .from('searches')
-            .select('id, result_count')
+          // Buscar de google_maps_searches (tabela correta)
+          const { data: gmSearches } = await supabase
+            .from('google_maps_searches')
+            .select('id')
+            .eq('campaign_id', campaign.id);
+          
+          // Contar leads reais da campanha
+          const { count: leadsCount } = await supabase
+            .from('google_maps_leads')
+            .select('id', { count: 'exact', head: true })
             .eq('campaign_id', campaign.id);
           
           return {
             ...campaign,
-            searchCount: searches?.length || 0,
-            prospectCount: searches?.reduce((acc, s) => acc + (s.result_count || 0), 0) || 0,
+            searchCount: gmSearches?.length || 0,
+            prospectCount: leadsCount || 0,
           };
         })
       );
