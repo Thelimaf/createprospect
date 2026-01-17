@@ -110,7 +110,15 @@ serve(async (req) => {
     }
 
     if (req.method === 'POST') {
-      const { action, userId } = await req.json();
+      let body;
+      try {
+        const text = await req.text();
+        body = text ? JSON.parse(text) : {};
+      } catch {
+        body = {};
+      }
+      
+      const { action, userId } = body;
       
       if (!action || !userId) {
         return new Response(
