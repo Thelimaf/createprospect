@@ -153,62 +153,41 @@ serve(async (req) => {
       }
 
       if (action === 'upgrade') {
-        // Check if subscription exists
-        const { data: existingSub } = await supabaseAdmin
+        // UPSERT subscription to ensure it always exists
+        const { error: upsertError } = await supabaseAdmin
           .from('user_subscriptions')
-          .select('*')
-          .eq('user_id', userId)
-          .single();
+          .upsert({
+            user_id: userId,
+            plan_id: starterPlan.id,
+            status: 'active',
+            current_period_start: new Date().toISOString(),
+            current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
+            updated_at: new Date().toISOString(),
+          }, { onConflict: 'user_id' });
 
-        if (existingSub) {
-          // Update existing subscription
-          const { error: updateError } = await supabaseAdmin
-            .from('user_subscriptions')
-            .update({
-              plan_id: starterPlan.id,
-              status: 'active',
-              current_period_start: new Date().toISOString(),
-              current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-              updated_at: new Date().toISOString(),
-            })
-            .eq('user_id', userId);
-
-          if (updateError) {
-            console.error('Error updating subscription:', updateError);
-            return new Response(
-              JSON.stringify({ error: 'Erro ao atualizar assinatura' }),
-              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
-        } else {
-          // Create new subscription
-          const { error: insertError } = await supabaseAdmin
-            .from('user_subscriptions')
-            .insert({
-              user_id: userId,
-              plan_id: starterPlan.id,
-              status: 'active',
-              current_period_start: new Date().toISOString(),
-              current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
-            });
-
-          if (insertError) {
-            console.error('Error inserting subscription:', insertError);
-            return new Response(
-              JSON.stringify({ error: 'Erro ao criar assinatura' }),
-              { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-            );
-          }
+        if (upsertError) {
+          console.error('Error upserting subscription:', upsertError);
+          return new Response(
+            JSON.stringify({ error: 'Erro ao atualizar assinatura' }),
+            { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+          );
         }
 
-        // Reset monthly usage for new starter user
+        // UPSERT user_usage to ensure it exists and reset monthly
+        const { data: existingUsage } = await supabaseAdmin
+          .from('user_usage')
+          .select('searches_used_lifetime')
+          .eq('user_id', userId)
+          .maybeSingle();
+
         await supabaseAdmin
           .from('user_usage')
-          .update({ 
+          .upsert({ 
+            user_id: userId,
             searches_used_monthly: 0,
+            searches_used_lifetime: existingUsage?.searches_used_lifetime || 0,
             reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          })
-          .eq('user_id', userId);
+          }, { onConflict: 'user_id' });
 
         console.log(`User ${userId} upgraded to Starter`);
         return new Response(
@@ -218,19 +197,20 @@ serve(async (req) => {
       }
 
       if (action === 'downgrade') {
-        const { error: updateError } = await supabaseAdmin
+        // UPSERT to ensure subscription exists even if it didn't before
+        const { error: upsertError } = await supabaseAdmin
           .from('user_subscriptions')
-          .update({
+          .upsert({
+            user_id: userId,
             plan_id: freePlan.id,
             status: 'active',
             current_period_start: null,
             current_period_end: null,
             updated_at: new Date().toISOString(),
-          })
-          .eq('user_id', userId);
+          }, { onConflict: 'user_id' });
 
-        if (updateError) {
-          console.error('Error downgrading subscription:', updateError);
+        if (upsertError) {
+          console.error('Error downgrading subscription:', upsertError);
           return new Response(
             JSON.stringify({ error: 'Erro ao rebaixar assinatura' }),
             { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
