@@ -29,11 +29,12 @@ import {
   MapPin,
   Globe,
   Star,
-  MoreHorizontal,
   ChevronUp,
   ChevronDown,
   Copy,
-  Trash,
+  Mail,
+  Search,
+  Loader2,
 } from 'lucide-react';
 import { ExternalLinkButton } from '@/components/shared/ExternalLinkButton';
 import { buildWhatsAppUrl, ensureHttps } from '@/lib/external-links';
@@ -45,6 +46,7 @@ interface Lead {
   id: string;
   business_name: string;
   phone: string | null;
+  email?: string | null;
   rating: number | null;
   website: string | null;
   google_maps_url: string | null;
@@ -53,12 +55,17 @@ interface Lead {
   city: string | null;
   address: string | null;
   last_contact_date: string | null;
+  enriched_at?: string | null;
+  campaign_id?: string | null;
+  category?: string | null;
 }
 
 interface LeadsTableProps {
   leads: Lead[];
   onStatusChange: (leadId: string, status: string) => void;
   onWhatsAppClick: (lead: Lead) => void;
+  onEnrichEmail?: (leadId: string, website: string) => Promise<void>;
+  enrichingLeadIds?: Set<string>;
 }
 
 type SortField = 'business_name' | 'rating' | 'status' | 'city' | 'updated_at';
@@ -80,7 +87,7 @@ const STATUS_COLORS: Record<string, string> = {
   closed: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
 };
 
-export function LeadsTable({ leads, onStatusChange, onWhatsAppClick }: LeadsTableProps) {
+export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEmail, enrichingLeadIds = new Set() }: LeadsTableProps) {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -156,6 +163,12 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick }: LeadsTabl
   const copyPhone = (phone: string) => {
     navigator.clipboard.writeText(phone);
     toast.success('Telefone copiado!');
+  };
+
+  // Copy email to clipboard
+  const copyEmail = (email: string) => {
+    navigator.clipboard.writeText(email);
+    toast.success('Email copiado!');
   };
 
   // Render sort indicator
@@ -244,6 +257,7 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick }: LeadsTabl
                 </div>
               </TableHead>
               <TableHead>Telefone</TableHead>
+              <TableHead>Email</TableHead>
               <TableHead 
                 className="cursor-pointer hover:text-foreground"
                 onClick={() => handleSort('status')}
@@ -312,6 +326,40 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick }: LeadsTabl
                     </button>
                   ) : (
                     <span className="text-muted-foreground">-</span>
+                  )}
+                </TableCell>
+                <TableCell>
+                  {lead.email ? (
+                    <button
+                      onClick={() => copyEmail(lead.email!)}
+                      className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+                    >
+                      <Mail className="h-3 w-3 text-primary" />
+                      {lead.email.length > 25 ? `${lead.email.slice(0, 25)}...` : lead.email}
+                      <Copy className="h-3 w-3 opacity-50" />
+                    </button>
+                  ) : lead.website && onEnrichEmail ? (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                      onClick={() => onEnrichEmail(lead.id, lead.website!)}
+                      disabled={enrichingLeadIds.has(lead.id)}
+                    >
+                      {enrichingLeadIds.has(lead.id) ? (
+                        <>
+                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                          Buscando...
+                        </>
+                      ) : (
+                        <>
+                          <Search className="h-3 w-3 mr-1" />
+                          Buscar
+                        </>
+                      )}
+                    </Button>
+                  ) : (
+                    <span className="text-muted-foreground text-xs">-</span>
                   )}
                 </TableCell>
                 <TableCell>

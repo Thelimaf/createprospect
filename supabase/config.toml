@@ -26,3 +26,6 @@ verify_jwt = false
 
 [functions.increment-search-usage]
 verify_jwt = false
+
+[functions.enrich-lead-email]
+verify_jwt = false

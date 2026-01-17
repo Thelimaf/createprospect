@@ -72,6 +72,7 @@ interface Lead {
   address: string | null;
   category: string | null;
   last_contact_date: string | null;
+  enriched_at?: string | null;
 }
 
 interface Campaign {
@@ -172,6 +173,9 @@ export default function CampaignLeadsPage() {
   // Upgrade modal
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
   const [upgradeModalVariant, setUpgradeModalVariant] = useState<UpgradeModalVariant>('limit_reached');
+
+  // Email enrichment state
+  const [enrichingLeadIds, setEnrichingLeadIds] = useState<Set<string>>(new Set());
 
   // Save view mode preference
   useEffect(() => {
@@ -369,6 +373,50 @@ export default function CampaignLeadsPage() {
   const handleWhatsAppClick = (lead: Lead) => {
     setSelectedLeadForWhatsApp(lead);
     setWhatsappDialogOpen(true);
+  };
+
+  // Enrich lead email with Hunter.io
+  const handleEnrichEmail = async (leadId: string, website: string) => {
+    if (!user) return;
+
+    setEnrichingLeadIds(prev => new Set(prev).add(leadId));
+
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Not authenticated');
+
+      const { data, error } = await supabase.functions.invoke('enrich-lead-email', {
+        body: { lead_id: leadId, website },
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+
+      if (error) throw error;
+
+      if (data.email) {
+        toast.success(`Email encontrado: ${data.email}`);
+        // Update local leads state
+        setLeads(prev => prev.map(l => 
+          l.id === leadId ? { ...l, email: data.email, enriched_at: new Date().toISOString() } : l
+        ));
+      } else {
+        toast.info('Nenhum email encontrado para este domínio');
+      }
+    } catch (error: any) {
+      console.error('Error enriching lead:', error);
+      if (error.message?.includes('rate limit')) {
+        toast.error('Limite de buscas Hunter.io excedido');
+      } else {
+        toast.error('Erro ao buscar email');
+      }
+    } finally {
+      setEnrichingLeadIds(prev => {
+        const next = new Set(prev);
+        next.delete(leadId);
+        return next;
+      });
+    }
   };
 
   // Drag handlers
@@ -733,6 +781,8 @@ export default function CampaignLeadsPage() {
                 leads={filteredLeads}
                 onStatusChange={updateLeadStatus}
                 onWhatsAppClick={handleWhatsAppClick}
+                onEnrichEmail={handleEnrichEmail}
+                enrichingLeadIds={enrichingLeadIds}
               />
             </motion.div>
           )}
