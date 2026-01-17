@@ -1,11 +1,17 @@
 import { useDraggable } from '@dnd-kit/core';
 import { CSS } from '@dnd-kit/utilities';
-import { Phone, Star, MapPin, Globe, MessageCircle, GripVertical } from 'lucide-react';
+import { Phone, Star, MapPin, Globe, MessageCircle, GripVertical, Lock, Crown } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { ExternalLinkButton } from '@/components/shared/ExternalLinkButton';
 import { buildWhatsAppUrl, ensureHttps } from '@/lib/external-links';
 import { cn } from '@/lib/utils';
+import { useUserPlan } from '@/hooks/useUserPlan';
 
 interface Lead {
   id: string;
@@ -37,6 +43,7 @@ export function KanbanCard({
   onWhatsAppClick,
   whatsappMessage = '',
 }: KanbanCardProps) {
+  const { isFree, canSendWhatsApp, canViewFullLeadData } = useUserPlan();
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
     data: { lead },
@@ -115,7 +122,24 @@ export function KanbanCard({
       {lead.phone && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
           <Phone className="h-3 w-3" />
-          <span className="truncate">{lead.phone}</span>
+          {canViewFullLeadData ? (
+            <span className="truncate">{lead.phone}</span>
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 cursor-help">
+                  <Lock className="h-3 w-3" />
+                  <span className="blur-sm select-none">*****</span>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="flex items-center gap-2">
+                  <Crown className="h-4 w-4 text-yellow-500" />
+                  <span>Disponível no Starter</span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
       )}
 
@@ -130,7 +154,22 @@ export function KanbanCard({
       {/* City */}
       {lead.city && (
         <div className="text-xs text-muted-foreground mb-3 truncate">
-          📍 {lead.city}
+          📍 {canViewFullLeadData ? lead.city : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <span className="inline-flex items-center gap-1 cursor-help">
+                  <Lock className="h-3 w-3" />
+                  <span className="blur-sm select-none">*****</span>
+                </span>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="flex items-center gap-2">
+                  <Crown className="h-4 w-4 text-yellow-500" />
+                  <span>Disponível no Starter</span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )}
         </div>
       )}
 
@@ -141,17 +180,33 @@ export function KanbanCard({
         onPointerDown={(e) => e.stopPropagation()}
       >
         {lead.phone && (
-          <ExternalLinkButton
-            url={buildWhatsAppUrl(lead.phone, whatsappMessage)}
-            label=""
-            icon={<MessageCircle className="h-3.5 w-3.5" />}
-            variant="outline"
-            className="h-7 w-7 p-0 bg-green-600/10 hover:bg-green-600/20 text-green-600 border-green-600/30"
-            toastLabel="Abrindo WhatsApp..."
-            onBeforeOpen={onWhatsAppClick}
-            context="kanban_whatsapp"
-            leadId={lead.id}
-          />
+          canSendWhatsApp ? (
+            <ExternalLinkButton
+              url={buildWhatsAppUrl(lead.phone, whatsappMessage)}
+              label=""
+              icon={<MessageCircle className="h-3.5 w-3.5" />}
+              variant="outline"
+              className="h-7 w-7 p-0 bg-green-600/10 hover:bg-green-600/20 text-green-600 border-green-600/30"
+              toastLabel="Abrindo WhatsApp..."
+              onBeforeOpen={onWhatsAppClick}
+              context="kanban_whatsapp"
+              leadId={lead.id}
+            />
+          ) : (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="h-7 w-7 flex items-center justify-center rounded border border-muted-foreground/20 text-muted-foreground opacity-50 cursor-not-allowed">
+                  <MessageCircle className="h-3.5 w-3.5" />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent>
+                <div className="flex items-center gap-2">
+                  <Crown className="h-4 w-4 text-yellow-500" />
+                  <span>WhatsApp disponível no Starter</span>
+                </div>
+              </TooltipContent>
+            </Tooltip>
+          )
         )}
         {lead.google_maps_url && (
           <ExternalLinkButton

@@ -46,6 +46,11 @@ interface UserPlanData {
   searchesLimit: number;
   searchesRemaining: number;
   refetch: () => Promise<void>;
+  // Feature flags
+  canSearchEmails: boolean;
+  canSendWhatsApp: boolean;
+  canViewFullLeadData: boolean;
+  canExportCSV: boolean;
 }
 
 export function useUserPlan(): UserPlanData {
@@ -119,6 +124,12 @@ export function useUserPlan(): UserPlanData {
 
   const searchesRemaining = Math.max(0, searchesLimit - searchesUsed);
 
+  // Feature flags based on plan
+  const canSearchEmails = isPro;
+  const canSendWhatsApp = isPro;
+  const canViewFullLeadData = isPro;
+  const canExportCSV = isPro;
+
   return {
     subscription,
     usage,
@@ -131,5 +142,10 @@ export function useUserPlan(): UserPlanData {
     searchesLimit,
     searchesRemaining,
     refetch: fetchData,
+    // Feature flags
+    canSearchEmails,
+    canSendWhatsApp,
+    canViewFullLeadData,
+    canExportCSV,
   };
 }
