@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
+import { Link } from 'react-router-dom';
 import {
   Table,
   TableBody,
@@ -19,11 +20,10 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import {
   MessageCircle,
   MapPin,
@@ -35,12 +35,15 @@ import {
   Mail,
   Search,
   Loader2,
+  Lock,
+  Crown,
 } from 'lucide-react';
 import { ExternalLinkButton } from '@/components/shared/ExternalLinkButton';
 import { buildWhatsAppUrl, ensureHttps } from '@/lib/external-links';
 import { toast } from 'sonner';
 import { formatDistanceToNow } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
+import { useUserPlan } from '@/hooks/useUserPlan';
 
 interface Lead {
   id: string;
@@ -87,7 +90,28 @@ const STATUS_COLORS: Record<string, string> = {
   closed: 'bg-purple-500/20 text-purple-400 border-purple-500/30',
 };
 
+// Locked data placeholder component
+function LockedData({ feature }: { feature: string }) {
+  return (
+    <Tooltip>
+      <TooltipTrigger asChild>
+        <span className="inline-flex items-center gap-1 text-muted-foreground cursor-help">
+          <Lock className="h-3 w-3" />
+          <span className="text-xs blur-sm select-none">*****</span>
+        </span>
+      </TooltipTrigger>
+      <TooltipContent>
+        <div className="flex items-center gap-2">
+          <Crown className="h-4 w-4 text-yellow-500" />
+          <span>Disponível no plano Starter</span>
+        </div>
+      </TooltipContent>
+    </Tooltip>
+  );
+}
+
 export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEmail, enrichingLeadIds = new Set() }: LeadsTableProps) {
+  const { isFree, canSendWhatsApp, canSearchEmails, canViewFullLeadData } = useUserPlan();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -203,6 +227,31 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
 
   return (
     <div className="space-y-4">
+      {/* Free user upgrade banner */}
+      {isFree && (
+        <motion.div
+          initial={{ opacity: 0, y: -10 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex items-center justify-between p-4 bg-gradient-to-r from-yellow-500/10 to-orange-500/10 rounded-lg border border-yellow-500/20"
+        >
+          <div className="flex items-center gap-3">
+            <Lock className="h-5 w-5 text-yellow-500" />
+            <div>
+              <p className="font-medium text-foreground">Dados limitados no plano Free</p>
+              <p className="text-sm text-muted-foreground">
+                Faça upgrade para ver telefones, emails, enviar WhatsApp e mais!
+              </p>
+            </div>
+          </div>
+          <Button asChild className="bg-yellow-500 hover:bg-yellow-600 text-black">
+            <Link to="/pricing">
+              <Crown className="h-4 w-4 mr-2" />
+              Ver Planos
+            </Link>
+          </Button>
+        </motion.div>
+      )}
+
       {/* Bulk actions */}
       {selectedIds.size > 0 && (
         <motion.div
@@ -316,50 +365,58 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
                   </div>
                 </TableCell>
                 <TableCell>
-                  {lead.phone ? (
-                    <button
-                      onClick={() => copyPhone(lead.phone!)}
-                      className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
-                    >
-                      {lead.phone}
-                      <Copy className="h-3 w-3 opacity-50" />
-                    </button>
+                  {canViewFullLeadData ? (
+                    lead.phone ? (
+                      <button
+                        onClick={() => copyPhone(lead.phone!)}
+                        className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+                      >
+                        {lead.phone}
+                        <Copy className="h-3 w-3 opacity-50" />
+                      </button>
+                    ) : (
+                      <span className="text-muted-foreground">-</span>
+                    )
                   ) : (
-                    <span className="text-muted-foreground">-</span>
+                    <LockedData feature="phone" />
                   )}
                 </TableCell>
                 <TableCell>
-                  {lead.email ? (
-                    <button
-                      onClick={() => copyEmail(lead.email!)}
-                      className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
-                    >
-                      <Mail className="h-3 w-3 text-primary" />
-                      {lead.email.length > 25 ? `${lead.email.slice(0, 25)}...` : lead.email}
-                      <Copy className="h-3 w-3 opacity-50" />
-                    </button>
-                  ) : lead.website && onEnrichEmail ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="h-7 text-xs text-muted-foreground hover:text-foreground"
-                      onClick={() => onEnrichEmail(lead.id, lead.website!)}
-                      disabled={enrichingLeadIds.has(lead.id)}
-                    >
-                      {enrichingLeadIds.has(lead.id) ? (
-                        <>
-                          <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                          Buscando...
-                        </>
-                      ) : (
-                        <>
-                          <Search className="h-3 w-3 mr-1" />
-                          Buscar
-                        </>
-                      )}
-                    </Button>
+                  {canViewFullLeadData ? (
+                    lead.email ? (
+                      <button
+                        onClick={() => copyEmail(lead.email!)}
+                        className="text-sm text-muted-foreground hover:text-foreground flex items-center gap-1"
+                      >
+                        <Mail className="h-3 w-3 text-primary" />
+                        {lead.email.length > 25 ? `${lead.email.slice(0, 25)}...` : lead.email}
+                        <Copy className="h-3 w-3 opacity-50" />
+                      </button>
+                    ) : lead.website && onEnrichEmail && canSearchEmails ? (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-xs text-muted-foreground hover:text-foreground"
+                        onClick={() => onEnrichEmail(lead.id, lead.website!)}
+                        disabled={enrichingLeadIds.has(lead.id)}
+                      >
+                        {enrichingLeadIds.has(lead.id) ? (
+                          <>
+                            <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                            Buscando...
+                          </>
+                        ) : (
+                          <>
+                            <Search className="h-3 w-3 mr-1" />
+                            Buscar
+                          </>
+                        )}
+                      </Button>
+                    ) : (
+                      <span className="text-muted-foreground text-xs">-</span>
+                    )
                   ) : (
-                    <span className="text-muted-foreground text-xs">-</span>
+                    <LockedData feature="email" />
                   )}
                 </TableCell>
                 <TableCell>
@@ -380,20 +437,45 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
                   </Select>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {lead.city || '-'}
+                  {canViewFullLeadData ? (
+                    lead.city || '-'
+                  ) : (
+                    <LockedData feature="city" />
+                  )}
                 </TableCell>
                 <TableCell>{renderStars(lead.rating)}</TableCell>
                 <TableCell>
                   <div className="flex items-center gap-1">
                     {lead.phone && (
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-8 w-8 text-green-500 hover:text-green-400 hover:bg-green-500/10"
-                        onClick={() => onWhatsAppClick(lead)}
-                      >
-                        <MessageCircle className="h-4 w-4" />
-                      </Button>
+                      canSendWhatsApp ? (
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-green-500 hover:text-green-400 hover:bg-green-500/10"
+                          onClick={() => onWhatsAppClick(lead)}
+                        >
+                          <MessageCircle className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Button
+                              size="icon"
+                              variant="ghost"
+                              className="h-8 w-8 text-muted-foreground opacity-50 cursor-not-allowed"
+                              disabled
+                            >
+                              <MessageCircle className="h-4 w-4" />
+                            </Button>
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <div className="flex items-center gap-2">
+                              <Crown className="h-4 w-4 text-yellow-500" />
+                              <span>WhatsApp disponível no Starter</span>
+                            </div>
+                          </TooltipContent>
+                        </Tooltip>
+                      )
                     )}
                     {lead.google_maps_url && (
                       <ExternalLinkButton

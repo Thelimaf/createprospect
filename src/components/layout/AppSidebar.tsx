@@ -1,4 +1,4 @@
-import { Home, FolderOpen, Plus, LogOut, Sparkles, Settings, History, CreditCard } from 'lucide-react';
+import { Home, FolderOpen, Plus, LogOut, Sparkles, Settings, History, CreditCard, Shield } from 'lucide-react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -16,6 +16,8 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import { PlanBadge } from '@/components/billing/PlanBadge';
+
+const MASTER_EMAIL = 'anderson.ferlimajunior@gmail.com';
 
 const navigation = [
   { name: 'Painel', href: '/dashboard', icon: Home },
@@ -62,6 +64,21 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+              {/* Admin link - only for master user */}
+              {user?.email === MASTER_EMAIL && (
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    asChild
+                    isActive={location.pathname === '/admin'}
+                    className="text-sidebar-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                  >
+                    <Link to="/admin">
+                      <Shield className="h-4 w-4" />
+                      <span>Admin</span>
+                    </Link>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              )}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
