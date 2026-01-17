@@ -111,7 +111,7 @@ function LockedData({ feature }: { feature: string }) {
 }
 
 export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEmail, enrichingLeadIds = new Set() }: LeadsTableProps) {
-  const { isFree, canSendWhatsApp, canSearchEmails, canViewFullLeadData } = useUserPlan();
+  const { isFree, canSendWhatsApp, canSearchEmails, isLeadUnlocked } = useUserPlan();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>('updated_at');
   const [sortDirection, setSortDirection] = useState<SortDirection>('desc');
@@ -239,7 +239,7 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
             <div>
               <p className="font-medium text-foreground">Dados limitados no plano Free</p>
               <p className="text-sm text-muted-foreground">
-                Faça upgrade para ver telefones, emails, enviar WhatsApp e mais!
+                Você pode ver dados completos dos 3 primeiros leads para testar. Faça upgrade para desbloquear todos!
               </p>
             </div>
           </div>
@@ -338,7 +338,9 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
             </TableRow>
           </TableHeader>
           <TableBody>
-            {paginatedLeads.map((lead) => (
+            {paginatedLeads.map((lead) => {
+              const showFullData = isLeadUnlocked(lead.id);
+              return (
               <TableRow
                 key={lead.id}
                 className={`hover:bg-muted/30 ${
@@ -352,20 +354,27 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
                   />
                 </TableCell>
                 <TableCell>
-                  <div>
-                    <p className="font-medium text-foreground">{lead.business_name}</p>
-                    {lead.last_contact_date && (
-                      <p className="text-xs text-muted-foreground">
-                        Último contato: {formatDistanceToNow(new Date(lead.last_contact_date), {
-                          addSuffix: true,
-                          locale: ptBR,
-                        })}
-                      </p>
+                  <div className="flex items-center gap-2">
+                    <div>
+                      <p className="font-medium text-foreground">{lead.business_name}</p>
+                      {lead.last_contact_date && (
+                        <p className="text-xs text-muted-foreground">
+                          Último contato: {formatDistanceToNow(new Date(lead.last_contact_date), {
+                            addSuffix: true,
+                            locale: ptBR,
+                          })}
+                        </p>
+                      )}
+                    </div>
+                    {isFree && showFullData && (
+                      <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-500/10 text-green-500 border-green-500/30 shrink-0">
+                        Grátis
+                      </Badge>
                     )}
                   </div>
                 </TableCell>
                 <TableCell>
-                  {canViewFullLeadData ? (
+                  {showFullData ? (
                     lead.phone ? (
                       <button
                         onClick={() => copyPhone(lead.phone!)}
@@ -382,7 +391,7 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
                   )}
                 </TableCell>
                 <TableCell>
-                  {canViewFullLeadData ? (
+                  {showFullData ? (
                     lead.email ? (
                       <button
                         onClick={() => copyEmail(lead.email!)}
@@ -437,7 +446,7 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
                   </Select>
                 </TableCell>
                 <TableCell className="text-muted-foreground">
-                  {canViewFullLeadData ? (
+                  {showFullData ? (
                     lead.city || '-'
                   ) : (
                     <LockedData feature="city" />
@@ -504,7 +513,7 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
                   </div>
                 </TableCell>
               </TableRow>
-            ))}
+            )})}
           </TableBody>
         </Table>
       </div>

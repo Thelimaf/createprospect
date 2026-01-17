@@ -43,7 +43,8 @@ export function KanbanCard({
   onWhatsAppClick,
   whatsappMessage = '',
 }: KanbanCardProps) {
-  const { isFree, canSendWhatsApp, canViewFullLeadData } = useUserPlan();
+  const { isFree, canSendWhatsApp, isLeadUnlocked } = useUserPlan();
+  const showFullData = isLeadUnlocked(lead.id);
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: lead.id,
     data: { lead },
@@ -107,6 +108,11 @@ export function KanbanCard({
           </h4>
         </div>
         <div className="flex items-center gap-1 shrink-0">
+          {isFree && showFullData && (
+            <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-green-500/10 text-green-500 border-green-500/30">
+              Grátis
+            </Badge>
+          )}
           {needsFollowUp && (
             <Badge variant="outline" className="text-[10px] px-1.5 py-0 bg-orange-500/10 text-orange-500 border-orange-500/30">
               Follow-up
@@ -122,7 +128,7 @@ export function KanbanCard({
       {lead.phone && (
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground mb-2">
           <Phone className="h-3 w-3" />
-          {canViewFullLeadData ? (
+          {showFullData ? (
             <span className="truncate">{lead.phone}</span>
           ) : (
             <Tooltip>
@@ -154,7 +160,7 @@ export function KanbanCard({
       {/* City */}
       {lead.city && (
         <div className="text-xs text-muted-foreground mb-3 truncate">
-          📍 {canViewFullLeadData ? lead.city : (
+          📍 {showFullData ? lead.city : (
             <Tooltip>
               <TooltipTrigger asChild>
                 <span className="inline-flex items-center gap-1 cursor-help">
