@@ -54,6 +54,7 @@ interface Lead {
   address: string | null;
   category: string | null;
   last_contact_date: string | null;
+  enriched_at?: string | null;
 }
 
 interface Campaign {
