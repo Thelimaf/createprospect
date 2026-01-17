@@ -66,15 +66,19 @@ export default function Admin() {
         return;
       }
 
-      const { data, error } = await supabase.functions.invoke('admin-users', {
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/admin-users`, {
+        method: 'GET',
         headers: {
           Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
         },
       });
-
-      if (error) {
-        console.error('Error fetching users:', error);
-        toast.error('Erro ao carregar usuários');
+      
+      const data = await response.json();
+      
+      if (!response.ok) {
+        console.error('Error fetching users:', data);
+        toast.error(data.error || 'Erro ao carregar usuários');
         return;
       }
 
