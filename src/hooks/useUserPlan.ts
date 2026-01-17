@@ -70,25 +70,25 @@ export function useUserPlan(): UserPlanData {
       setIsLoading(true);
       setError(null);
 
-      // Fetch subscription with plan
+      // Fetch subscription with plan - use maybeSingle to avoid error when no record exists
       const { data: subData, error: subError } = await supabase
         .from('user_subscriptions')
         .select('*, subscription_plans(*)')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (subError && subError.code !== 'PGRST116') {
+      if (subError) {
         throw subError;
       }
 
-      // Fetch usage
+      // Fetch usage - use maybeSingle to avoid error when no record exists
       const { data: usageData, error: usageError } = await supabase
         .from('user_usage')
         .select('*')
         .eq('user_id', user.id)
-        .single();
+        .maybeSingle();
 
-      if (usageError && usageError.code !== 'PGRST116') {
+      if (usageError) {
         throw usageError;
       }
 
