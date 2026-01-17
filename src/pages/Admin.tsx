@@ -260,44 +260,40 @@ export default function Admin() {
                           })}
                         </TableCell>
                         <TableCell className="text-right">
-                          {adminUser.email !== MASTER_EMAIL && (
-                            <>
-                              {adminUser.plan === 'free' ? (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-green-500 border-green-500/30 hover:bg-green-500/10"
-                                  onClick={() => handlePlanChange(adminUser.id, 'upgrade')}
-                                  disabled={actionLoading === adminUser.id}
-                                >
-                                  {actionLoading === adminUser.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <>
-                                      <ArrowUpCircle className="h-4 w-4 mr-1" />
-                                      Dar PRO
-                                    </>
-                                  )}
-                                </Button>
+                          {adminUser.plan === 'free' ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-green-500 border-green-500/30 hover:bg-green-500/10"
+                              onClick={() => handlePlanChange(adminUser.id, 'upgrade')}
+                              disabled={actionLoading === adminUser.id}
+                            >
+                              {actionLoading === adminUser.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  className="text-red-500 border-red-500/30 hover:bg-red-500/10"
-                                  onClick={() => handlePlanChange(adminUser.id, 'downgrade')}
-                                  disabled={actionLoading === adminUser.id}
-                                >
-                                  {actionLoading === adminUser.id ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                  ) : (
-                                    <>
-                                      <ArrowDownCircle className="h-4 w-4 mr-1" />
-                                      Remover PRO
-                                    </>
-                                  )}
-                                </Button>
+                                <>
+                                  <ArrowUpCircle className="h-4 w-4 mr-1" />
+                                  Dar PRO
+                                </>
                               )}
-                            </>
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-500 border-red-500/30 hover:bg-red-500/10"
+                              onClick={() => handlePlanChange(adminUser.id, 'downgrade')}
+                              disabled={actionLoading === adminUser.id}
+                            >
+                              {actionLoading === adminUser.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <ArrowDownCircle className="h-4 w-4 mr-1" />
+                                  Remover PRO
+                                </>
+                              )}
+                            </Button>
                           )}
                         </TableCell>
                       </TableRow>
