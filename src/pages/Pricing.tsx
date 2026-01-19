@@ -21,6 +21,11 @@ import {
   Users,
   FileText,
   Infinity,
+  Phone,
+  Mail,
+  Globe,
+  Kanban,
+  Zap,
 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -28,30 +33,32 @@ export default function Pricing() {
   const { user } = useAuth();
 
   const freeFeatures = [
-    { text: 'Até 3 buscas vitalícias', icon: Search, included: true, tooltip: 'Aproximadamente 60 clientes no total' },
-    { text: 'Até 3 nichos diferentes', icon: Users, included: true },
+    { text: '3 buscas vitalícias (≈60 leads)', icon: Search, included: true },
     { text: '1 campanha', icon: FileText, included: true },
-    { text: 'Ver telefone e endereço', icon: Check, included: true },
-    { text: 'Copiar dados manualmente', icon: Check, included: true },
+    { text: 'Ver telefone e endereço', icon: Phone, included: true },
+    { text: '3 primeiros leads desbloqueados', icon: Check, included: true },
   ];
 
   const freeBlockedFeatures = [
+    { text: 'Dados completos em todos leads', icon: Users },
     { text: 'Export CSV', icon: Download },
-    { text: 'WhatsApp 1-click', icon: MessageSquare },
-    { text: 'CRM Pipeline', icon: BarChart3 },
-    { text: 'Templates de mensagem', icon: FileText },
-    { text: 'Analytics', icon: BarChart3 },
+    { text: 'WhatsApp 1-click ilimitado', icon: MessageSquare },
+    { text: 'Templates IA para mensagens', icon: Sparkles },
+    { text: 'CRM Kanban completo', icon: Kanban },
   ];
 
   const starterFeatures = [
-    { text: '100 buscas por mês', icon: Infinity, highlight: true },
-    { text: '~2.000 clientes/mês', icon: Users, highlight: true },
-    { text: 'Campanhas ilimitadas', icon: FileText },
-    { text: 'Export direto pra CSV', icon: Download },
-    { text: 'WhatsApp com 1 clique', icon: MessageSquare },
-    { text: 'Templates prontos de mensagem', icon: FileText },
-    { text: 'Analytics de conversão', icon: BarChart3 },
-    { text: 'Remove marca d\'água', icon: Check },
+    { text: '100 buscas/mês (≈2.000 leads)', icon: Search, highlight: true },
+    { text: 'Campanhas ilimitadas', icon: Infinity, highlight: true },
+    { text: 'Leads 100% reais do Google Maps', icon: Check },
+    { text: 'Ver telefone, WhatsApp, e-mail, site', icon: Phone },
+    { text: 'Export CSV completo', icon: Download },
+    { text: 'WhatsApp 1-click para todos leads', icon: MessageSquare },
+    { text: 'Templates de mensagem com IA', icon: Sparkles },
+    { text: 'CRM Kanban completo', icon: Kanban },
+    { text: 'Escolha cidade + nicho exato', icon: Users },
+    { text: 'Sem marca d\'água', icon: Check },
+    { text: 'Suporte prioritário', icon: Zap },
   ];
 
   const faqs = [
@@ -66,6 +73,10 @@ export default function Pricing() {
     {
       question: 'Posso cancelar quando quiser?',
       answer: 'Sim. Sem fidelidade, sem multa. Cancele a qualquer momento e você mantém acesso até o final do período pago.',
+    },
+    {
+      question: 'Quais os benefícios do Starter?',
+      answer: 'Com o Starter você tem 100 buscas/mês (≈2.000 leads), campanhas ilimitadas, export CSV, WhatsApp 1-click para todos leads, templates de mensagem com IA, CRM Kanban completo, e suporte prioritário.',
     },
     {
       question: 'Quais formas de pagamento?',
@@ -106,7 +117,11 @@ export default function Pricing() {
       <main className="container mx-auto px-4 py-12">
         {/* Title */}
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold mb-4">
+          <Badge className="mb-4 bg-primary/10 text-primary border-primary/30">
+            <Zap className="w-3 h-3 mr-1" />
+            Preços Acessíveis
+          </Badge>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4">
             Escolha seu plano
           </h1>
           <p className="text-xl text-muted-foreground">
@@ -122,7 +137,7 @@ export default function Pricing() {
               <CardTitle className="text-2xl text-muted-foreground">FREE</CardTitle>
               <CardDescription>Teste grátis para sempre</CardDescription>
               <div className="py-4">
-                <span className="text-4xl font-bold">R$ 0</span>
+                <span className="text-5xl font-bold">R$ 0</span>
                 <span className="text-muted-foreground">/sempre</span>
               </div>
             </CardHeader>
@@ -173,9 +188,16 @@ export default function Pricing() {
               </Badge>
             </div>
 
+            {/* Value badge */}
+            <div className="absolute -top-3 right-4">
+              <Badge className="bg-green-500/20 text-green-400 border-green-500/30 px-3 py-1">
+                Menos de R$1/dia
+              </Badge>
+            </div>
+
             <CardHeader className="text-center pb-2 pt-8">
               <CardTitle className="text-2xl text-primary font-bold">STARTER</CardTitle>
-              <CardDescription>Prospecção profissional ilimitada</CardDescription>
+              <CardDescription>Prospecção profissional completa</CardDescription>
               <div className="py-4">
                 <span className="text-5xl font-bold text-primary">R$ 27,90</span>
                 <span className="text-muted-foreground">/mês</span>
@@ -198,10 +220,10 @@ export default function Pricing() {
 
               {/* Payment methods */}
               <div className="flex items-center justify-center gap-3 pt-4 border-t border-border">
-                <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-blue-500/10 text-blue-400 text-xs font-medium">
+                <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/30">
                   <span className="font-bold">PIX</span>
                 </div>
-                <span className="text-xs text-muted-foreground">Pagamento instantâneo</span>
+                <span className="text-xs text-muted-foreground">Pagamento 100% seguro</span>
               </div>
 
               <Button asChild className="w-full" size="lg">

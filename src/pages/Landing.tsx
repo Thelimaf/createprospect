@@ -431,8 +431,17 @@ const GlowCard = ({
   );
 };
 
-// Top Freelancers Secret Section
+// Top Freelancers Secret Section with Parallax
 const TopFreelancersSection = () => {
+  const sectionRef = useRef<HTMLDivElement>(null);
+  const { scrollYProgress } = useScroll({
+    target: sectionRef,
+    offset: ["start end", "end start"],
+  });
+  
+  const backgroundY = useTransform(scrollYProgress, [0, 1], ['-15%', '15%']);
+  const opacity = useTransform(scrollYProgress, [0, 0.3, 0.7, 1], [0.02, 0.06, 0.06, 0.02]);
+
   const cards = [
     {
       number: "01",
@@ -465,19 +474,28 @@ const TopFreelancersSection = () => {
   ];
 
   return (
-    <section className="relative py-20 bg-[#0a0a0a] overflow-hidden">
-      {/* Grid background pattern */}
-      <div 
-        className="absolute inset-0 opacity-[0.04]"
-        style={{
-          backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
-                            linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
-          backgroundSize: '40px 40px'
-        }}
-      />
+    <section ref={sectionRef} className="relative py-24 bg-[#080808] overflow-hidden">
+      {/* Grid background pattern with parallax */}
+      <motion.div 
+        style={{ y: backgroundY, opacity }}
+        className="absolute inset-0 -top-[20%] -bottom-[20%]"
+      >
+        <div 
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `linear-gradient(rgba(139,92,246,0.4) 1px, transparent 1px),
+                              linear-gradient(90deg, rgba(139,92,246,0.4) 1px, transparent 1px)`,
+            backgroundSize: '60px 60px'
+          }}
+        />
+      </motion.div>
       
-      {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent" />
+      {/* Gradient overlay for depth */}
+      <div className="absolute inset-0 bg-gradient-to-b from-[#080808] via-transparent to-[#080808]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[#080808] via-transparent to-[#080808]" />
+      
+      {/* Central glow */}
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full bg-primary/10 blur-[150px]" />
       
       <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
@@ -485,11 +503,11 @@ const TopFreelancersSection = () => {
           whileInView="visible"
           viewport={{ once: true, amount: 0.2 }}
           variants={staggerContainer}
-          className="text-center mb-12"
+          className="text-center mb-16"
         >
           {/* Badge */}
-          <motion.div variants={fadeUp} className="inline-flex mb-6">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/15 border border-primary/30 text-sm text-primary">
+          <motion.div variants={fadeUp} className="inline-flex mb-8">
+            <span className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-primary/20 border border-primary/40 text-sm font-medium text-primary">
               <Flame className="w-4 h-4" />
               O SEGREDO DOS TOP FREELANCERS
             </span>
@@ -498,21 +516,21 @@ const TopFreelancersSection = () => {
           {/* Main headline */}
           <motion.h2
             variants={fadeUp}
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4"
+            className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold text-white mb-6"
           >
-            Existem <span className="text-primary">32 MILHÕES</span> de empresas no Google Maps
+            Existem <span className="text-gradient-hero">32 MILHÕES</span> de empresas no Google Maps
           </motion.h2>
 
           <motion.p
             variants={fadeUp}
-            className="text-xl sm:text-2xl text-gray-400 mb-6"
+            className="text-xl sm:text-2xl text-gray-300 mb-8 font-medium"
           >
             Quantas você já contatou hoje?
           </motion.p>
 
           <motion.p
             variants={fadeUp}
-            className="text-gray-500 max-w-3xl mx-auto"
+            className="text-gray-400 max-w-3xl mx-auto text-lg"
           >
             Com o <span className="text-primary font-semibold">ProspectAI</span>, você transforma o Google Maps na sua máquina de prospecção pessoal. Não dependa de sorte. Busque clientes ativamente.
           </motion.p>
@@ -524,7 +542,7 @@ const TopFreelancersSection = () => {
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
           variants={staggerContainer}
-          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
         >
           {cards.map((card) => (
             <GlowCard key={card.number} card={card} />
@@ -544,17 +562,43 @@ const ProblemSolutionSection = () => {
     "Prospecção manual é lenta e cansativa",
     "Google Maps desorganizado, sem exportação",
     "Copiando contatos um por um",
+    "Horas perdidas sem fechar nenhum cliente",
   ];
 
   const solutions = [
-    "Busque por nicho e cidade",
+    "Busque por nicho e cidade em segundos",
     "Receba lista de leads pronta para usar",
     "Clique e contate direto via WhatsApp",
+    "Feche seu primeiro cliente em até 7 dias",
   ];
 
   return (
-    <section className="py-24 bg-landing relative overflow-hidden">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-28 bg-landing relative overflow-hidden">
+      {/* Subtle grid background */}
+      <div 
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+          backgroundSize: '80px 80px'
+        }}
+      />
+      
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Do Problema à Solução
+          </h2>
+          <p className="text-gray-400 max-w-xl mx-auto">
+            Veja como o ProspectAI transforma sua prospecção
+          </p>
+        </motion.div>
+
         <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
           {/* Problem */}
           <motion.div
@@ -563,19 +607,21 @@ const ProblemSolutionSection = () => {
             whileInView="visible"
             viewport={{ once: true, margin: "-100px" }}
             transition={{ duration: 0.6 }}
-            className="glass-card rounded-2xl p-8 border border-red-500/20"
+            className="glass-card rounded-2xl p-8 border border-red-500/30 bg-gradient-to-br from-red-500/5 to-transparent"
           >
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
-                <X className="w-5 h-5 text-red-400" />
+            <div className="flex items-center gap-3 mb-8">
+              <div className="w-12 h-12 rounded-xl bg-red-500/20 flex items-center justify-center">
+                <X className="w-6 h-6 text-red-400" />
               </div>
-              <h3 className="text-xl font-semibold text-white">O Problema</h3>
+              <h3 className="text-2xl font-bold text-white">O Problema</h3>
             </div>
-            <ul className="space-y-4">
+            <ul className="space-y-5">
               {problems.map((problem, index) => (
-                <li key={index} className="flex items-start gap-3">
-                  <X className="w-5 h-5 text-red-400 mt-0.5 flex-shrink-0" />
-                  <span className="text-gray-300">{problem}</span>
+                <li key={index} className="flex items-start gap-4">
+                  <div className="w-6 h-6 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                    <X className="w-4 h-4 text-red-400" />
+                  </div>
+                  <span className="text-gray-300 text-lg">{problem}</span>
                 </li>
               ))}
             </ul>
@@ -588,7 +634,7 @@ const ProblemSolutionSection = () => {
               initial={{ opacity: 0 }}
               animate={{ opacity: isInView ? 0.6 : 0 }}
               transition={{ duration: 0.8 }}
-              className="absolute -inset-8 bg-[hsl(250_95%_70%/0.3)] blur-[80px] rounded-full"
+              className="absolute -inset-8 bg-primary/30 blur-[80px] rounded-full"
             />
             
             <motion.div
@@ -597,19 +643,21 @@ const ProblemSolutionSection = () => {
               whileInView="visible"
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.6 }}
-              className="relative glass-card rounded-2xl p-8 border border-[hsl(250_95%_70%/0.3)] glow-purple"
+              className="relative glass-card rounded-2xl p-8 border border-primary/40 glow-purple bg-gradient-to-br from-primary/10 to-transparent"
             >
-              <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-full bg-[hsl(250_95%_70%/0.2)] flex items-center justify-center">
-                  <Check className="w-5 h-5 text-landing-primary" />
+              <div className="flex items-center gap-3 mb-8">
+                <div className="w-12 h-12 rounded-xl bg-primary/20 flex items-center justify-center">
+                  <Check className="w-6 h-6 text-primary" />
                 </div>
-                <h3 className="text-xl font-semibold text-white">A Solução</h3>
+                <h3 className="text-2xl font-bold text-white">A Solução</h3>
               </div>
-              <ul className="space-y-4">
+              <ul className="space-y-5">
                 {solutions.map((solution, index) => (
-                  <li key={index} className="flex items-start gap-3">
-                    <Check className="w-5 h-5 text-landing-primary mt-0.5 flex-shrink-0" />
-                    <span className="text-gray-300">{solution}</span>
+                  <li key={index} className="flex items-start gap-4">
+                    <div className="w-6 h-6 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0 mt-0.5">
+                      <Check className="w-4 h-4 text-primary" />
+                    </div>
+                    <span className="text-gray-300 text-lg">{solution}</span>
                   </li>
                 ))}
               </ul>
@@ -628,32 +676,52 @@ const HowItWorksSection = () => {
       icon: Search,
       title: "Digite o nicho e a cidade",
       description: "Exemplo: 'Dentistas em São Paulo'",
+      color: "from-blue-500/20 to-cyan-500/20",
     },
     {
       icon: Database,
       title: "Geramos empresas reais",
       description: "Dados direto do Google Maps",
+      color: "from-primary/20 to-purple-500/20",
     },
     {
       icon: MessageCircle,
       title: "Clique e prospecte",
       description: "WhatsApp, telefone, tudo pronto",
+      color: "from-green-500/20 to-emerald-500/20",
     },
   ];
 
   return (
-    <section id="como-funciona" className="py-24 bg-landing-card relative">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="como-funciona" className="py-28 bg-[#0a0a0a] relative overflow-hidden">
+      {/* Background glow */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[600px] h-[400px] bg-primary/10 blur-[150px] rounded-full" />
+      
+      {/* Grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.03]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+          backgroundSize: '60px 60px'
+        }}
+      />
+      
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          className="text-center mb-16"
+          className="text-center mb-20"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-sm text-primary mb-6">
+            <Zap className="w-4 h-4" />
+            Simples e Rápido
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
             Como Funciona
           </h2>
-          <p className="text-gray-400 max-w-xl mx-auto">
+          <p className="text-gray-400 max-w-xl mx-auto text-lg">
             Três passos simples para encontrar seus próximos clientes
           </p>
         </motion.div>
@@ -673,20 +741,24 @@ const HowItWorksSection = () => {
             >
               {/* Connector line */}
               {index < steps.length - 1 && (
-                <div className="hidden md:block absolute top-12 left-[60%] w-[80%] h-[2px] bg-gradient-to-r from-[hsl(250_95%_70%/0.5)] to-transparent" />
+                <div className="hidden md:block absolute top-16 left-[60%] w-[80%] h-[2px] bg-gradient-to-r from-primary/50 to-transparent" />
               )}
 
-              <div className="glass-card rounded-2xl p-8 text-center hover:-translate-y-2 transition-transform duration-300">
-                <div className="w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br from-[hsl(250_95%_70%/0.2)] to-[hsl(280_85%_65%/0.2)] flex items-center justify-center">
-                  <step.icon className="w-8 h-8 text-landing-primary" />
+              <div className="glass-card rounded-2xl p-8 text-center hover:-translate-y-2 transition-all duration-300 border border-white/5 hover:border-primary/30">
+                {/* Step number */}
+                <div className="absolute -top-4 left-1/2 -translate-x-1/2">
+                  <span className="inline-flex items-center justify-center w-8 h-8 rounded-full bg-primary text-white text-sm font-bold">
+                    {index + 1}
+                  </span>
                 </div>
-                <div className="text-sm text-purple-light mb-2">
-                  Passo {index + 1}
+                
+                <div className={`w-20 h-20 mx-auto mb-6 rounded-2xl bg-gradient-to-br ${step.color} flex items-center justify-center`}>
+                  <step.icon className="w-10 h-10 text-white" />
                 </div>
-                <h3 className="text-xl font-semibold text-white mb-2">
+                <h3 className="text-xl font-semibold text-white mb-3">
                   {step.title}
                 </h3>
-                <p className="text-gray-400 text-sm">{step.description}</p>
+                <p className="text-gray-400">{step.description}</p>
               </div>
             </motion.div>
           ))}
@@ -699,19 +771,31 @@ const HowItWorksSection = () => {
 // Benefits section
 const BenefitsSection = () => {
   const benefits = [
-    "Economize horas por semana",
-    "Encontre clientes que você não conhecia",
-    "Prospecção local com alta conversão",
-    "Ideal para freelancers, agências e prestadores",
+    { text: "Economize horas por semana", icon: Zap },
+    { text: "Encontre clientes que você não conhecia", icon: Search },
+    { text: "Prospecção local com alta conversão", icon: MapPin },
+    { text: "Ideal para freelancers, agências e prestadores", icon: Users },
+    { text: "Leads 100% reais e atualizados", icon: ShieldCheck },
+    { text: "WhatsApp direto com 1 clique", icon: MessageCircle },
   ];
 
   return (
-    <section className="py-24 bg-landing relative overflow-hidden">
+    <section className="py-28 bg-landing relative overflow-hidden">
       {/* Gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-br from-[hsl(250_95%_70%/0.05)] to-[hsl(280_85%_65%/0.05)]" />
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-purple-500/5" />
+      
+      {/* Grid pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+          backgroundSize: '50px 50px'
+        }}
+      />
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
-        <div className="grid lg:grid-cols-2 gap-12 items-center">
+        <div className="grid lg:grid-cols-2 gap-16 items-center">
           {/* Benefits list */}
           <motion.div
             variants={slideInLeft}
@@ -720,26 +804,30 @@ const BenefitsSection = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.6 }}
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-8">
-              Por que usar ProspectAI?
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-sm text-primary mb-6">
+              <Sparkles className="w-4 h-4" />
+              Vantagens
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-10">
+              Por que usar <span className="text-gradient-hero">ProspectAI</span>?
             </h2>
-            <ul className="space-y-6">
+            <div className="grid sm:grid-cols-2 gap-4">
               {benefits.map((benefit, index) => (
-                <motion.li
+                <motion.div
                   key={index}
                   initial={{ opacity: 0, x: -20 }}
                   whileInView={{ opacity: 1, x: 0 }}
                   viewport={{ once: true }}
                   transition={{ delay: index * 0.1 }}
-                  className="flex items-center gap-4"
+                  className="flex items-center gap-4 p-4 rounded-xl bg-white/5 border border-white/5 hover:border-primary/30 transition-colors"
                 >
-                  <div className="w-6 h-6 rounded-full bg-[hsl(250_95%_70%/0.2)] flex items-center justify-center flex-shrink-0">
-                    <Check className="w-4 h-4 text-landing-primary" />
+                  <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                    <benefit.icon className="w-5 h-5 text-primary" />
                   </div>
-                  <span className="text-lg text-gray-300">{benefit}</span>
-                </motion.li>
+                  <span className="text-gray-300">{benefit.text}</span>
+                </motion.div>
               ))}
-            </ul>
+            </div>
           </motion.div>
 
           {/* Mockup */}
@@ -751,31 +839,37 @@ const BenefitsSection = () => {
             transition={{ duration: 0.6 }}
             className="relative"
           >
-            <div className="glass-card rounded-2xl p-6 glow-primary">
+            {/* Background glow */}
+            <div className="absolute inset-0 bg-primary/20 blur-[80px] rounded-full" />
+            
+            <div className="relative glass-card rounded-2xl p-6 glow-primary border border-primary/30">
               {/* Fake app interface */}
               <div className="space-y-4">
-                <div className="flex items-center gap-3 pb-4 border-b border-[hsl(230_15%_20%/0.5)]">
+                <div className="flex items-center gap-3 pb-4 border-b border-white/10">
                   <div className="w-3 h-3 rounded-full bg-red-500" />
                   <div className="w-3 h-3 rounded-full bg-yellow-500" />
                   <div className="w-3 h-3 rounded-full bg-green-500" />
+                  <span className="text-xs text-gray-500 ml-2">ProspectAI Dashboard</span>
                 </div>
-                <div className="bg-landing rounded-lg p-4">
-                  <div className="text-sm text-gray-400 mb-2">Busca:</div>
-                  <div className="text-white font-medium">
+                <div className="bg-[#0a0a0a] rounded-lg p-4 border border-white/5">
+                  <div className="text-xs text-gray-500 mb-2">Busca:</div>
+                  <div className="text-white font-medium flex items-center gap-2">
+                    <Search className="w-4 h-4 text-primary" />
                     Dentistas em São Paulo
                   </div>
                 </div>
                 {[1, 2, 3].map((i) => (
-                  <div key={i} className="bg-landing rounded-lg p-4 flex items-center justify-between">
+                  <div key={i} className="bg-[#0a0a0a] rounded-lg p-4 flex items-center justify-between border border-white/5 hover:border-primary/30 transition-colors">
                     <div>
                       <div className="text-white font-medium">
                         {["Clínica Sorriso Feliz", "Dr. João Odontologia", "DentCare SP"][i - 1]}
                       </div>
-                      <div className="text-sm text-gray-400">
+                      <div className="text-sm text-gray-400 flex items-center gap-2 mt-1">
+                        <Phone className="w-3 h-3" />
                         {["(11) 99999-1234", "(11) 98888-5678", "(11) 97777-9012"][i - 1]}
                       </div>
                     </div>
-                    <Button size="sm" className="bg-landing-primary hover:opacity-90 text-white">
+                    <Button size="sm" className="bg-green-600 hover:bg-green-700 text-white">
                       <MessageCircle className="w-4 h-4" />
                     </Button>
                   </div>
@@ -792,15 +886,32 @@ const BenefitsSection = () => {
 // Metrics section
 const MetricsSection = () => {
   const metrics = [
-    { icon: Building, value: 10000, prefix: "+", suffix: "", label: "empresas encontradas" },
-    { icon: Users, value: 500, prefix: "+", suffix: "", label: "usuários ativos" },
-    { icon: Zap, value: 3, prefix: "", suffix: "s", label: "tempo médio de busca" },
-    { icon: MessageCircle, value: 85, prefix: "", suffix: "%", label: "taxa de resposta" },
+    { icon: Building, value: 10000, prefix: "+", suffix: "", label: "empresas encontradas", color: "from-blue-500 to-cyan-500" },
+    { icon: Users, value: 500, prefix: "+", suffix: "", label: "usuários ativos", color: "from-primary to-purple-500" },
+    { icon: Zap, value: 3, prefix: "", suffix: "s", label: "tempo médio de busca", color: "from-yellow-500 to-orange-500" },
+    { icon: MessageCircle, value: 85, prefix: "", suffix: "%", label: "taxa de resposta", color: "from-green-500 to-emerald-500" },
   ];
 
   return (
-    <section className="py-24 bg-landing-card">
-      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section className="py-24 bg-[#080808] relative overflow-hidden">
+      {/* Background */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
+      
+      <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="text-center mb-16"
+        >
+          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            Números que Impressionam
+          </h2>
+          <p className="text-gray-400">
+            Resultados reais de quem usa ProspectAI
+          </p>
+        </motion.div>
+
         <motion.div
           variants={staggerContainer}
           initial="hidden"
@@ -812,19 +923,19 @@ const MetricsSection = () => {
             <motion.div
               key={index}
               variants={scaleIn}
-              className="glass-card rounded-2xl p-6 text-center hover:glow-purple transition-shadow duration-300"
+              className="glass-card rounded-2xl p-8 text-center hover:glow-purple transition-all duration-300 group border border-white/5 hover:border-primary/30"
             >
-              <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-[hsl(250_95%_70%/0.1)] flex items-center justify-center">
-                <metric.icon className="w-6 h-6 text-landing-primary" />
+              <div className={`w-16 h-16 mx-auto mb-6 rounded-2xl bg-gradient-to-br ${metric.color} flex items-center justify-center group-hover:scale-110 transition-transform`}>
+                <metric.icon className="w-8 h-8 text-white" />
               </div>
-              <div className="text-3xl font-bold text-white mb-1">
+              <div className="text-4xl font-bold text-white mb-2">
                 <AnimatedCounter
                   value={metric.value}
                   prefix={metric.prefix}
                   suffix={metric.suffix}
                 />
               </div>
-              <div className="text-sm text-gray-400">{metric.label}</div>
+              <div className="text-gray-400">{metric.label}</div>
             </motion.div>
           ))}
         </motion.div>
@@ -840,43 +951,71 @@ const PricingSection = () => {
     price: "R$ 0",
     subtitle: "Teste sem compromisso",
     features: [
-      { text: "3 buscas totais (≈ 60 leads)", included: true },
+      { text: "3 buscas vitalícias (≈60 leads)", included: true },
       { text: "1 campanha", included: true },
-      { text: "Ver telefones e endereços", included: true },
-      { text: "Export CSV", included: false },
-      { text: "WhatsApp 1-click", included: false },
-      { text: "Templates de mensagens", included: false },
+      { text: "Ver telefone e endereço", included: true },
+      { text: "3 primeiros leads desbloqueados", included: true },
+    ],
+    blockedFeatures: [
+      { text: "Dados completos em todos leads" },
+      { text: "Export CSV" },
+      { text: "WhatsApp 1-click ilimitado" },
+      { text: "Templates IA para mensagens" },
+      { text: "CRM Kanban completo" },
     ],
   };
 
   const starterPlan = {
     name: "Starter",
-    price: "R$ 49",
+    price: "R$ 27,90",
     period: "/mês",
-    subtitle: "Prospecção profissional",
+    subtitle: "Prospecção profissional completa",
     popular: true,
     features: [
-      { text: "100 buscas/mês (≈ 2.000 leads)", included: true },
-      { text: "Export CSV", included: true },
-      { text: "Templates de mensagens", included: true },
-      { text: "Prospecção profissional", included: true },
+      { text: "100 buscas/mês (≈2.000 leads)", highlight: true },
+      { text: "Campanhas ilimitadas", highlight: true },
+      { text: "Leads 100% reais do Google Maps", included: true },
+      { text: "Ver telefone, WhatsApp, e-mail, site", included: true },
+      { text: "Export CSV completo", included: true },
+      { text: "WhatsApp 1-click para todos leads", included: true },
+      { text: "Templates de mensagem com IA", included: true },
+      { text: "CRM Kanban completo", included: true },
+      { text: "Escolha cidade + nicho exato", included: true },
       { text: "Sem marca d'água", included: true },
+      { text: "Suporte prioritário", included: true },
     ],
   };
 
   return (
-    <section id="precos" className="py-24 bg-landing relative overflow-hidden">
-      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
+    <section id="precos" className="py-28 bg-landing relative overflow-hidden">
+      {/* Grid background */}
+      <div 
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+          backgroundSize: '60px 60px'
+        }}
+      />
+      
+      {/* Glow behind starter */}
+      <div className="absolute top-1/2 right-1/4 w-[500px] h-[500px] bg-primary/20 blur-[150px] rounded-full" />
+      
+      <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           className="text-center mb-16"
         >
-          <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+          <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-sm text-primary mb-6">
+            <DollarSign className="w-4 h-4" />
+            Preços Acessíveis
+          </span>
+          <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
             Escolha Seu Plano
           </h2>
-          <p className="text-gray-400">
+          <p className="text-gray-400 text-lg">
             Comece grátis. Faça upgrade quando quiser.
           </p>
         </motion.div>
@@ -889,35 +1028,45 @@ const PricingSection = () => {
             whileInView="visible"
             viewport={{ once: true }}
             transition={{ duration: 0.5 }}
-            className="glass-card rounded-2xl p-8 hover:-translate-y-2 transition-transform duration-300"
+            className="glass-card rounded-2xl p-8 hover:-translate-y-2 transition-transform duration-300 border border-white/10"
           >
-            <h3 className="text-xl font-semibold text-white mb-2">
+            <h3 className="text-2xl font-bold text-white mb-2">
               {freePlan.name}
             </h3>
             <div className="flex items-baseline gap-1 mb-2">
-              <span className="text-4xl font-bold text-white">{freePlan.price}</span>
+              <span className="text-5xl font-bold text-white">{freePlan.price}</span>
+              <span className="text-gray-400">/sempre</span>
             </div>
-            <p className="text-gray-400 text-sm mb-8">{freePlan.subtitle}</p>
+            <p className="text-gray-400 mb-8">{freePlan.subtitle}</p>
 
-            <ul className="space-y-4 mb-8">
+            {/* Included features */}
+            <div className="space-y-4 mb-6">
               {freePlan.features.map((feature, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  {feature.included ? (
-                    <Check className="w-5 h-5 text-landing-primary flex-shrink-0" />
-                  ) : (
-                    <X className="w-5 h-5 text-red-400/60 flex-shrink-0" />
-                  )}
-                  <span className={feature.included ? "text-gray-300" : "text-gray-500"}>
-                    {feature.text}
-                  </span>
-                </li>
+                <div key={index} className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3 text-green-500" />
+                  </div>
+                  <span className="text-gray-300">{feature.text}</span>
+                </div>
               ))}
-            </ul>
+            </div>
+
+            {/* Blocked features */}
+            <div className="space-y-4 mb-8 pt-6 border-t border-white/10">
+              {freePlan.blockedFeatures.map((feature, index) => (
+                <div key={index} className="flex items-center gap-3 opacity-50">
+                  <div className="w-5 h-5 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
+                    <X className="w-3 h-3 text-red-400" />
+                  </div>
+                  <span className="text-gray-500 line-through">{feature.text}</span>
+                </div>
+              ))}
+            </div>
 
             <Link to="/auth" className="block">
               <Button
                 variant="ghost"
-                className="w-full border border-[hsl(230_15%_20%)] text-white hover:bg-white/5"
+                className="w-full border border-white/20 text-white hover:bg-white/5 h-12"
               >
                 Começar Grátis
               </Button>
@@ -931,40 +1080,53 @@ const PricingSection = () => {
             whileInView="visible"
             viewport={{ once: true }}
             transition={{ duration: 0.5, delay: 0.1 }}
-            className="relative glass-card rounded-2xl p-8 border-2 border-[hsl(250_95%_70%/0.5)] glow-purple hover:-translate-y-2 transition-transform duration-300"
+            className="relative glass-card rounded-2xl p-8 border-2 border-primary/50 glow-purple hover:-translate-y-2 transition-transform duration-300"
           >
             {/* Popular badge */}
             <div className="absolute -top-4 left-1/2 -translate-x-1/2">
-              <span className="px-4 py-1 rounded-full gradient-purple text-white text-sm font-medium">
+              <span className="px-5 py-1.5 rounded-full gradient-purple text-white text-sm font-semibold flex items-center gap-1.5 shadow-lg">
+                <Sparkles className="w-4 h-4" />
                 Mais Popular
               </span>
             </div>
 
-            <h3 className="text-xl font-semibold text-white mb-2 mt-2">
+            {/* Value badge */}
+            <div className="absolute -top-4 right-4">
+              <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-medium border border-green-500/30">
+                Menos de R$1/dia
+              </span>
+            </div>
+
+            <h3 className="text-2xl font-bold text-primary mb-2 mt-2">
               {starterPlan.name}
             </h3>
             <div className="flex items-baseline gap-1 mb-2">
-              <span className="text-4xl font-bold text-white">{starterPlan.price}</span>
+              <span className="text-5xl font-bold text-white">{starterPlan.price}</span>
               <span className="text-gray-400">{starterPlan.period}</span>
             </div>
-            <p className="text-gray-400 text-sm mb-8">{starterPlan.subtitle}</p>
+            <p className="text-gray-400 mb-8">{starterPlan.subtitle}</p>
 
-            <ul className="space-y-4 mb-8">
+            <div className="space-y-4 mb-8">
               {starterPlan.features.map((feature, index) => (
-                <li key={index} className="flex items-center gap-3">
-                  <Check className="w-5 h-5 text-landing-primary flex-shrink-0" />
-                  <span className="text-gray-300">{feature.text}</span>
-                </li>
+                <div key={index} className="flex items-center gap-3">
+                  <div className="w-5 h-5 rounded-full bg-green-500/20 flex items-center justify-center flex-shrink-0">
+                    <Check className="w-3 h-3 text-green-500" />
+                  </div>
+                  <span className={feature.highlight ? "text-primary font-medium" : "text-gray-300"}>
+                    {feature.text}
+                  </span>
+                </div>
               ))}
-            </ul>
+            </div>
 
             {/* Payment methods */}
-            <div className="flex items-center justify-center gap-4 mb-6">
-              <span className="text-xs text-gray-400 px-3 py-1.5 rounded-full bg-[hsl(250_95%_70%/0.1)] border border-[hsl(250_95%_70%/0.2)]">PIX</span>
+            <div className="flex items-center justify-center gap-4 mb-6 py-4 border-t border-white/10">
+              <span className="text-xs text-gray-400 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 font-medium">PIX Instantâneo</span>
+              <span className="text-xs text-gray-500">Pagamento 100% seguro</span>
             </div>
 
             <Link to="/checkout?plan=starter" className="block">
-              <Button className="w-full bg-landing-primary hover:opacity-90 text-white glow-purple">
+              <Button className="w-full bg-primary hover:bg-primary/90 text-white glow-purple h-12 text-base font-semibold">
                 Assinar Agora
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
@@ -996,26 +1158,45 @@ const FAQSection = () => {
       answer: "Geramos um link direto para abrir a conversa no WhatsApp Web ou aplicativo. Basta clicar e começar a prospectar.",
     },
     {
+      question: "Quais os benefícios do Starter?",
+      answer: "Com o Starter você tem 100 buscas/mês (≈2.000 leads), campanhas ilimitadas, export CSV, WhatsApp 1-click para todos leads, templates de mensagem com IA, CRM Kanban completo, e suporte prioritário. Tudo por menos de R$1/dia.",
+    },
+    {
       question: "Tem suporte?",
-      answer: "Sim, oferecemos suporte via email e chat. Resposta rápida garantida em até 24 horas.",
+      answer: "Sim, oferecemos suporte via email e chat. Resposta rápida garantida em até 24 horas para todos os planos.",
     },
   ];
 
   return (
-    <section id="faq" className="py-24 bg-landing-card">
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="grid lg:grid-cols-2 gap-12">
+    <section id="faq" className="py-28 bg-[#0a0a0a] relative overflow-hidden">
+      {/* Grid background */}
+      <div 
+        className="absolute inset-0 opacity-[0.02]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+          backgroundSize: '60px 60px'
+        }}
+      />
+      
+      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 relative z-10">
+        <div className="grid lg:grid-cols-2 gap-12 items-start">
           {/* Title */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
+            className="lg:sticky lg:top-24"
           >
-            <h2 className="text-3xl sm:text-4xl font-bold text-white mb-4">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 border border-primary/30 text-sm text-primary mb-6">
+              <MessageCircle className="w-4 h-4" />
+              Tire suas dúvidas
+            </span>
+            <h2 className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4">
               Perguntas Frequentes
             </h2>
-            <p className="text-gray-400">
-              Tire suas dúvidas sobre a plataforma
+            <p className="text-gray-400 text-lg">
+              Tudo que você precisa saber sobre a plataforma
             </p>
           </motion.div>
 
@@ -1031,12 +1212,12 @@ const FAQSection = () => {
                 <AccordionItem
                   key={index}
                   value={`item-${index}`}
-                  className="glass-card rounded-xl border-none px-6"
+                  className="glass-card rounded-xl border border-white/5 px-6 hover:border-primary/30 transition-colors"
                 >
-                  <AccordionTrigger className="text-left text-white hover:text-landing-primary hover:no-underline py-4">
+                  <AccordionTrigger className="text-left text-white hover:text-primary hover:no-underline py-5 font-medium">
                     {faq.question}
                   </AccordionTrigger>
-                  <AccordionContent className="text-gray-400 pb-4">
+                  <AccordionContent className="text-gray-400 pb-5">
                     {faq.answer}
                   </AccordionContent>
                 </AccordionItem>
