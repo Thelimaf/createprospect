@@ -30,6 +30,31 @@ export function MinhaBaseTab() {
     }
   }, [user]);
 
+  // Realtime subscription for auto-refresh
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('minha-base-leads-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'google_maps_leads',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          loadLeads();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const loadLeads = async () => {
     try {
       // Get count

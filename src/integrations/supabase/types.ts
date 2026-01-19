@@ -116,6 +116,7 @@ export type Database = {
           search_id: string | null
           seen_at: string | null
           socios: Json | null
+          source: string | null
           state: string | null
           status: string
           updated_at: string
@@ -155,6 +156,7 @@ export type Database = {
           search_id?: string | null
           seen_at?: string | null
           socios?: Json | null
+          source?: string | null
           state?: string | null
           status?: string
           updated_at?: string
@@ -194,6 +196,7 @@ export type Database = {
           search_id?: string | null
           seen_at?: string | null
           socios?: Json | null
+          source?: string | null
           state?: string | null
           status?: string
           updated_at?: string

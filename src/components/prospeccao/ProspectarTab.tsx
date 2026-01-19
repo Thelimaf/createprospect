@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
-import { Search, Loader2, MapPin } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Label } from '@/components/ui/label';
+import { Search, Loader2, MapPin, FolderOpen } from 'lucide-react';
 import { SourceToggle, type SourceType } from './SourceToggle';
 import { SourceInfoCard } from './SourceInfoCard';
 import { SearchFilters, type SearchFiltersData } from './SearchFilters';
@@ -10,6 +12,9 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCheckLimit } from '@/hooks/useCheckLimit';
+import type { Tables } from '@/integrations/supabase/types';
+
+type Campaign = Tables<'campaigns'>;
 
 export function ProspectarTab() {
   const { user } = useAuth();
@@ -23,6 +28,25 @@ export function ProspectarTab() {
     quantity: 20,
   });
   const [loading, setLoading] = useState(false);
+  const [campaigns, setCampaigns] = useState<Campaign[]>([]);
+  const [selectedCampaign, setSelectedCampaign] = useState<string>('none');
+
+  // Load campaigns
+  useEffect(() => {
+    if (user) {
+      loadCampaigns();
+    }
+  }, [user]);
+
+  const loadCampaigns = async () => {
+    const { data } = await supabase
+      .from('campaigns')
+      .select('*')
+      .eq('user_id', user!.id)
+      .order('created_at', { ascending: false });
+    
+    setCampaigns(data || []);
+  };
 
   const handleSearch = async () => {
     if (!filters.term.trim()) {
@@ -55,6 +79,8 @@ export function ProspectarTab() {
         query += `, ${filters.state}`;
       }
 
+      const campaignId = selectedCampaign !== 'none' ? selectedCampaign : null;
+
       if (source === 'google_maps') {
         // Use existing Google Maps scraper
         const { data, error } = await supabase.functions.invoke('scrape-google-maps', {
@@ -62,6 +88,7 @@ export function ProspectarTab() {
             query, 
             limit: filters.quantity,
             user_id: user?.id,
+            campaignId,
           },
         });
 
@@ -73,15 +100,13 @@ export function ProspectarTab() {
         const leadsFound = data?.leads_saved || 0;
         toast.success(`${leadsFound} leads encontrados e salvos!`);
       } else {
-        // Use Firecrawl for web search
-        const { data, error } = await supabase.functions.invoke('firecrawl-search', {
+        // Use Firecrawl business search with data extraction
+        const { data, error } = await supabase.functions.invoke('firecrawl-business-search', {
           body: { 
-            query: `${query} contato telefone email site`,
-            options: {
-              limit: filters.quantity,
-              lang: 'pt-BR',
-              country: 'BR',
-            },
+            query,
+            limit: filters.quantity,
+            user_id: user?.id,
+            campaignId,
           },
         });
 
@@ -90,8 +115,9 @@ export function ProspectarTab() {
         // Increment usage after successful search
         await incrementUsage();
 
-        const resultsCount = data?.data?.length || 0;
-        toast.success(`${resultsCount} resultados encontrados na web!`);
+        const leadsFound = data?.leads_saved || 0;
+        const totalFound = data?.total_found || 0;
+        toast.success(`${leadsFound} leads salvos de ${totalFound} resultados encontrados!`);
       }
     } catch (error: any) {
       console.error('Search error:', error);
@@ -121,6 +147,30 @@ export function ProspectarTab() {
 
         {/* Filters */}
         <SearchFilters filters={filters} onChange={setFilters} />
+
+        {/* Campaign Selector */}
+        <div className="space-y-2">
+          <Label className="flex items-center gap-2 text-foreground">
+            <FolderOpen className="h-4 w-4" />
+            Campanha de destino
+          </Label>
+          <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Selecionar campanha (opcional)" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="none">Sem campanha</SelectItem>
+              {campaigns.map((campaign) => (
+                <SelectItem key={campaign.id} value={campaign.id}>
+                  {campaign.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-xs text-muted-foreground">
+            Leads serão salvos na campanha selecionada para organização
+          </p>
+        </div>
 
         {/* Manual selection note */}
         <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/50">
