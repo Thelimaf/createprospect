@@ -82,6 +82,34 @@ serve(async (req) => {
         console.error('Error fetching usage:', usageError);
       }
 
+      // Get leads count per user
+      const { data: leadsPerUser, error: leadsPerUserError } = await supabaseAdmin
+        .from('google_maps_leads')
+        .select('user_id');
+
+      if (leadsPerUserError) {
+        console.error('Error fetching leads per user:', leadsPerUserError);
+      }
+
+      // Count leads per user
+      const leadsCountMap: Record<string, number> = {};
+      leadsPerUser?.forEach((lead) => {
+        leadsCountMap[lead.user_id] = (leadsCountMap[lead.user_id] || 0) + 1;
+      });
+
+      // Get last activity (last lead or search) per user
+      const { data: lastSearches } = await supabaseAdmin
+        .from('google_maps_searches')
+        .select('user_id, created_at')
+        .order('created_at', { ascending: false });
+
+      const lastActivityMap: Record<string, string> = {};
+      lastSearches?.forEach((search) => {
+        if (!lastActivityMap[search.user_id]) {
+          lastActivityMap[search.user_id] = search.created_at || '';
+        }
+      });
+
       // Merge data
       const users = authUsers.users.map((authUser) => {
         const userSub = subscriptions?.find(s => s.user_id === authUser.id);
@@ -99,12 +127,118 @@ serve(async (req) => {
           searches_used_monthly: userUsage?.searches_used_monthly || 0,
           subscription_id: userSub?.id || null,
           plan_id: userSub?.plan_id || null,
+          leads_count: leadsCountMap[authUser.id] || 0,
+          last_activity: lastActivityMap[authUser.id] || null,
         };
       });
 
-      console.log(`Returning ${users.length} users`);
+      // ========== STATS ==========
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+
+      // Payment stats
+      const { data: payments } = await supabaseAdmin
+        .from('pix_payments')
+        .select('amount_brl, status, created_at, paid_at');
+
+      const paidPayments = payments?.filter(p => p.status === 'PAID') || [];
+      const paidThisMonth = paidPayments.filter(p => p.paid_at && p.paid_at >= startOfMonth);
+      const pendingPayments = payments?.filter(p => p.status === 'PENDING') || [];
+
+      const mrr = paidThisMonth.reduce((sum, p) => sum + (p.amount_brl || 0), 0);
+      const totalRevenue = paidPayments.reduce((sum, p) => sum + (p.amount_brl || 0), 0);
+      const avgTicket = paidPayments.length > 0 
+        ? paidPayments.reduce((sum, p) => sum + (p.amount_brl || 0), 0) / paidPayments.length 
+        : 0;
+
+      // Leads stats
+      const { count: totalLeads } = await supabaseAdmin
+        .from('google_maps_leads')
+        .select('*', { count: 'exact', head: true });
+
+      const { count: leadsToday } = await supabaseAdmin
+        .from('google_maps_leads')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', startOfToday);
+
+      // Searches stats
+      const { count: totalSearches } = await supabaseAdmin
+        .from('google_maps_searches')
+        .select('*', { count: 'exact', head: true });
+
+      // Campaigns stats
+      const { count: totalCampaigns } = await supabaseAdmin
+        .from('campaigns')
+        .select('*', { count: 'exact', head: true });
+
+      // User counts
+      const totalUsers = users.length;
+      const starterUsers = users.filter(u => u.plan === 'starter').length;
+      const freeUsers = users.filter(u => u.plan === 'free').length;
+      const conversionRate = totalUsers > 0 ? (starterUsers / totalUsers) * 100 : 0;
+
+      // ========== CHARTS DATA ==========
+      // Leads by day (last 30 days)
+      const thirtyDaysAgo = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000).toISOString();
+      const { data: recentLeads } = await supabaseAdmin
+        .from('google_maps_leads')
+        .select('created_at')
+        .gte('created_at', thirtyDaysAgo);
+
+      const leadsByDayMap: Record<string, number> = {};
+      for (let i = 29; i >= 0; i--) {
+        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        leadsByDayMap[dateStr] = 0;
+      }
+      recentLeads?.forEach((lead) => {
+        const dateStr = lead.created_at.split('T')[0];
+        if (leadsByDayMap[dateStr] !== undefined) {
+          leadsByDayMap[dateStr]++;
+        }
+      });
+      const leadsByDay = Object.entries(leadsByDayMap).map(([date, count]) => ({ date, count }));
+
+      // Users by day (last 14 days)
+      const fourteenDaysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+      const usersByDayMap: Record<string, number> = {};
+      for (let i = 13; i >= 0; i--) {
+        const date = new Date(now.getTime() - i * 24 * 60 * 60 * 1000);
+        const dateStr = date.toISOString().split('T')[0];
+        usersByDayMap[dateStr] = 0;
+      }
+      authUsers.users.forEach((u) => {
+        const dateStr = u.created_at.split('T')[0];
+        if (usersByDayMap[dateStr] !== undefined) {
+          usersByDayMap[dateStr]++;
+        }
+      });
+      const usersByDay = Object.entries(usersByDayMap).map(([date, count]) => ({ date, count }));
+
+      const stats = {
+        totalUsers,
+        starterUsers,
+        freeUsers,
+        conversionRate: Math.round(conversionRate * 10) / 10,
+        totalLeads: totalLeads || 0,
+        leadsToday: leadsToday || 0,
+        totalSearches: totalSearches || 0,
+        totalCampaigns: totalCampaigns || 0,
+        mrr,
+        totalRevenue,
+        pendingPayments: pendingPayments.length,
+        avgTicket: Math.round(avgTicket * 100) / 100,
+      };
+
+      const charts = {
+        leadsByDay,
+        usersByDay,
+      };
+
+      console.log(`Returning ${users.length} users with stats`);
       return new Response(
-        JSON.stringify({ users }),
+        JSON.stringify({ users, stats, charts }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
