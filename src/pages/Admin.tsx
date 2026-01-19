@@ -7,6 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import {
   Table,
   TableBody,
@@ -16,16 +17,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { MetricCard } from '@/components/admin/MetricCard';
 import { toast } from 'sonner';
 import { 
   Users, Crown, Search, Loader2, ArrowUpCircle, ArrowDownCircle, Shield,
-  DollarSign, TrendingUp, Clock, CreditCard, Target, BarChart3, Megaphone,
-  UserPlus, Percent
+  DollarSign, Target, BarChart3
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
-import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from 'recharts';
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer, PieChart, Pie, Cell, Legend } from 'recharts';
 
 const MASTER_EMAIL = 'anderson.ferlimajunior@gmail.com';
 
@@ -73,14 +72,6 @@ const chartConfig = {
   users: {
     label: "Usuários",
     color: "hsl(262, 83%, 58%)",
-  },
-  free: {
-    label: "Free",
-    color: "hsl(220, 14%, 46%)",
-  },
-  starter: {
-    label: "Starter",
-    color: "hsl(48, 96%, 53%)",
   },
 };
 
@@ -186,16 +177,17 @@ export default function Admin() {
     u.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Gradient pie chart data
   const planDistribution = stats ? [
-    { name: 'Free', value: stats.freeUsers, fill: 'hsl(220, 14%, 46%)' },
-    { name: 'Starter', value: stats.starterUsers, fill: 'hsl(48, 96%, 53%)' },
+    { name: 'Free', value: stats.freeUsers },
+    { name: 'Starter', value: stats.starterUsers },
   ] : [];
 
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-    }).format(value / 100); // assuming cents
+    }).format(value / 100);
   };
 
   if (authLoading || (!isMaster && loading)) {
@@ -237,187 +229,241 @@ export default function Admin() {
           </div>
         ) : (
           <>
-            {/* Financial KPIs */}
-            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-              <MetricCard
-                title="MRR"
-                value={formatCurrency(stats?.mrr || 0)}
-                icon={DollarSign}
-                iconColor="text-emerald-500"
-                valueColor="text-emerald-500"
-                description="Receita mensal recorrente"
-              />
-              <MetricCard
-                title="Receita Total"
-                value={formatCurrency(stats?.totalRevenue || 0)}
-                icon={TrendingUp}
-                iconColor="text-blue-500"
-                description="Faturamento lifetime"
-              />
-              <MetricCard
-                title="Pag. Pendentes"
-                value={stats?.pendingPayments || 0}
-                icon={Clock}
-                iconColor="text-amber-500"
-                valueColor={stats?.pendingPayments ? "text-amber-500" : undefined}
-                description="PIX aguardando"
-              />
-              <MetricCard
-                title="Ticket Médio"
-                value={formatCurrency(stats?.avgTicket || 0)}
-                icon={CreditCard}
-                iconColor="text-purple-500"
-                description="Valor médio por pagamento"
-              />
-            </div>
-
-            {/* User KPIs */}
-            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-              <MetricCard
-                title="Total Usuários"
-                value={stats?.totalUsers || 0}
-                icon={Users}
-                iconColor="text-blue-500"
-              />
-              <MetricCard
-                title="Usuários Starter"
-                value={stats?.starterUsers || 0}
-                icon={Crown}
-                iconColor="text-yellow-500"
-                valueColor="text-yellow-500"
-              />
-              <MetricCard
-                title="Usuários Free"
-                value={stats?.freeUsers || 0}
-                icon={UserPlus}
-                iconColor="text-slate-500"
-              />
-              <MetricCard
-                title="Taxa Conversão"
-                value={`${stats?.conversionRate || 0}%`}
-                icon={Percent}
-                iconColor="text-emerald-500"
-                valueColor={stats?.conversionRate && stats.conversionRate > 0 ? "text-emerald-500" : undefined}
-                description="Free → Starter"
-              />
-            </div>
-
-            {/* Activity KPIs */}
-            <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
-              <MetricCard
-                title="Total Leads"
-                value={stats?.totalLeads?.toLocaleString('pt-BR') || 0}
-                icon={Target}
-                iconColor="text-emerald-500"
-              />
-              <MetricCard
-                title="Leads Hoje"
-                value={stats?.leadsToday || 0}
-                icon={TrendingUp}
-                iconColor="text-emerald-500"
-                valueColor="text-emerald-500"
-              />
-              <MetricCard
-                title="Total Buscas"
-                value={stats?.totalSearches?.toLocaleString('pt-BR') || 0}
-                icon={BarChart3}
-                iconColor="text-blue-500"
-              />
-              <MetricCard
-                title="Campanhas"
-                value={stats?.totalCampaigns || 0}
-                icon={Megaphone}
-                iconColor="text-purple-500"
-              />
-            </div>
-
-            {/* Charts */}
-            <div className="grid gap-4 lg:grid-cols-3">
-              {/* Leads Chart */}
-              <Card className="lg:col-span-2 bg-card/50 border-border/50">
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium">Leads (últimos 30 dias)</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <ChartContainer config={chartConfig} className="h-[200px] w-full">
-                    <AreaChart data={charts?.leadsByDay || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                      <defs>
-                        <linearGradient id="leadsGradient" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.3}/>
-                          <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0}/>
-                        </linearGradient>
-                      </defs>
-                      <XAxis 
-                        dataKey="date" 
-                        tickFormatter={(value) => format(new Date(value), 'dd/MM')}
-                        tick={{ fontSize: 10 }}
-                        tickLine={false}
-                        axisLine={false}
-                      />
-                      <YAxis tick={{ fontSize: 10 }} tickLine={false} axisLine={false} />
-                      <ChartTooltip 
-                        content={<ChartTooltipContent labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy')} />}
-                      />
-                      <Area
-                        type="monotone"
-                        dataKey="count"
-                        stroke="hsl(142, 76%, 36%)"
-                        strokeWidth={2}
-                        fill="url(#leadsGradient)"
-                        name="Leads"
-                      />
-                    </AreaChart>
-                  </ChartContainer>
+            {/* Top KPI Cards - Compact Row */}
+            <div className="grid gap-3 grid-cols-2 md:grid-cols-4">
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-emerald-500/10">
+                      <Target className="h-5 w-5 text-emerald-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stats?.totalLeads?.toLocaleString('pt-BR') || 0}</p>
+                      <p className="text-xs text-muted-foreground">Total Leads</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
 
-              {/* Plan Distribution */}
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-green-500/10">
+                      <DollarSign className="h-5 w-5 text-green-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-green-500">{formatCurrency(stats?.totalRevenue || 0)}</p>
+                      <p className="text-xs text-muted-foreground">Receita Total</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-blue-500/10">
+                      <Users className="h-5 w-5 text-blue-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stats?.totalUsers || 0}</p>
+                      <p className="text-xs text-muted-foreground">Usuários</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-card/50 border-border/50">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-lg bg-purple-500/10">
+                      <BarChart3 className="h-5 w-5 text-purple-500" />
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold">{stats?.totalSearches?.toLocaleString('pt-BR') || 0}</p>
+                      <p className="text-xs text-muted-foreground">Buscas</p>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+
+            {/* Main Content - Table + Pie Chart Side by Side */}
+            <div className="grid gap-4 lg:grid-cols-3">
+              {/* Users Table */}
+              <Card className="lg:col-span-2 bg-card/50 border-border/50">
+                <CardHeader className="pb-3">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="text-base">Usuários ({filteredUsers.length})</CardTitle>
+                    <div className="relative w-48">
+                      <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        placeholder="Buscar..."
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="pl-9 h-8 text-sm bg-background/50"
+                      />
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="p-0">
+                  <ScrollArea className="h-[320px]">
+                    <Table>
+                      <TableHeader>
+                        <TableRow className="bg-muted/30 hover:bg-muted/30">
+                          <TableHead className="text-xs">Email</TableHead>
+                          <TableHead className="text-xs">Plano</TableHead>
+                          <TableHead className="text-xs text-center">Leads</TableHead>
+                          <TableHead className="text-xs text-right">Ações</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {filteredUsers.map((adminUser) => (
+                          <TableRow key={adminUser.id} className="hover:bg-muted/20">
+                            <TableCell className="py-2">
+                              <div className="flex flex-col">
+                                <span className="text-sm font-medium truncate max-w-[200px]">
+                                  {adminUser.email}
+                                  {adminUser.email === MASTER_EMAIL && (
+                                    <Badge variant="outline" className="ml-2 text-[10px] border-primary/50 text-primary">Admin</Badge>
+                                  )}
+                                </span>
+                                <span className="text-xs text-muted-foreground">
+                                  {formatDistanceToNow(new Date(adminUser.created_at), { addSuffix: true, locale: ptBR })}
+                                </span>
+                              </div>
+                            </TableCell>
+                            <TableCell className="py-2">
+                              <Badge
+                                variant={adminUser.plan === 'starter' ? 'default' : 'secondary'}
+                                className={adminUser.plan === 'starter' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-xs' : 'bg-muted text-xs'}
+                              >
+                                {adminUser.plan === 'starter' && <Crown className="h-3 w-3 mr-1" />}
+                                {adminUser.plan_name}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="py-2 text-center font-medium text-sm">{adminUser.leads_count}</TableCell>
+                            <TableCell className="py-2 text-right">
+                              {adminUser.plan === 'free' ? (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 text-xs text-emerald-500 hover:text-emerald-400 hover:bg-emerald-500/10"
+                                  onClick={() => handlePlanChange(adminUser.id, 'upgrade')}
+                                  disabled={actionLoading === adminUser.id}
+                                >
+                                  {actionLoading === adminUser.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <ArrowUpCircle className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="ghost"
+                                  className="h-7 text-xs text-red-500 hover:text-red-400 hover:bg-red-500/10"
+                                  onClick={() => handlePlanChange(adminUser.id, 'downgrade')}
+                                  disabled={actionLoading === adminUser.id}
+                                >
+                                  {actionLoading === adminUser.id ? (
+                                    <Loader2 className="h-3 w-3 animate-spin" />
+                                  ) : (
+                                    <ArrowDownCircle className="h-4 w-4" />
+                                  )}
+                                </Button>
+                              )}
+                            </TableCell>
+                          </TableRow>
+                        ))}
+                        {filteredUsers.length === 0 && (
+                          <TableRow>
+                            <TableCell colSpan={4} className="text-center text-muted-foreground py-8">
+                              Nenhum usuário encontrado
+                            </TableCell>
+                          </TableRow>
+                        )}
+                      </TableBody>
+                    </Table>
+                  </ScrollArea>
+                </CardContent>
+              </Card>
+
+              {/* Pie Chart with Gradient */}
               <Card className="bg-card/50 border-border/50">
                 <CardHeader className="pb-2">
-                  <CardTitle className="text-base font-medium">Distribuição de Planos</CardTitle>
+                  <CardTitle className="text-base">Distribuição de Planos</CardTitle>
                 </CardHeader>
-                <CardContent className="flex items-center justify-center">
-                  <ChartContainer config={chartConfig} className="h-[200px] w-full">
+                <CardContent className="flex flex-col items-center justify-center pt-0">
+                  <ChartContainer config={chartConfig} className="h-[250px] w-full">
                     <PieChart>
+                      <defs>
+                        <linearGradient id="gradientFree" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#8b5cf6" />
+                          <stop offset="50%" stopColor="#6366f1" />
+                          <stop offset="100%" stopColor="#4f46e5" />
+                        </linearGradient>
+                        <linearGradient id="gradientStarter" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#fbbf24" />
+                          <stop offset="50%" stopColor="#f59e0b" />
+                          <stop offset="100%" stopColor="#d97706" />
+                        </linearGradient>
+                      </defs>
                       <Pie
                         data={planDistribution}
                         cx="50%"
-                        cy="50%"
-                        innerRadius={50}
-                        outerRadius={70}
-                        paddingAngle={5}
+                        cy="45%"
+                        innerRadius={55}
+                        outerRadius={85}
+                        paddingAngle={4}
                         dataKey="value"
                         nameKey="name"
+                        stroke="none"
                       >
-                        {planDistribution.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={entry.fill} />
-                        ))}
+                        <Cell fill="url(#gradientFree)" />
+                        <Cell fill="url(#gradientStarter)" />
                       </Pie>
                       <ChartTooltip content={<ChartTooltipContent />} />
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={36}
+                        formatter={(value, entry) => {
+                          const count = value === 'Free' ? stats?.freeUsers : stats?.starterUsers;
+                          return <span className="text-sm text-muted-foreground">{value} ({count})</span>;
+                        }}
+                      />
                     </PieChart>
                   </ChartContainer>
+                  
+                  {/* Stats below pie */}
+                  <div className="grid grid-cols-2 gap-4 w-full mt-2 pt-4 border-t border-border/50">
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-yellow-500">{stats?.conversionRate || 0}%</p>
+                      <p className="text-xs text-muted-foreground">Conversão</p>
+                    </div>
+                    <div className="text-center">
+                      <p className="text-xl font-bold text-emerald-500">{formatCurrency(stats?.mrr || 0)}</p>
+                      <p className="text-xs text-muted-foreground">MRR</p>
+                    </div>
+                  </div>
                 </CardContent>
-                <div className="flex justify-center gap-6 pb-4">
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-slate-500" />
-                    <span className="text-sm text-muted-foreground">Free ({stats?.freeUsers})</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full bg-yellow-500" />
-                    <span className="text-sm text-muted-foreground">Starter ({stats?.starterUsers})</span>
-                  </div>
-                </div>
               </Card>
             </div>
 
-            {/* New Users Chart */}
+            {/* Leads Chart - Full Width */}
             <Card className="bg-card/50 border-border/50">
               <CardHeader className="pb-2">
-                <CardTitle className="text-base font-medium">Novos Usuários (últimos 14 dias)</CardTitle>
+                <CardTitle className="text-base">Leads (últimos 30 dias)</CardTitle>
               </CardHeader>
               <CardContent>
-                <ChartContainer config={chartConfig} className="h-[150px] w-full">
-                  <BarChart data={charts?.usersByDay || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                <ChartContainer config={chartConfig} className="h-[180px] w-full">
+                  <AreaChart data={charts?.leadsByDay || []} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                    <defs>
+                      <linearGradient id="leadsGradient" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0.4}/>
+                        <stop offset="95%" stopColor="hsl(142, 76%, 36%)" stopOpacity={0}/>
+                      </linearGradient>
+                    </defs>
                     <XAxis 
                       dataKey="date" 
                       tickFormatter={(value) => format(new Date(value), 'dd/MM')}
@@ -429,130 +475,16 @@ export default function Admin() {
                     <ChartTooltip 
                       content={<ChartTooltipContent labelFormatter={(value) => format(new Date(value), 'dd/MM/yyyy')} />}
                     />
-                    <Bar
+                    <Area
+                      type="monotone"
                       dataKey="count"
-                      fill="hsl(262, 83%, 58%)"
-                      radius={[4, 4, 0, 0]}
-                      name="Usuários"
+                      stroke="hsl(142, 76%, 36%)"
+                      strokeWidth={2}
+                      fill="url(#leadsGradient)"
+                      name="Leads"
                     />
-                  </BarChart>
+                  </AreaChart>
                 </ChartContainer>
-              </CardContent>
-            </Card>
-
-            {/* Users Table */}
-            <Card className="bg-card/50 border-border/50">
-              <CardHeader>
-                <div className="flex items-center justify-between">
-                  <CardTitle>Usuários</CardTitle>
-                  <div className="relative w-64">
-                    <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Buscar por email ou nome..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-9 bg-background/50"
-                    />
-                  </div>
-                </div>
-              </CardHeader>
-              <CardContent>
-                <div className="border rounded-lg overflow-hidden">
-                  <Table>
-                    <TableHeader>
-                      <TableRow className="bg-muted/30 hover:bg-muted/30">
-                        <TableHead>Email</TableHead>
-                        <TableHead>Nome</TableHead>
-                        <TableHead>Plano</TableHead>
-                        <TableHead className="text-center">Leads</TableHead>
-                        <TableHead className="text-center">Buscas</TableHead>
-                        <TableHead>Última Atividade</TableHead>
-                        <TableHead>Cadastro</TableHead>
-                        <TableHead className="text-right">Ações</TableHead>
-                      </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                      {filteredUsers.map((adminUser) => (
-                        <TableRow key={adminUser.id} className="hover:bg-muted/20">
-                          <TableCell className="font-medium">
-                            {adminUser.email}
-                            {adminUser.email === MASTER_EMAIL && (
-                              <Badge variant="outline" className="ml-2 text-xs border-primary/50 text-primary">Admin</Badge>
-                            )}
-                          </TableCell>
-                          <TableCell className="text-muted-foreground">{adminUser.full_name || '-'}</TableCell>
-                          <TableCell>
-                            <Badge
-                              variant={adminUser.plan === 'starter' ? 'default' : 'secondary'}
-                              className={adminUser.plan === 'starter' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30' : 'bg-muted'}
-                            >
-                              {adminUser.plan === 'starter' && <Crown className="h-3 w-3 mr-1" />}
-                              {adminUser.plan_name}
-                            </Badge>
-                          </TableCell>
-                          <TableCell className="text-center font-medium">{adminUser.leads_count}</TableCell>
-                          <TableCell className="text-center">{adminUser.searches_used_lifetime}</TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
-                            {adminUser.last_activity 
-                              ? formatDistanceToNow(new Date(adminUser.last_activity), { addSuffix: true, locale: ptBR })
-                              : '-'
-                            }
-                          </TableCell>
-                          <TableCell className="text-muted-foreground text-sm">
-                            {formatDistanceToNow(new Date(adminUser.created_at), {
-                              addSuffix: true,
-                              locale: ptBR,
-                            })}
-                          </TableCell>
-                          <TableCell className="text-right">
-                            {adminUser.plan === 'free' ? (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-emerald-500 border-emerald-500/30 hover:bg-emerald-500/10"
-                                onClick={() => handlePlanChange(adminUser.id, 'upgrade')}
-                                disabled={actionLoading === adminUser.id}
-                              >
-                                {actionLoading === adminUser.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <ArrowUpCircle className="h-4 w-4 mr-1" />
-                                    Dar PRO
-                                  </>
-                                )}
-                              </Button>
-                            ) : (
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                className="text-red-500 border-red-500/30 hover:bg-red-500/10"
-                                onClick={() => handlePlanChange(adminUser.id, 'downgrade')}
-                                disabled={actionLoading === adminUser.id}
-                              >
-                                {actionLoading === adminUser.id ? (
-                                  <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                  <>
-                                    <ArrowDownCircle className="h-4 w-4 mr-1" />
-                                    Remover PRO
-                                  </>
-                                )}
-                              </Button>
-                            )}
-                          </TableCell>
-                        </TableRow>
-                      ))}
-                      {filteredUsers.length === 0 && (
-                        <TableRow>
-                          <TableCell colSpan={8} className="text-center text-muted-foreground py-8">
-                            Nenhum usuário encontrado
-                          </TableCell>
-                        </TableRow>
-                      )}
-                    </TableBody>
-                  </Table>
-                </div>
               </CardContent>
             </Card>
           </>
