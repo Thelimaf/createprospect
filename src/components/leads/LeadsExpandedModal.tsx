@@ -1,5 +1,7 @@
 import { useState, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import * as XLSX from 'xlsx';
+import { toast } from 'sonner';
 import {
   Dialog,
   DialogContent,
@@ -204,6 +206,51 @@ export function LeadsExpandedModal({
     });
   };
 
+  const normalizePhoneBR = (phone: string): string => {
+    const digits = phone.replace(/\D/g, "");
+    if (digits.startsWith("55")) return digits;
+    if (digits.length === 11 || digits.length === 10) return `55${digits}`;
+    return digits;
+  };
+
+  const exportToExcel = () => {
+    if (filteredLeads.length === 0) {
+      toast.error("Nenhum lead para exportar");
+      return;
+    }
+
+    const data = filteredLeads.map((lead) => {
+      const normalizedPhone = lead.phone ? normalizePhoneBR(lead.phone) : "";
+      const whatsappUrl = lead.phone ? `https://wa.me/${normalizedPhone}` : "";
+      return {
+        "Nome": lead.business_name,
+        "Telefone": lead.phone || "",
+        "Email": lead.email || "",
+        "Endereço": lead.address || "",
+        "Cidade": lead.city || "",
+        "Avaliação": lead.rating || "",
+        "Status": COLUMNS.find(c => c.id === lead.status)?.label || lead.status,
+        "Link WhatsApp": whatsappUrl,
+        "Website": lead.website || "",
+      };
+    });
+
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
+
+    worksheet['!cols'] = [
+      { wch: 35 }, { wch: 18 }, { wch: 30 }, { wch: 40 },
+      { wch: 18 }, { wch: 10 }, { wch: 15 }, { wch: 35 }, { wch: 35 },
+    ];
+
+    const timestamp = new Date().toISOString().split("T")[0];
+    const filename = `leads-${campaign.name.replace(/[^a-zA-Z0-9]/g, '_')}-${timestamp}.xlsx`;
+    
+    XLSX.writeFile(workbook, filename);
+    toast.success("Excel exportado com sucesso!");
+  };
+
   return (
     <Dialog open={open} onOpenChange={(isOpen) => !isOpen && onClose()}>
       <DialogContent className="max-w-[100vw] w-full h-[100vh] p-0 gap-0 rounded-none">
@@ -297,7 +344,7 @@ export function LeadsExpandedModal({
             </TabsList>
           </Tabs>
 
-          <Button variant="outline" size="sm" className="ml-auto">
+          <Button variant="outline" size="sm" className="ml-auto" onClick={exportToExcel}>
             <Download className="h-4 w-4 mr-2" />
             Exportar
           </Button>
