@@ -78,6 +78,57 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    const userId = userData.user?.id;
+    console.log("User created successfully:", userId);
+
+    // Create user subscription and usage records (trigger doesn't fire for Admin API)
+    if (userId) {
+      // Get free plan ID
+      const { data: freePlan } = await supabaseAdmin
+        .from("subscription_plans")
+        .select("id")
+        .eq("slug", "free")
+        .single();
+
+      if (freePlan) {
+        // Create subscription
+        const { error: subError } = await supabaseAdmin
+          .from("user_subscriptions")
+          .insert({
+            user_id: userId,
+            plan_id: freePlan.id,
+            status: "active",
+          })
+          .select()
+          .single();
+
+        if (subError) {
+          console.error("Error creating subscription:", subError);
+        } else {
+          console.log("Subscription created for user:", userId);
+        }
+
+        // Create usage record
+        const { error: usageError } = await supabaseAdmin
+          .from("user_usage")
+          .insert({
+            user_id: userId,
+            searches_used_lifetime: 0,
+            searches_used_monthly: 0,
+          })
+          .select()
+          .single();
+
+        if (usageError) {
+          console.error("Error creating usage record:", usageError);
+        } else {
+          console.log("Usage record created for user:", userId);
+        }
+      } else {
+        console.error("Free plan not found in database");
+      }
+    }
+
     // Mark token as used
     const { error: updateError } = await supabaseAdmin
       .from("email_verification_tokens")
@@ -86,10 +137,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     if (updateError) {
       console.error("Error marking token as used:", updateError);
-      // Don't fail - user was already created
     }
-
-    console.log("User created successfully:", userData.user?.id);
 
     return new Response(
       JSON.stringify({ 
