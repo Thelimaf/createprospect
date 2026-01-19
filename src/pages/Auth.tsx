@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Sparkles, ArrowLeft, Mail, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
@@ -190,6 +191,11 @@ const handleGoogleSignIn = async () => {
 
   return (
     <div className="flex min-h-screen">
+      {/* Theme Toggle - Fixed position */}
+      <div className="fixed top-4 right-4 z-50">
+        <ThemeToggle />
+      </div>
+
       {/* Lado esquerdo - Formulário */}
       <div className="flex w-full flex-col justify-center px-8 lg:w-1/2 lg:px-12">
         <div className="mx-auto w-full max-w-md">
