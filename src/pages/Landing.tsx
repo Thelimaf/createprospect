@@ -353,6 +353,84 @@ const HeroSection = () => {
   );
 };
 
+// Glow Card component with mouse-following effect
+const GlowCard = ({ 
+  card 
+}: { 
+  card: { 
+    number: string; 
+    title: string; 
+    subtitle: string; 
+    description: string; 
+    icon: React.ComponentType<{ className?: string }>; 
+  } 
+}) => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isHovering, setIsHovering] = useState(false);
+  const cardRef = useRef<HTMLDivElement>(null);
+
+  const handleMouseMove = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!cardRef.current) return;
+    const rect = cardRef.current.getBoundingClientRect();
+    setMousePosition({
+      x: e.clientX - rect.left,
+      y: e.clientY - rect.top,
+    });
+  };
+
+  const IconComponent = card.icon;
+
+  return (
+    <motion.div
+      ref={cardRef}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovering(true)}
+      onMouseLeave={() => setIsHovering(false)}
+      variants={fadeUp}
+      className="relative bg-[#1a1a1a] rounded-2xl p-6 border border-gray-800 hover:border-primary/40 transition-all duration-300 group overflow-hidden"
+    >
+      {/* Mouse glow effect */}
+      <div
+        className="pointer-events-none absolute w-48 h-48 rounded-full transition-opacity duration-300"
+        style={{
+          background: 'radial-gradient(circle, hsl(var(--primary) / 0.25) 0%, transparent 70%)',
+          left: mousePosition.x - 96,
+          top: mousePosition.y - 96,
+          opacity: isHovering ? 1 : 0,
+          filter: 'blur(40px)',
+        }}
+      />
+
+      {/* Large number background */}
+      <span className="absolute top-4 right-6 text-6xl font-bold text-white/5 group-hover:text-primary/10 transition-colors duration-300">
+        {card.number}
+      </span>
+
+      <div className="relative z-10">
+        {/* Icon */}
+        <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center mb-4">
+          <IconComponent className="w-6 h-6 text-primary" />
+        </div>
+
+        {/* Title */}
+        <h3 className="text-xl font-bold text-primary mb-1">
+          {card.title}
+        </h3>
+
+        {/* Subtitle */}
+        <p className="text-sm text-gray-400 mb-3">
+          {card.subtitle}
+        </p>
+
+        {/* Description */}
+        <p className="text-gray-500 text-sm leading-relaxed">
+          {card.description}
+        </p>
+      </div>
+    </motion.div>
+  );
+};
+
 // Top Freelancers Secret Section
 const TopFreelancersSection = () => {
   const cards = [
@@ -388,10 +466,20 @@ const TopFreelancersSection = () => {
 
   return (
     <section className="relative py-20 bg-[#0a0a0a] overflow-hidden">
-      {/* Subtle gradient overlay */}
-      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[hsl(80_70%_50%/0.03)] to-transparent" />
+      {/* Grid background pattern */}
+      <div 
+        className="absolute inset-0 opacity-[0.04]"
+        style={{
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+                            linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)`,
+          backgroundSize: '40px 40px'
+        }}
+      />
       
-      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/[0.02] to-transparent" />
+      
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div
           initial="hidden"
           whileInView="visible"
@@ -401,7 +489,7 @@ const TopFreelancersSection = () => {
         >
           {/* Badge */}
           <motion.div variants={fadeUp} className="inline-flex mb-6">
-            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(0_80%_50%/0.15)] border border-[hsl(0_80%_50%/0.3)] text-sm text-red-400">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/15 border border-primary/30 text-sm text-primary">
               <Flame className="w-4 h-4" />
               O SEGREDO DOS TOP FREELANCERS
             </span>
@@ -412,7 +500,7 @@ const TopFreelancersSection = () => {
             variants={fadeUp}
             className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4"
           >
-            Existem <span className="text-[#d4ff00]">32 MILHÕES</span> de empresas no Google Maps
+            Existem <span className="text-primary">32 MILHÕES</span> de empresas no Google Maps
           </motion.h2>
 
           <motion.p
@@ -426,51 +514,20 @@ const TopFreelancersSection = () => {
             variants={fadeUp}
             className="text-gray-500 max-w-3xl mx-auto"
           >
-            Com o <span className="text-[#d4ff00] font-semibold">ProspectAI</span>, você transforma o Google Maps na sua máquina de prospecção pessoal. Não dependa de sorte. Busque clientes ativamente.
+            Com o <span className="text-primary font-semibold">ProspectAI</span>, você transforma o Google Maps na sua máquina de prospecção pessoal. Não dependa de sorte. Busque clientes ativamente.
           </motion.p>
         </motion.div>
 
-        {/* Cards grid */}
+        {/* Cards grid - 4 columns on desktop */}
         <motion.div
           initial="hidden"
           whileInView="visible"
           viewport={{ once: true, amount: 0.1 }}
           variants={staggerContainer}
-          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+          className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
         >
           {cards.map((card) => (
-            <motion.div
-              key={card.number}
-              variants={fadeUp}
-              className="relative bg-[#1a1a1a] rounded-2xl p-6 border border-gray-800 hover:border-[#d4ff00]/30 transition-all duration-300 group"
-            >
-              {/* Large number background */}
-              <span className="absolute top-4 right-6 text-6xl font-bold text-white/5 group-hover:text-[#d4ff00]/10 transition-colors duration-300">
-                {card.number}
-              </span>
-
-              <div className="relative z-10">
-                {/* Icon */}
-                <div className="w-12 h-12 rounded-xl bg-[#d4ff00]/10 flex items-center justify-center mb-4">
-                  <card.icon className="w-6 h-6 text-[#d4ff00]" />
-                </div>
-
-                {/* Title */}
-                <h3 className="text-xl font-bold text-[#d4ff00] mb-1">
-                  {card.title}
-                </h3>
-
-                {/* Subtitle */}
-                <p className="text-sm text-gray-400 mb-3">
-                  {card.subtitle}
-                </p>
-
-                {/* Description */}
-                <p className="text-gray-500 text-sm leading-relaxed">
-                  {card.description}
-                </p>
-              </div>
-            </motion.div>
+            <GlowCard key={card.number} card={card} />
           ))}
         </motion.div>
       </div>
