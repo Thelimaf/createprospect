@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 
+const MASTER_EMAIL = 'anderson.ferlimajunior@gmail.com';
+
 interface SubscriptionPlan {
   id: string;
   name: string;
@@ -123,7 +125,9 @@ export function useUserPlan(): UserPlanData {
   }, [user]);
 
   const plan = subscription?.subscription_plans || null;
-  const isPro = plan?.slug === 'starter' && subscription?.status === 'active';
+  // Admin master always has full Pro access regardless of database plan
+  const isMaster = user?.email === MASTER_EMAIL;
+  const isPro = isMaster || (plan?.slug === 'starter' && subscription?.status === 'active');
   const isFree = !isPro;
 
   // Calculate searches

@@ -425,6 +425,7 @@ export type Database = {
           plan_id: string
           status: string
           updated_at: string | null
+          upgrade_source: string | null
           user_id: string
         }
         Insert: {
@@ -435,6 +436,7 @@ export type Database = {
           plan_id: string
           status?: string
           updated_at?: string | null
+          upgrade_source?: string | null
           user_id: string
         }
         Update: {
@@ -445,6 +447,7 @@ export type Database = {
           plan_id?: string
           status?: string
           updated_at?: string | null
+          upgrade_source?: string | null
           user_id?: string
         }
         Relationships: [

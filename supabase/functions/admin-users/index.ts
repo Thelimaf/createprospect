@@ -64,10 +64,10 @@ serve(async (req) => {
         );
       }
 
-      // Get subscriptions
+      // Get subscriptions (including upgrade_source)
       const { data: subscriptions, error: subError } = await supabaseAdmin
         .from('user_subscriptions')
-        .select('*, subscription_plans(*)');
+        .select('*, subscription_plans(*), upgrade_source');
 
       if (subError) {
         console.error('Error fetching subscriptions:', subError);
@@ -123,6 +123,7 @@ serve(async (req) => {
           plan: userSub?.subscription_plans?.slug || 'free',
           plan_name: userSub?.subscription_plans?.name || 'Free',
           plan_status: userSub?.status || 'active',
+          upgrade_source: userSub?.upgrade_source || null,
           searches_used_lifetime: userUsage?.searches_used_lifetime || 0,
           searches_used_monthly: userUsage?.searches_used_monthly || 0,
           subscription_id: userSub?.id || null,
@@ -172,11 +173,14 @@ serve(async (req) => {
         .from('campaigns')
         .select('*', { count: 'exact', head: true });
 
-      // User counts
+      // User counts - separate paid vs courtesy
       const totalUsers = users.length;
       const starterUsers = users.filter(u => u.plan === 'starter').length;
+      const starterPaidUsers = users.filter(u => u.plan === 'starter' && u.upgrade_source === 'payment').length;
+      const starterCourtesyUsers = users.filter(u => u.plan === 'starter' && u.upgrade_source !== 'payment').length;
       const freeUsers = users.filter(u => u.plan === 'free').length;
       const conversionRate = totalUsers > 0 ? (starterUsers / totalUsers) * 100 : 0;
+      const paidConversionRate = totalUsers > 0 ? (starterPaidUsers / totalUsers) * 100 : 0;
 
       // ========== CHARTS DATA ==========
       // Leads by day (last 30 days)
@@ -219,8 +223,11 @@ serve(async (req) => {
       const stats = {
         totalUsers,
         starterUsers,
+        starterPaidUsers,
+        starterCourtesyUsers,
         freeUsers,
         conversionRate: Math.round(conversionRate * 10) / 10,
+        paidConversionRate: Math.round(paidConversionRate * 10) / 10,
         totalLeads: totalLeads || 0,
         leadsToday: leadsToday || 0,
         totalSearches: totalSearches || 0,
@@ -287,13 +294,14 @@ serve(async (req) => {
       }
 
       if (action === 'upgrade') {
-        // UPSERT subscription to ensure it always exists
+        // UPSERT subscription with upgrade_source = 'admin_grant' (courtesy)
         const { error: upsertError } = await supabaseAdmin
           .from('user_subscriptions')
           .upsert({
             user_id: userId,
             plan_id: starterPlan.id,
             status: 'active',
+            upgrade_source: 'admin_grant',
             current_period_start: new Date().toISOString(),
             current_period_end: new Date(Date.now() + 365 * 24 * 60 * 60 * 1000).toISOString(),
             updated_at: new Date().toISOString(),
