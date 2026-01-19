@@ -292,16 +292,29 @@ const HeroSection = () => {
           {/* Trust indicators */}
           <motion.div
             variants={fadeUp}
-            className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-sm text-gray-400 pt-4"
+            className="flex flex-col items-center gap-4 pt-4"
           >
-            <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(250_95%_70%/0.1)] border border-[hsl(250_95%_70%/0.2)]">
-              <Check className="w-4 h-4 text-landing-primary" />
-              Sem cartão de crédito
-            </span>
-            <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(250_95%_70%/0.1)] border border-[hsl(250_95%_70%/0.2)]">
-              <Check className="w-4 h-4 text-landing-primary" />
-              Até 60 clientes reais para testar agora
-            </span>
+            {/* Main indicators row */}
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 sm:gap-6 text-sm text-gray-300">
+              <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(250_95%_70%/0.1)] border border-[hsl(250_95%_70%/0.2)]">
+                <Check className="w-4 h-4 text-green-400" />
+                R$0 em anúncios
+              </span>
+              <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(250_95%_70%/0.1)] border border-[hsl(250_95%_70%/0.2)]">
+                <Zap className="w-4 h-4 text-yellow-400" />
+                Funciona em 3 minutos
+              </span>
+              <span className="flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(250_95%_70%/0.1)] border border-[hsl(250_95%_70%/0.2)]">
+                <Phone className="w-4 h-4 text-green-400" />
+                +2.847 freelancers usando
+              </span>
+            </div>
+            
+            {/* Urgency indicator */}
+            <div className="flex items-center gap-2 text-sm text-yellow-400">
+              <Zap className="w-4 h-4" />
+              <span>147 pessoas acessaram esta página nas últimas 2 horas</span>
+            </div>
           </motion.div>
         </motion.div>
       </div>
