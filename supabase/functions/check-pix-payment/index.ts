@@ -159,16 +159,17 @@ serve(async (req) => {
         .single();
 
       if (starterPlan) {
-        // Update subscription to starter
+        // Update subscription to starter with upgrade_source = 'payment'
         await supabase
           .from('user_subscriptions')
-          .update({
+          .upsert({
+            user_id: user.id,
             plan_id: starterPlan.id,
             status: 'active',
+            upgrade_source: 'payment',
             current_period_start: now.toISOString(),
             current_period_end: periodEnd.toISOString(),
-          })
-          .eq('user_id', user.id);
+          }, { onConflict: 'user_id' });
 
         // Reset monthly usage
         await supabase

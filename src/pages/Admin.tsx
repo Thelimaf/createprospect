@@ -43,6 +43,7 @@ interface AdminUser {
   plan: string;
   plan_name: string;
   plan_status: string;
+  upgrade_source: string | null;
   searches_used_lifetime: number;
   searches_used_monthly: number;
   subscription_id: string | null;
@@ -54,8 +55,11 @@ interface AdminUser {
 interface Stats {
   totalUsers: number;
   starterUsers: number;
+  starterPaidUsers: number;
+  starterCourtesyUsers: number;
   freeUsers: number;
   conversionRate: number;
+  paidConversionRate: number;
   totalLeads: number;
   leadsToday: number;
   totalSearches: number;
@@ -252,10 +256,11 @@ export default function Admin() {
     u.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  // Gradient pie chart data
+  // Gradient pie chart data - separate paid vs courtesy
   const planDistribution = stats ? [
     { name: 'Free', value: stats.freeUsers },
-    { name: 'Starter', value: stats.starterUsers },
+    { name: 'Starter (Pagos)', value: stats.starterPaidUsers },
+    { name: 'Starter (Cortesia)', value: stats.starterCourtesyUsers },
   ] : [];
 
   const formatCurrency = (value: number) => {
@@ -492,13 +497,27 @@ export default function Admin() {
                               </div>
                             </TableCell>
                             <TableCell className="py-2">
-                              <Badge
-                                variant={adminUser.plan === 'starter' ? 'default' : 'secondary'}
-                                className={adminUser.plan === 'starter' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-xs' : 'bg-muted text-xs'}
-                              >
-                                {adminUser.plan === 'starter' && <Crown className="h-3 w-3 mr-1" />}
-                                {adminUser.plan_name}
-                              </Badge>
+                              <div className="flex flex-col gap-1">
+                                <Badge
+                                  variant={adminUser.plan === 'starter' ? 'default' : 'secondary'}
+                                  className={adminUser.plan === 'starter' ? 'bg-yellow-500/20 text-yellow-500 border-yellow-500/30 text-xs w-fit' : 'bg-muted text-xs w-fit'}
+                                >
+                                  {adminUser.plan === 'starter' && <Crown className="h-3 w-3 mr-1" />}
+                                  {adminUser.plan_name}
+                                </Badge>
+                                {adminUser.plan === 'starter' && (
+                                  <Badge 
+                                    variant="outline" 
+                                    className={
+                                      adminUser.upgrade_source === 'payment'
+                                        ? 'bg-green-500/10 text-green-500 border-green-500/30 text-[10px] w-fit'
+                                        : 'bg-amber-500/10 text-amber-500 border-amber-500/30 text-[10px] w-fit'
+                                    }
+                                  >
+                                    {adminUser.upgrade_source === 'payment' ? 'Pago' : 'Cortesia'}
+                                  </Badge>
+                                )}
+                              </div>
                             </TableCell>
                             <TableCell className="py-2 text-center font-medium text-sm">{adminUser.leads_count}</TableCell>
                             <TableCell className="py-2 text-right">
@@ -561,7 +580,12 @@ export default function Admin() {
                           <stop offset="50%" stopColor="#6366f1" />
                           <stop offset="100%" stopColor="#4f46e5" />
                         </linearGradient>
-                        <linearGradient id="gradientStarter" x1="0" y1="0" x2="1" y2="1">
+                        <linearGradient id="gradientStarterPaid" x1="0" y1="0" x2="1" y2="1">
+                          <stop offset="0%" stopColor="#22c55e" />
+                          <stop offset="50%" stopColor="#16a34a" />
+                          <stop offset="100%" stopColor="#15803d" />
+                        </linearGradient>
+                        <linearGradient id="gradientStarterCourtesy" x1="0" y1="0" x2="1" y2="1">
                           <stop offset="0%" stopColor="#fbbf24" />
                           <stop offset="50%" stopColor="#f59e0b" />
                           <stop offset="100%" stopColor="#d97706" />
@@ -579,14 +603,18 @@ export default function Admin() {
                         stroke="none"
                       >
                         <Cell fill="url(#gradientFree)" />
-                        <Cell fill="url(#gradientStarter)" />
+                        <Cell fill="url(#gradientStarterPaid)" />
+                        <Cell fill="url(#gradientStarterCourtesy)" />
                       </Pie>
                       <ChartTooltip content={<ChartTooltipContent />} />
                       <Legend 
                         verticalAlign="bottom" 
                         height={36}
-                        formatter={(value, entry) => {
-                          const count = value === 'Free' ? stats?.freeUsers : stats?.starterUsers;
+                        formatter={(value) => {
+                          let count = 0;
+                          if (value === 'Free') count = stats?.freeUsers || 0;
+                          else if (value === 'Starter (Pagos)') count = stats?.starterPaidUsers || 0;
+                          else if (value === 'Starter (Cortesia)') count = stats?.starterCourtesyUsers || 0;
                           return <span className="text-sm text-muted-foreground">{value} ({count})</span>;
                         }}
                       />
@@ -596,8 +624,8 @@ export default function Admin() {
                   {/* Stats below pie */}
                   <div className="grid grid-cols-2 gap-4 w-full mt-2 pt-4 border-t border-border/50">
                     <div className="text-center">
-                      <p className="text-xl font-bold text-yellow-500">{stats?.conversionRate || 0}%</p>
-                      <p className="text-xs text-muted-foreground">Conversão</p>
+                      <p className="text-xl font-bold text-green-500">{stats?.paidConversionRate || 0}%</p>
+                      <p className="text-xs text-muted-foreground">Conversão (Pagos)</p>
                     </div>
                     <div className="text-center">
                       <p className="text-xl font-bold text-emerald-500">{formatCurrency(stats?.mrr || 0)}</p>
