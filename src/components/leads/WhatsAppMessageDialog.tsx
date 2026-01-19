@@ -26,6 +26,10 @@ import {
   MapPin,
   Plus,
   Send,
+  UserCircle,
+  RefreshCw,
+  FileText,
+  Coffee,
 } from 'lucide-react';
 
 interface Lead {
@@ -68,6 +72,13 @@ const DEFAULT_QUICK_REPLIES: QuickReply[] = [
   { text: 'Obrigado pelo seu tempo', variables: [] },
 ];
 
+const TEMPLATE_TYPES = [
+  { id: 'apresentacao', label: 'Apresentação', icon: UserCircle, description: 'Primeira apresentação profissional' },
+  { id: 'followup', label: 'Follow-up', icon: RefreshCw, description: 'Retomar contato anterior' },
+  { id: 'proposta', label: 'Proposta', icon: FileText, description: 'Proposta comercial direta' },
+  { id: 'casual', label: 'Casual', icon: Coffee, description: 'Abordagem leve e amigável' },
+];
+
 export function WhatsAppMessageDialog({
   open,
   onOpenChange,
@@ -80,6 +91,7 @@ export function WhatsAppMessageDialog({
   const [message, setMessage] = useState('');
   const [isGenerating, setIsGenerating] = useState(false);
   const [cursorPosition, setCursorPosition] = useState(0);
+  const [templateType, setTemplateType] = useState('apresentacao');
 
   // Get quick replies from campaign or use defaults
   const quickReplies = campaign.quick_replies?.length 
@@ -113,8 +125,9 @@ export function WhatsAppMessageDialog({
   };
 
   // Generate AI message
-  const generateMessage = async () => {
+  const generateMessage = async (overrideTemplate?: string) => {
     setIsGenerating(true);
+    const selectedTemplate = overrideTemplate || templateType;
 
     try {
       const { data, error } = await supabase.functions.invoke('generate-whatsapp', {
@@ -130,6 +143,7 @@ export function WhatsAppMessageDialog({
             city: lead.city,
             rating: lead.rating,
           },
+          templateType: selectedTemplate,
         },
       });
 
@@ -259,6 +273,39 @@ export function WhatsAppMessageDialog({
             </CardContent>
           </Card>
 
+          {/* Template Type Selection */}
+          <div className="space-y-2">
+            <p className="text-sm font-medium text-foreground">Tipo de Abordagem:</p>
+            <div className="flex flex-wrap gap-2">
+              {TEMPLATE_TYPES.map((template) => (
+                <Tooltip key={template.id}>
+                  <TooltipTrigger asChild>
+                    <motion.button
+                      whileHover={{ scale: 1.02 }}
+                      whileTap={{ scale: 0.98 }}
+                      onClick={() => {
+                        setTemplateType(template.id);
+                        generateMessage(template.id);
+                      }}
+                      disabled={isGenerating}
+                      className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs border transition-colors ${
+                        templateType === template.id
+                          ? 'bg-primary text-primary-foreground border-primary'
+                          : 'bg-secondary/50 border-border hover:border-primary hover:bg-secondary'
+                      } ${isGenerating ? 'opacity-50 cursor-not-allowed' : ''}`}
+                    >
+                      <template.icon className="h-3.5 w-3.5" />
+                      {template.label}
+                    </motion.button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>{template.description}</p>
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </div>
+          </div>
+
           {/* Message Textarea */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
@@ -268,7 +315,7 @@ export function WhatsAppMessageDialog({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={generateMessage}
+                onClick={() => generateMessage()}
                 disabled={isGenerating}
                 className="h-8 px-3 text-primary hover:text-primary hover:bg-primary/10 border-primary/30"
               >
