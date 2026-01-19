@@ -17,6 +17,11 @@ import {
   Zap,
   Sparkles,
   ChevronDown,
+  ShieldCheck,
+  DollarSign,
+  Lock,
+  BarChart3,
+  Flame,
 } from "lucide-react";
 import {
   Accordion,
@@ -197,6 +202,20 @@ const Navbar = () => {
 
 // Hero section
 const HeroSection = () => {
+  const [visitorCount, setVisitorCount] = useState(147);
+
+  useEffect(() => {
+    const interval = setInterval(() => {
+      const variation = Math.floor(Math.random() * 15) - 7;
+      setVisitorCount(prev => {
+        const newValue = prev + variation;
+        return Math.max(120, Math.min(200, newValue));
+      });
+    }, 3500);
+
+    return () => clearInterval(interval);
+  }, []);
+
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
     if (element) {
@@ -313,7 +332,9 @@ const HeroSection = () => {
             {/* Urgency indicator */}
             <div className="flex items-center gap-2 text-sm text-yellow-400">
               <Zap className="w-4 h-4" />
-              <span>147 pessoas acessaram esta página nas últimas 2 horas</span>
+              <span className="transition-all duration-500">
+                {visitorCount} pessoas acessaram esta página nas últimas 2 horas
+              </span>
             </div>
           </motion.div>
         </motion.div>
@@ -328,6 +349,131 @@ const HeroSection = () => {
       >
         <ChevronDown className="w-6 h-6 text-gray-500 animate-bounce" />
       </motion.div>
+    </section>
+  );
+};
+
+// Top Freelancers Secret Section
+const TopFreelancersSection = () => {
+  const cards = [
+    {
+      number: "01",
+      title: "Leads 100% REAIS",
+      subtitle: "nada de lista fria",
+      description: "Empresas ATIVAS extraídas direto do Google Maps. Sem base velha, sem contato inválido, sem perder seu tempo.",
+      icon: ShieldCheck,
+    },
+    {
+      number: "02",
+      title: "WhatsApp DIRETO",
+      subtitle: "zero enrolação",
+      description: "Telefone, WhatsApp, e-mail e site na sua mão. Comece a prospectar em SEGUNDOS, não em dias.",
+      icon: DollarSign,
+    },
+    {
+      number: "03",
+      title: "VOCÊ escolhe",
+      subtitle: "cidade + nicho exato",
+      description: "Dentistas em SP? Advogados no RJ? Restaurantes em BH? Você define EXATAMENTE quem quer abordar.",
+      icon: Lock,
+    },
+    {
+      number: "04",
+      title: "Resultado HOJE",
+      subtitle: "não em semanas",
+      description: "Enquanto outros perdem MESES planejando, você fecha seu primeiro cliente em até 7 dias.",
+      icon: BarChart3,
+    },
+  ];
+
+  return (
+    <section className="relative py-20 bg-[#0a0a0a] overflow-hidden">
+      {/* Subtle gradient overlay */}
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-[hsl(80_70%_50%/0.03)] to-transparent" />
+      
+      <div className="relative z-10 max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.2 }}
+          variants={staggerContainer}
+          className="text-center mb-12"
+        >
+          {/* Badge */}
+          <motion.div variants={fadeUp} className="inline-flex mb-6">
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[hsl(0_80%_50%/0.15)] border border-[hsl(0_80%_50%/0.3)] text-sm text-red-400">
+              <Flame className="w-4 h-4" />
+              O SEGREDO DOS TOP FREELANCERS
+            </span>
+          </motion.div>
+
+          {/* Main headline */}
+          <motion.h2
+            variants={fadeUp}
+            className="text-3xl sm:text-4xl md:text-5xl font-bold text-white mb-4"
+          >
+            Existem <span className="text-[#d4ff00]">32 MILHÕES</span> de empresas no Google Maps
+          </motion.h2>
+
+          <motion.p
+            variants={fadeUp}
+            className="text-xl sm:text-2xl text-gray-400 mb-6"
+          >
+            Quantas você já contatou hoje?
+          </motion.p>
+
+          <motion.p
+            variants={fadeUp}
+            className="text-gray-500 max-w-3xl mx-auto"
+          >
+            Com o <span className="text-[#d4ff00] font-semibold">ProspectAI</span>, você transforma o Google Maps na sua máquina de prospecção pessoal. Não dependa de sorte. Busque clientes ativamente.
+          </motion.p>
+        </motion.div>
+
+        {/* Cards grid */}
+        <motion.div
+          initial="hidden"
+          whileInView="visible"
+          viewport={{ once: true, amount: 0.1 }}
+          variants={staggerContainer}
+          className="grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          {cards.map((card) => (
+            <motion.div
+              key={card.number}
+              variants={fadeUp}
+              className="relative bg-[#1a1a1a] rounded-2xl p-6 border border-gray-800 hover:border-[#d4ff00]/30 transition-all duration-300 group"
+            >
+              {/* Large number background */}
+              <span className="absolute top-4 right-6 text-6xl font-bold text-white/5 group-hover:text-[#d4ff00]/10 transition-colors duration-300">
+                {card.number}
+              </span>
+
+              <div className="relative z-10">
+                {/* Icon */}
+                <div className="w-12 h-12 rounded-xl bg-[#d4ff00]/10 flex items-center justify-center mb-4">
+                  <card.icon className="w-6 h-6 text-[#d4ff00]" />
+                </div>
+
+                {/* Title */}
+                <h3 className="text-xl font-bold text-[#d4ff00] mb-1">
+                  {card.title}
+                </h3>
+
+                {/* Subtitle */}
+                <p className="text-sm text-gray-400 mb-3">
+                  {card.subtitle}
+                </p>
+
+                {/* Description */}
+                <p className="text-gray-500 text-sm leading-relaxed">
+                  {card.description}
+                </p>
+              </div>
+            </motion.div>
+          ))}
+        </motion.div>
+      </div>
     </section>
   );
 };
@@ -945,6 +1091,7 @@ export default function Landing() {
       <Navbar />
       <main>
         <HeroSection />
+        <TopFreelancersSection />
         <ProblemSolutionSection />
         <HowItWorksSection />
         <BenefitsSection />
