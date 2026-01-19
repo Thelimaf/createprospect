@@ -59,6 +59,12 @@ export function ProspectarTab() {
       return;
     }
 
+    // Campaign is now required
+    if (selectedCampaign === 'none') {
+      toast.error('Selecione uma campanha para salvar os leads');
+      return;
+    }
+
     // Check user limits
     const limitResult = await checkLimit();
     if (!limitResult.allowed) {
@@ -148,18 +154,20 @@ export function ProspectarTab() {
         {/* Filters */}
         <SearchFilters filters={filters} onChange={setFilters} />
 
-        {/* Campaign Selector */}
+        {/* Campaign Selector - Required */}
         <div className="space-y-2">
           <Label className="flex items-center gap-2 text-foreground">
-            <FolderOpen className="h-4 w-4" />
-            Campanha de destino
+            <FolderOpen className="h-4 w-4 text-primary" />
+            Campanha de destino <span className="text-destructive">*</span>
           </Label>
           <Select value={selectedCampaign} onValueChange={setSelectedCampaign}>
-            <SelectTrigger className="w-full">
-              <SelectValue placeholder="Selecionar campanha (opcional)" />
+            <SelectTrigger className={`w-full ${selectedCampaign === 'none' ? 'border-destructive/50' : ''}`}>
+              <SelectValue placeholder="Selecione uma campanha" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="none">Sem campanha</SelectItem>
+              <SelectItem value="none" disabled>
+                Selecione uma campanha
+              </SelectItem>
               {campaigns.map((campaign) => (
                 <SelectItem key={campaign.id} value={campaign.id}>
                   {campaign.name}
@@ -167,9 +175,15 @@ export function ProspectarTab() {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground">
-            Leads serão salvos na campanha selecionada para organização
-          </p>
+          {campaigns.length === 0 ? (
+            <p className="text-xs text-destructive">
+              Você precisa criar uma campanha primeiro para organizar seus leads
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground">
+              Os leads serão salvos diretamente na campanha selecionada
+            </p>
+          )}
         </div>
 
         {/* Manual selection note */}
