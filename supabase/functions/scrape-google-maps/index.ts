@@ -238,6 +238,7 @@ serve(async (req) => {
           rating: place.rating || null,
           reviews_count: place.ratingCount || null,
           status: "new",
+          source: "google_maps",
         };
 
         const { error: insertError } = await supabaseClient
@@ -277,6 +278,7 @@ serve(async (req) => {
       JSON.stringify({
         success: true,
         message: `Busca concluída`,
+        leads_saved: newCount,
         count: newCount + existingCount + updatedCount,
         stats: {
           new: newCount,
