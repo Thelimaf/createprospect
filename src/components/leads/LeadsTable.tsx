@@ -101,9 +101,14 @@ function LockedData({ feature }: { feature: string }) {
         </span>
       </TooltipTrigger>
       <TooltipContent>
-        <div className="flex items-center gap-2">
-          <Crown className="h-4 w-4 text-yellow-500" />
-          <span>Disponível no plano Starter</span>
+        <div className="flex flex-col gap-1">
+          <div className="flex items-center gap-2">
+            <Crown className="h-4 w-4 text-yellow-500" />
+            <span>Disponível no plano Starter</span>
+          </div>
+          <span className="text-xs text-muted-foreground">
+            No Free, os 3 primeiros leads têm dados liberados (badge "Grátis")
+          </span>
         </div>
       </TooltipContent>
     </Tooltip>
@@ -118,9 +123,17 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  // Sort leads
+  // Sort leads - prioritize unlocked leads for Free users
   const sortedLeads = useMemo(() => {
     return [...leads].sort((a, b) => {
+      // For Free users, prioritize unlocked leads first
+      if (isFree) {
+        const aUnlocked = isLeadUnlocked(a.id);
+        const bUnlocked = isLeadUnlocked(b.id);
+        if (aUnlocked && !bUnlocked) return -1;
+        if (!aUnlocked && bUnlocked) return 1;
+      }
+
       let comparison = 0;
       
       switch (sortField) {
@@ -143,7 +156,7 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
       
       return sortDirection === 'asc' ? comparison : -comparison;
     });
-  }, [leads, sortField, sortDirection]);
+  }, [leads, sortField, sortDirection, isFree, isLeadUnlocked]);
 
   // Paginate leads
   const paginatedLeads = useMemo(() => {
@@ -477,10 +490,15 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
                               <MessageCircle className="h-4 w-4" />
                             </Button>
                           </TooltipTrigger>
-                          <TooltipContent>
-                            <div className="flex items-center gap-2">
-                              <Crown className="h-4 w-4 text-yellow-500" />
-                              <span>WhatsApp disponível no Starter</span>
+                        <TooltipContent>
+                            <div className="flex flex-col gap-1">
+                              <div className="flex items-center gap-2">
+                                <Crown className="h-4 w-4 text-yellow-500" />
+                                <span>WhatsApp disponível no Starter</span>
+                              </div>
+                              <span className="text-xs text-muted-foreground">
+                                No Free, os 3 primeiros leads têm WhatsApp liberado (badge "Grátis")
+                              </span>
                             </div>
                           </TooltipContent>
                         </Tooltip>

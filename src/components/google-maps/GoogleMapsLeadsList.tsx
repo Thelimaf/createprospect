@@ -26,11 +26,14 @@ import {
   UserX,
   Clock,
   Plus,
-  Briefcase
+  Briefcase,
+  Lock,
+  Crown
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
+import { useUserPlan } from "@/hooks/useUserPlan";
 import { ExternalLinkButton } from "@/components/shared/ExternalLinkButton";
 import { IframeWarningBanner } from "@/components/shared/IframeWarningBanner";
 import { LeadUrlsTooltip } from "@/components/shared/LeadUrlsTooltip";
@@ -41,6 +44,11 @@ import {
   normalizeMapsUrl,
   logExternalLinkAttempt 
 } from "@/lib/external-links";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import * as XLSX from 'xlsx';
 
 interface Lead {
@@ -82,6 +90,7 @@ const defaultWhatsAppTemplate = "Olá! Vim através do Google e gostaria de apre
 
 export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLeadsListProps) {
   const { user } = useAuth();
+  const { isFree, isLeadUnlocked, canSendWhatsApp } = useUserPlan();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [whatsappTemplate, setWhatsappTemplate] = useState(defaultWhatsAppTemplate);
@@ -193,6 +202,18 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
       return matchesStatus && matchesCity;
     });
   }, [leads, statusFilter, cityFilter]);
+
+  // Sort filtered leads - prioritize unlocked leads for Free users
+  const sortedFilteredLeads = useMemo(() => {
+    if (!isFree) return filteredLeads;
+    return [...filteredLeads].sort((a, b) => {
+      const aUnlocked = isLeadUnlocked(a.id);
+      const bUnlocked = isLeadUnlocked(b.id);
+      if (aUnlocked && !bUnlocked) return -1;
+      if (!aUnlocked && bUnlocked) return 1;
+      return 0;
+    });
+  }, [filteredLeads, isFree, isLeadUnlocked]);
 
   const stats = useMemo(() => {
     const total = leads.length;
@@ -473,16 +494,26 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
         </Card>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredLeads.map((lead) => (
+          {sortedFilteredLeads.map((lead) => {
+            const showFullData = isLeadUnlocked(lead.id);
+            return (
             <Card key={lead.id} className="bg-card border-border hover:border-primary/50 transition-colors relative">
               {/* Campaign Badge & Info Tooltip */}
               <div className="absolute top-2 right-2 flex items-center gap-1">
                 <LeadUrlsTooltip
-                  phone={lead.phone}
+                  phone={showFullData ? lead.phone : null}
                   googleMapsUrl={lead.google_maps_url}
                   website={lead.website}
                   whatsappMessage={getWhatsAppMessage(lead)}
                 />
+                {isFree && showFullData && (
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs bg-green-500/10 text-green-500 border-green-500/30"
+                  >
+                    Grátis
+                  </Badge>
+                )}
                 {lead.campaign_id ? (
                   <Badge 
                     variant="outline" 
@@ -529,14 +560,34 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
                 {lead.address && (
                   <p className="text-sm text-muted-foreground mt-2 flex items-start gap-1">
                     <MapPin className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                    <span className="line-clamp-2">{lead.address}</span>
+                    <span className="line-clamp-2">{showFullData ? lead.address : "•••••••••"}</span>
                   </p>
                 )}
 
                 {lead.phone && (
                   <p className="text-sm text-muted-foreground mt-1 flex items-center gap-1">
                     <Phone className="h-4 w-4" />
-                    {lead.phone}
+                    {showFullData ? lead.phone : (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <span className="inline-flex items-center gap-1 cursor-help">
+                            <Lock className="h-3 w-3" />
+                            <span className="blur-sm select-none">*****</span>
+                          </span>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <div className="flex flex-col gap-1">
+                            <div className="flex items-center gap-2">
+                              <Crown className="h-4 w-4 text-yellow-500" />
+                              <span>Disponível no Starter</span>
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              No Free, os 3 primeiros leads têm dados liberados
+                            </span>
+                          </div>
+                        </TooltipContent>
+                      </Tooltip>
+                    )}
                   </p>
                 )}
 
@@ -634,7 +685,8 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
                 </div>
               </CardContent>
             </Card>
-          ))}
+          );
+          })}
         </div>
       )}
 

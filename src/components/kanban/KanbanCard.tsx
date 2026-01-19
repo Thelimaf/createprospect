@@ -139,9 +139,14 @@ export function KanbanCard({
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                <div className="flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-yellow-500" />
-                  <span>Disponível no Starter</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-yellow-500" />
+                    <span>Disponível no Starter</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    No Free, os 3 primeiros leads têm dados liberados
+                  </span>
                 </div>
               </TooltipContent>
             </Tooltip>
@@ -169,9 +174,14 @@ export function KanbanCard({
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                <div className="flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-yellow-500" />
-                  <span>Disponível no Starter</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-yellow-500" />
+                    <span>Disponível no Starter</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    No Free, os 3 primeiros leads têm dados liberados
+                  </span>
                 </div>
               </TooltipContent>
             </Tooltip>
@@ -206,9 +216,14 @@ export function KanbanCard({
                 </div>
               </TooltipTrigger>
               <TooltipContent>
-                <div className="flex items-center gap-2">
-                  <Crown className="h-4 w-4 text-yellow-500" />
-                  <span>WhatsApp disponível no Starter</span>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2">
+                    <Crown className="h-4 w-4 text-yellow-500" />
+                    <span>WhatsApp disponível no Starter</span>
+                  </div>
+                  <span className="text-xs text-muted-foreground">
+                    No Free, os 3 primeiros leads têm WhatsApp liberado
+                  </span>
                 </div>
               </TooltipContent>
             </Tooltip>
