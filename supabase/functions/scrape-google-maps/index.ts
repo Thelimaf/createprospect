@@ -123,7 +123,12 @@ serve(async (req) => {
     const serperData = await serperResponse.json();
     console.log(`Received ${serperData.places?.length || 0} places from Serper`);
 
-    const places = serperData.places || [];
+    const allPlaces = serperData.places || [];
+    
+    // CRITICAL: Limit results to exactly what the user requested
+    // Serper always returns up to 20 results regardless of 'num' parameter
+    const placesToProcess = allPlaces.slice(0, limit);
+    console.log(`Processing ${placesToProcess.length} of ${allPlaces.length} places (user limit: ${limit})`);
 
     // Create a search record first
     const { data: searchRecord, error: searchError } = await supabaseClient
@@ -151,7 +156,7 @@ serve(async (req) => {
     let existingCount = 0;
     let updatedCount = 0;
 
-    for (const place of places) {
+    for (const place of placesToProcess) {
       // Clean phone number - remove non-numeric characters
       let cleanPhone = place.phoneNumber?.replace(/\D/g, "") || null;
       
@@ -265,7 +270,8 @@ serve(async (req) => {
 
     console.log(`Stats: ${newCount} new, ${existingCount} existing, ${updatedCount} updated`);
 
-    const hasMore = places.length === 20;
+    // hasMore is true if Serper returned a full page (20) AND we processed the full limit
+    const hasMore = allPlaces.length === 20 && placesToProcess.length === limit;
 
     return new Response(
       JSON.stringify({
