@@ -102,7 +102,7 @@ serve(async (req) => {
       );
     }
 
-    // Call Abacate Pay simulate endpoint - pass id directly as per API docs
+    // Call Abacate Pay simulate endpoint
     const simulateResponse = await fetch('https://api.abacatepay.com/v1/pixQrCode/simulate-payment', {
       method: 'POST',
       headers: {
@@ -110,7 +110,7 @@ serve(async (req) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        id: charge_id
+        identifier: charge_id
       }),
     });
 
