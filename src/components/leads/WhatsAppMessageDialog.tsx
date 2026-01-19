@@ -86,12 +86,17 @@ export function WhatsAppMessageDialog({
     ? campaign.quick_replies 
     : DEFAULT_QUICK_REPLIES;
 
-  // Generate initial message when dialog opens
+  // Reset message when lead changes
   useEffect(() => {
-    if (open && !message) {
+    setMessage('');
+  }, [lead.id]);
+
+  // Generate initial message when dialog opens or lead changes
+  useEffect(() => {
+    if (open) {
       generateMessage();
     }
-  }, [open]);
+  }, [open, lead.id]);
 
   // Replace variables in text
   const replaceVariables = (text: string): string => {
