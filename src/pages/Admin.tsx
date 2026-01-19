@@ -16,11 +16,18 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/dialog';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { toast } from 'sonner';
 import { 
   Users, Crown, Search, Loader2, ArrowUpCircle, ArrowDownCircle, Shield,
-  DollarSign, Target, BarChart3
+  DollarSign, Target, BarChart3, Zap, CreditCard, CheckCircle2
 } from 'lucide-react';
 import { formatDistanceToNow, format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -84,6 +91,10 @@ export default function Admin() {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [simulatorOpen, setSimulatorOpen] = useState(false);
+  const [simulatorLoading, setSimulatorLoading] = useState(false);
+  const [pendingPayments, setPendingPayments] = useState<any[]>([]);
+  const [loadingPayments, setLoadingPayments] = useState(false);
 
   const isMaster = user?.email === MASTER_EMAIL;
 
@@ -172,6 +183,70 @@ export default function Admin() {
     }
   };
 
+  const fetchPendingPayments = async () => {
+    try {
+      setLoadingPayments(true);
+      const { data, error } = await supabase
+        .from('pix_payments')
+        .select('*')
+        .eq('status', 'PENDING')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching payments:', error);
+        return;
+      }
+      setPendingPayments(data || []);
+    } catch (err) {
+      console.error('Error:', err);
+    } finally {
+      setLoadingPayments(false);
+    }
+  };
+
+  const handleSimulatePayment = async (chargeId: string) => {
+    try {
+      setSimulatorLoading(true);
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        toast.error('Sessão expirada');
+        return;
+      }
+
+      // Call edge function to simulate payment (needs to be done server-side for API key)
+      const response = await fetch(`${import.meta.env.VITE_SUPABASE_URL}/functions/v1/simulate-pix-payment`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ charge_id: chargeId }),
+      });
+
+      const result = await response.json();
+
+      if (!response.ok) {
+        toast.error(result.error || 'Erro ao simular pagamento');
+        return;
+      }
+
+      toast.success('Pagamento simulado com sucesso!');
+      fetchPendingPayments();
+      fetchData();
+    } catch (err) {
+      console.error('Error simulating payment:', err);
+      toast.error('Erro ao simular pagamento');
+    } finally {
+      setSimulatorLoading(false);
+    }
+  };
+
+  const openSimulator = () => {
+    setSimulatorOpen(true);
+    fetchPendingPayments();
+  };
+
   const filteredUsers = users.filter(u => 
     u.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
     u.full_name?.toLowerCase().includes(searchTerm.toLowerCase())
@@ -218,10 +293,93 @@ export default function Admin() {
               <p className="text-sm text-muted-foreground">Métricas e gestão do SaaS</p>
             </div>
           </div>
-          <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
-            {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Atualizar'}
-          </Button>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={openSimulator} className="text-amber-500 border-amber-500/30 hover:bg-amber-500/10">
+              <Zap className="h-4 w-4 mr-1" />
+              Simulador PIX
+            </Button>
+            <Button variant="outline" size="sm" onClick={fetchData} disabled={loading}>
+              {loading ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Atualizar'}
+            </Button>
+          </div>
         </div>
+
+        {/* Payment Simulator Dialog */}
+        <Dialog open={simulatorOpen} onOpenChange={setSimulatorOpen}>
+          <DialogContent className="max-w-lg">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <Zap className="h-5 w-5 text-amber-500" />
+                Simulador de Pagamento PIX
+              </DialogTitle>
+              <DialogDescription>
+                Simule pagamentos PIX pendentes para testes (ambiente de desenvolvimento).
+              </DialogDescription>
+            </DialogHeader>
+            
+            <div className="space-y-4 mt-4">
+              {loadingPayments ? (
+                <div className="flex justify-center py-8">
+                  <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                </div>
+              ) : pendingPayments.length === 0 ? (
+                <div className="text-center py-8 text-muted-foreground">
+                  <CreditCard className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                  <p>Nenhum pagamento pendente</p>
+                </div>
+              ) : (
+                <ScrollArea className="max-h-[400px]">
+                  <div className="space-y-3">
+                    {pendingPayments.map((payment) => (
+                      <Card key={payment.id} className="bg-muted/30 border-border/50">
+                        <CardContent className="p-4">
+                          <div className="flex items-start justify-between gap-4">
+                            <div className="flex-1 min-w-0">
+                              <p className="font-medium truncate">{payment.customer_name}</p>
+                              <p className="text-sm text-muted-foreground truncate">{payment.customer_email}</p>
+                              <div className="flex items-center gap-2 mt-2">
+                                <Badge variant="outline" className="text-amber-500 border-amber-500/30">
+                                  PENDENTE
+                                </Badge>
+                                <span className="text-sm font-medium text-emerald-500">
+                                  R$ {payment.amount_brl.toFixed(2)}
+                                </span>
+                              </div>
+                              <p className="text-xs text-muted-foreground mt-1 font-mono truncate">
+                                {payment.abacate_charge_id}
+                              </p>
+                            </div>
+                            <Button
+                              size="sm"
+                              onClick={() => handleSimulatePayment(payment.abacate_charge_id)}
+                              disabled={simulatorLoading}
+                              className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                            >
+                              {simulatorLoading ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                <>
+                                  <CheckCircle2 className="h-4 w-4 mr-1" />
+                                  Aprovar
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                </ScrollArea>
+              )}
+              
+              <div className="pt-2 border-t border-border/50">
+                <p className="text-xs text-muted-foreground text-center">
+                  ⚠️ Modo de desenvolvimento - Os pagamentos simulados são apenas para testes
+                </p>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
 
         {loading ? (
           <div className="flex items-center justify-center h-64">
