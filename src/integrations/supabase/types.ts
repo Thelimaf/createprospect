@@ -88,9 +88,14 @@ export type Database = {
           address: string | null
           business_name: string
           campaign_id: string | null
+          capital_social: number | null
           category: string | null
           city: string | null
+          cnae_principal: string | null
+          cnpj: string | null
+          cnpj_status: string | null
           created_at: string
+          data_abertura: string | null
           duplicate_score: number | null
           email: string | null
           enriched_at: string | null
@@ -99,14 +104,18 @@ export type Database = {
           last_contact_date: string | null
           latitude: number | null
           longitude: number | null
+          nome_fantasia: string | null
           notes: string | null
           phone: string | null
           place_id: string | null
           possible_duplicate_of: string | null
           rating: number | null
+          razao_social: string | null
           reviews_count: number | null
+          scrape_data: Json | null
           search_id: string | null
           seen_at: string | null
+          socios: Json | null
           state: string | null
           status: string
           updated_at: string
@@ -118,9 +127,14 @@ export type Database = {
           address?: string | null
           business_name: string
           campaign_id?: string | null
+          capital_social?: number | null
           category?: string | null
           city?: string | null
+          cnae_principal?: string | null
+          cnpj?: string | null
+          cnpj_status?: string | null
           created_at?: string
+          data_abertura?: string | null
           duplicate_score?: number | null
           email?: string | null
           enriched_at?: string | null
@@ -129,14 +143,18 @@ export type Database = {
           last_contact_date?: string | null
           latitude?: number | null
           longitude?: number | null
+          nome_fantasia?: string | null
           notes?: string | null
           phone?: string | null
           place_id?: string | null
           possible_duplicate_of?: string | null
           rating?: number | null
+          razao_social?: string | null
           reviews_count?: number | null
+          scrape_data?: Json | null
           search_id?: string | null
           seen_at?: string | null
+          socios?: Json | null
           state?: string | null
           status?: string
           updated_at?: string
@@ -148,9 +166,14 @@ export type Database = {
           address?: string | null
           business_name?: string
           campaign_id?: string | null
+          capital_social?: number | null
           category?: string | null
           city?: string | null
+          cnae_principal?: string | null
+          cnpj?: string | null
+          cnpj_status?: string | null
           created_at?: string
+          data_abertura?: string | null
           duplicate_score?: number | null
           email?: string | null
           enriched_at?: string | null
@@ -159,14 +182,18 @@ export type Database = {
           last_contact_date?: string | null
           latitude?: number | null
           longitude?: number | null
+          nome_fantasia?: string | null
           notes?: string | null
           phone?: string | null
           place_id?: string | null
           possible_duplicate_of?: string | null
           rating?: number | null
+          razao_social?: string | null
           reviews_count?: number | null
+          scrape_data?: Json | null
           search_id?: string | null
           seen_at?: string | null
+          socios?: Json | null
           state?: string | null
           status?: string
           updated_at?: string
