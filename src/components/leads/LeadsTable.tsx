@@ -456,7 +456,7 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
                 <TableCell>
                   <div className="flex items-center gap-1">
                     {lead.phone && (
-                      canSendWhatsApp ? (
+                      (canSendWhatsApp || showFullData) ? (
                         <Button
                           size="icon"
                           variant="ghost"

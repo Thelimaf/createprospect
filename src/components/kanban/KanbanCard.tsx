@@ -186,7 +186,7 @@ export function KanbanCard({
         onPointerDown={(e) => e.stopPropagation()}
       >
         {lead.phone && (
-          canSendWhatsApp ? (
+          (canSendWhatsApp || showFullData) ? (
             <ExternalLinkButton
               url={buildWhatsAppUrl(lead.phone, whatsappMessage)}
               label=""
