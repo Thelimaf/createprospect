@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { AppShell } from '@/components/layout/AppShell';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { 
@@ -11,7 +12,8 @@ import {
   Users, 
   Plus, 
   ArrowRight,
-  Clock
+  Clock,
+  AlertTriangle
 } from 'lucide-react';
 import { format } from 'date-fns';
 import { ptBR } from 'date-fns/locale';
@@ -24,6 +26,7 @@ interface Stats {
   totalCampaigns: number;
   totalSearches: number;
   totalProspects: number;
+  orphanLeads: number;
 }
 
 interface Campaign {
@@ -36,7 +39,7 @@ interface Campaign {
 export default function Dashboard() {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
-  const [stats, setStats] = useState<Stats>({ totalCampaigns: 0, totalSearches: 0, totalProspects: 0 });
+  const [stats, setStats] = useState<Stats>({ totalCampaigns: 0, totalSearches: 0, totalProspects: 0, orphanLeads: 0 });
   const [recentCampaigns, setRecentCampaigns] = useState<Campaign[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -129,10 +132,18 @@ export default function Dashboard() {
         .select('*', { count: 'exact', head: true })
         .eq('user_id', user!.id);
 
+      // Carregar leads sem campanha (órfãos)
+      const { count: orphanCount } = await supabase
+        .from('google_maps_leads')
+        .select('*', { count: 'exact', head: true })
+        .eq('user_id', user!.id)
+        .is('campaign_id', null);
+
       setStats({
         totalCampaigns: campaignCount || 0,
         totalSearches: searchCount || 0,
         totalProspects: totalProspects || 0,
+        orphanLeads: orphanCount || 0,
       });
 
       // Carregar campanhas recentes
@@ -160,6 +171,25 @@ export default function Dashboard() {
   return (
     <AppShell title="Painel">
       <UsageBanner />
+      
+      {/* Alerta de leads órfãos */}
+      {stats.orphanLeads > 0 && (
+        <Alert className="mb-4 border-amber-500/50 bg-amber-500/10">
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+          <AlertDescription className="flex items-center justify-between">
+            <span className="text-amber-700 dark:text-amber-400">
+              Você tem <strong>{stats.orphanLeads}</strong> leads sem campanha vinculada.
+            </span>
+            <Button variant="outline" size="sm" asChild className="border-amber-500/50 text-amber-700 hover:bg-amber-500/20 dark:text-amber-400">
+              <Link to="/prospeccao">
+                Organizar agora
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+      
       <div className="space-y-8 pt-4">
         {/* Seção de Boas-vindas */}
         <div className="flex items-center justify-between">
