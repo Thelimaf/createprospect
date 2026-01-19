@@ -24,7 +24,27 @@ const toneInstructions: Record<string, string> = {
   friendly: 'Use um tom muito amigável e acolhedor.',
 };
 
-// Message styles for variation
+// Message templates for different approaches
+const messageTemplates: Record<string, { description: string; instruction: string }> = {
+  apresentacao: {
+    description: 'Primeira apresentação profissional',
+    instruction: 'Crie uma mensagem de APRESENTAÇÃO PROFISSIONAL. Se apresente brevemente, mencione sua empresa e o que você pode oferecer. Seja cordial e profissional.',
+  },
+  followup: {
+    description: 'Seguimento de conversa anterior',
+    instruction: 'Crie uma mensagem de FOLLOW-UP. Mencione que está retomando o contato, reforce o interesse em ajudar e pergunte se há alguma novidade ou se podem conversar.',
+  },
+  proposta: {
+    description: 'Proposta comercial direta',
+    instruction: 'Crie uma mensagem com PROPOSTA DIRETA. Seja objetivo sobre o que você oferece, mencione benefícios concretos e inclua um call-to-action claro.',
+  },
+  casual: {
+    description: 'Abordagem casual e amigável',
+    instruction: 'Crie uma mensagem CASUAL e AMIGÁVEL. Use tom descontraído mas profissional, seja leve e crie uma conexão pessoal antes de falar de negócios.',
+  },
+};
+
+// Message styles for additional variation
 const messageStyles = [
   'Comece com uma observação positiva sobre o negócio ou nicho',
   'Comece se apresentando brevemente antes de falar do objetivo',
@@ -43,7 +63,7 @@ serve(async (req) => {
   }
 
   try {
-    const { campaign, lead }: { campaign: Campaign; lead?: Lead } = await req.json();
+    const { campaign, lead, templateType }: { campaign: Campaign; lead?: Lead; templateType?: string } = await req.json();
 
     if (!campaign) {
       return new Response(
@@ -84,10 +104,14 @@ ${lead.rating ? `- Avaliação: ${lead.rating} estrelas` : ''}` : '';
 
     // Select random style for variation
     const randomStyle = messageStyles[Math.floor(Math.random() * messageStyles.length)];
+    
+    // Get template instruction if provided
+    const template = templateType ? messageTemplates[templateType] : null;
+    const templateInstruction = template ? `\nTIPO DE ABORDAGEM: ${template.instruction}` : '';
 
     const userPrompt = `Crie uma mensagem de WhatsApp para primeiro contato.
-
-ESTILO OBRIGATÓRIO: ${randomStyle}
+${templateInstruction}
+ESTILO DE ABERTURA: ${randomStyle}
 
 OBJETIVO DA CAMPANHA: ${campaign.goal}
 ${campaign.context ? `SOBRE MIM/MINHA EMPRESA: ${campaign.context}` : ''}
@@ -95,7 +119,7 @@ TOM: ${toneInstructions[campaign.tone] || toneInstructions.professional}
 ${leadInfo}
 
 REGRAS:
-- Siga o ESTILO OBRIGATÓRIO para começar a mensagem
+${template ? '- Siga o TIPO DE ABORDAGEM especificado' : '- Siga o ESTILO DE ABERTURA para começar a mensagem'}
 - Use {nome} onde o nome do negócio deve aparecer
 - Seja criativo e varie a estrutura da mensagem
 - A mensagem deve ser persuasiva mas não agressiva

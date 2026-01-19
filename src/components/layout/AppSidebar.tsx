@@ -1,4 +1,5 @@
 import { Home, FolderOpen, Plus, LogOut, Sparkles, Settings, History, CreditCard, Shield } from 'lucide-react';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import {
@@ -99,6 +100,7 @@ export function AppSidebar() {
               {user?.email}
             </p>
           </div>
+          <ThemeToggle />
           <Button
             variant="ghost"
             size="icon"
