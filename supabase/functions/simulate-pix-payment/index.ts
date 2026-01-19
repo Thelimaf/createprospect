@@ -17,6 +17,7 @@ serve(async (req) => {
   try {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
     const abacateApiKey = Deno.env.get('ABACATE_PAY_API_KEY');
     const resendApiKey = Deno.env.get('RESEND_API_KEY');
 
@@ -36,24 +37,45 @@ serve(async (req) => {
       );
     }
 
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
-    const token = authHeader.replace('Bearer ', '');
-    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
+    const match = authHeader.match(/^Bearer\s+(.+)$/i);
+    if (!match?.[1]) {
+      return new Response(
+        JSON.stringify({ error: 'Não autorizado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
 
-    if (authError || !user) {
+    const token = match[1].trim();
+
+    // Validate JWT via claims
+    const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
+      global: { headers: { Authorization: `Bearer ${token}` } },
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims) {
+      console.error('Claims error:', claimsError);
       return new Response(
         JSON.stringify({ error: 'Token inválido' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
+    const userEmail = (claimsData.claims as any).email as string | undefined;
+
     // Only admin can simulate payments
-    if (user.email !== ADMIN_EMAIL) {
+    if (userEmail !== ADMIN_EMAIL) {
+      console.log('Access denied for:', userEmail);
       return new Response(
         JSON.stringify({ error: 'Acesso negado' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
+
+    // Create admin client for privileged operations
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     const { charge_id } = await req.json();
 
