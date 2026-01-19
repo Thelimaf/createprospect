@@ -28,6 +28,7 @@ export function ProspectarTab() {
     quantity: 20,
   });
   const [loading, setLoading] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [campaigns, setCampaigns] = useState<Campaign[]>([]);
   const [selectedCampaign, setSelectedCampaign] = useState<string>('none');
 
@@ -73,6 +74,7 @@ export function ProspectarTab() {
     }
 
     setLoading(true);
+    setLoadingMessage(source === 'google_maps' ? 'Buscando no Google Maps...' : 'Buscando na web...');
 
     try {
       // Build query based on filters
@@ -107,6 +109,8 @@ export function ProspectarTab() {
         toast.success(`${leadsFound} leads encontrados e salvos!`);
       } else {
         // Use Firecrawl business search with data extraction
+        setLoadingMessage('Buscando empresas na web...');
+        
         const { data, error } = await supabase.functions.invoke('firecrawl-business-search', {
           body: { 
             query,
@@ -130,6 +134,7 @@ export function ProspectarTab() {
       toast.error(error.message || 'Erro ao buscar empresas');
     } finally {
       setLoading(false);
+      setLoadingMessage('');
     }
   };
 
@@ -209,7 +214,7 @@ export function ProspectarTab() {
           {loading ? (
             <>
               <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              Buscando...
+              {loadingMessage || 'Buscando...'}
             </>
           ) : (
             <>
