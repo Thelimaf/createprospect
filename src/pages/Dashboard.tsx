@@ -60,6 +60,55 @@ export default function Dashboard() {
     }
   }, [user]);
 
+  // Realtime subscription for auto-refresh when leads change
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('dashboard-leads-realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'google_maps_leads',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          loadDashboardData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'campaigns',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          loadDashboardData();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'google_maps_searches',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          loadDashboardData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user]);
+
   const loadDashboardData = async () => {
     try {
       // Carregar contagem de campanhas

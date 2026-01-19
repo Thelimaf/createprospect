@@ -1,4 +1,4 @@
-import { Home, FolderOpen, Plus, LogOut, Sparkles, Settings, History, CreditCard, Shield } from 'lucide-react';
+import { Home, FolderOpen, Plus, LogOut, Sparkles, Settings, History, CreditCard, Shield, Search } from 'lucide-react';
 import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
@@ -22,6 +22,7 @@ const MASTER_EMAIL = 'anderson.ferlimajunior@gmail.com';
 
 const navigation = [
   { name: 'Painel', href: '/dashboard', icon: Home },
+  { name: 'Prospecção B2B', href: '/prospeccao', icon: Search },
   { name: 'Campanhas', href: '/campaigns', icon: FolderOpen },
   { name: 'Nova Campanha', href: '/campaigns/new', icon: Plus },
   { name: 'Histórico de Buscas', href: '/searches', icon: History },

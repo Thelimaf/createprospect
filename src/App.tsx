@@ -12,6 +12,7 @@ import Campaigns from "./pages/Campaigns";
 import CampaignNew from "./pages/CampaignNew";
 import CampaignLeadsPage from "./pages/CampaignLeadsPage";
 import GoogleMapsLeads from "./pages/GoogleMapsLeads";
+import Prospeccao from "./pages/Prospeccao";
 import Settings from "./pages/Settings";
 import SearchHistory from "./pages/SearchHistory";
 import Pricing from "./pages/Pricing";
@@ -41,6 +42,7 @@ const App = () => (
             <Route path="/campaigns/:id" element={<Navigate to="leads" replace />} />
             <Route path="/campaigns/:id/leads" element={<CampaignLeadsPage />} />
             <Route path="/google-maps-leads" element={<GoogleMapsLeads />} />
+            <Route path="/prospeccao" element={<Prospeccao />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/searches" element={<SearchHistory />} />
             <Route path="/pricing" element={<Pricing />} />
