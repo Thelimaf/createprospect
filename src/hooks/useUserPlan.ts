@@ -56,6 +56,7 @@ interface UserPlanData {
   // First 3 leads unlocked for free users
   unlockedLeadIds: Set<string>;
   isLeadUnlocked: (leadId: string) => boolean;
+  refreshUnlockedLeads: () => Promise<void>;
 }
 
 export function useUserPlan(): UserPlanData {
@@ -65,6 +66,26 @@ export function useUserPlan(): UserPlanData {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [unlockedLeadIds, setUnlockedLeadIds] = useState<Set<string>>(new Set());
+
+  // Fetch unlocked leads (first 3 leads by created_at)
+  const fetchUnlockedLeads = useCallback(async () => {
+    if (!user) return;
+
+    try {
+      const { data: firstLeads } = await supabase
+        .from('google_maps_leads')
+        .select('id')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: true })
+        .limit(3);
+
+      if (firstLeads) {
+        setUnlockedLeadIds(new Set(firstLeads.map(l => l.id)));
+      }
+    } catch (err) {
+      console.error('Error fetching unlocked leads:', err);
+    }
+  }, [user]);
 
   const fetchData = async () => {
     if (!user) {
@@ -99,16 +120,7 @@ export function useUserPlan(): UserPlanData {
       }
 
       // Fetch first 3 leads for free users (unlocked leads)
-      const { data: firstLeads } = await supabase
-        .from('google_maps_leads')
-        .select('id')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: true })
-        .limit(3);
-
-      if (firstLeads) {
-        setUnlockedLeadIds(new Set(firstLeads.map(l => l.id)));
-      }
+      await fetchUnlockedLeads();
 
       setSubscription(subData as UserSubscription);
       setUsage(usageData as UserUsage);
@@ -123,6 +135,45 @@ export function useUserPlan(): UserPlanData {
   useEffect(() => {
     fetchData();
   }, [user]);
+
+  // Setup realtime subscription for leads to update unlocked leads dynamically
+  useEffect(() => {
+    if (!user) return;
+
+    const channel = supabase
+      .channel('unlocked_leads_realtime')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'google_maps_leads',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          // When a new lead is inserted, re-fetch unlocked leads
+          fetchUnlockedLeads();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'DELETE',
+          schema: 'public',
+          table: 'google_maps_leads',
+          filter: `user_id=eq.${user.id}`,
+        },
+        () => {
+          // When a lead is deleted, re-fetch unlocked leads
+          fetchUnlockedLeads();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [user, fetchUnlockedLeads]);
 
   const plan = subscription?.subscription_plans || null;
   // Admin master always has full Pro access regardless of database plan
@@ -176,5 +227,6 @@ export function useUserPlan(): UserPlanData {
     // First 3 leads unlocked
     unlockedLeadIds,
     isLeadUnlocked,
+    refreshUnlockedLeads: fetchUnlockedLeads,
   };
 }

@@ -25,6 +25,7 @@ import { KanbanCard } from './KanbanCard';
 import { KanbanContextMenu } from './KanbanContextMenu';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
+import { useUserPlan } from '@/hooks/useUserPlan';
 import { toast } from 'sonner';
 
 interface Lead {
@@ -91,6 +92,7 @@ const defaultWhatsAppTemplate = `Olá! Vi sua empresa no Google Maps e gostaria 
 
 export function KanbanBoard({ campaignId, campaignName, whatsappTemplate }: KanbanBoardProps) {
   const { user } = useAuth();
+  const { isFree, isLeadUnlocked } = useUserPlan();
   const [leads, setLeads] = useState<Lead[]>([]);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
@@ -330,14 +332,25 @@ export function KanbanBoard({ campaignId, campaignName, whatsappTemplate }: Kanb
     });
   }, [leads, searchQuery, filterCity, filterMinRating]);
 
-  // Group leads by status
+  // Group leads by status - prioritize unlocked leads for Free users
   const leadsByStatus = useMemo(() => {
     const grouped: Record<string, Lead[]> = {};
     COLUMNS.forEach((col) => {
-      grouped[col.id] = filteredLeads.filter((lead) => lead.status === col.id);
+      const columnLeads = filteredLeads.filter((lead) => lead.status === col.id);
+      // For Free users, sort unlocked leads first within each column
+      if (isFree) {
+        columnLeads.sort((a, b) => {
+          const aUnlocked = isLeadUnlocked(a.id);
+          const bUnlocked = isLeadUnlocked(b.id);
+          if (aUnlocked && !bUnlocked) return -1;
+          if (!aUnlocked && bUnlocked) return 1;
+          return 0;
+        });
+      }
+      grouped[col.id] = columnLeads;
     });
     return grouped;
-  }, [filteredLeads]);
+  }, [filteredLeads, isFree, isLeadUnlocked]);
 
   // Active lead for drag overlay
   const activeLead = activeId ? leads.find((l) => l.id === activeId) : null;
