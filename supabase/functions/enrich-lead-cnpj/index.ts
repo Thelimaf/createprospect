@@ -20,6 +20,107 @@ function extractCnpjFromText(text: string): string | null {
   return null;
 }
 
+// Validate CNPJ checksum
+function isValidCnpj(cnpj: string): boolean {
+  const clean = cnpj.replace(/[^\d]/g, '');
+  if (clean.length !== 14) return false;
+  
+  // Check for repeated digits
+  if (/^(\d)\1+$/.test(clean)) return false;
+  
+  // Calculate first check digit
+  let sum = 0;
+  let weight = 5;
+  for (let i = 0; i < 12; i++) {
+    sum += parseInt(clean[i]) * weight;
+    weight = weight === 2 ? 9 : weight - 1;
+  }
+  let digit = 11 - (sum % 11);
+  if (digit > 9) digit = 0;
+  if (digit !== parseInt(clean[12])) return false;
+  
+  // Calculate second check digit
+  sum = 0;
+  weight = 6;
+  for (let i = 0; i < 13; i++) {
+    sum += parseInt(clean[i]) * weight;
+    weight = weight === 2 ? 9 : weight - 1;
+  }
+  digit = 11 - (sum % 11);
+  if (digit > 9) digit = 0;
+  if (digit !== parseInt(clean[13])) return false;
+  
+  return true;
+}
+
+async function searchCnpjWithFirecrawl(
+  apiKey: string, 
+  businessName: string, 
+  city?: string
+): Promise<string | null> {
+  // Try multiple search strategies
+  const searchQueries = [
+    // Strategy 1: Direct business name + CNPJ
+    `"${businessName}" CNPJ`,
+    // Strategy 2: With city if available
+    city ? `"${businessName}" "${city}" CNPJ` : null,
+    // Strategy 3: Broader search without quotes
+    `${businessName} CNPJ empresa`,
+    // Strategy 4: Search on specific CNPJ sites
+    `site:casadosdados.com.br "${businessName}"`,
+  ].filter(Boolean) as string[];
+
+  for (const query of searchQueries) {
+    console.log('Trying CNPJ search query:', query);
+    
+    try {
+      const response = await fetch('https://api.firecrawl.dev/v1/search', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${apiKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          query,
+          limit: 10,
+          lang: 'pt',
+          country: 'BR',
+        }),
+      });
+
+      if (!response.ok) {
+        console.error('Firecrawl search failed for query:', query);
+        continue;
+      }
+
+      const searchData = await response.json();
+      
+      if (searchData.data && Array.isArray(searchData.data)) {
+        for (const result of searchData.data) {
+          // Search in all available text
+          const textToSearch = [
+            result.title || '',
+            result.description || '',
+            result.url || '',
+            result.markdown || '',
+            result.content || '',
+          ].join(' ');
+          
+          const foundCnpj = extractCnpjFromText(textToSearch);
+          if (foundCnpj && isValidCnpj(foundCnpj)) {
+            console.log('Found valid CNPJ:', foundCnpj, 'from query:', query);
+            return foundCnpj;
+          }
+        }
+      }
+    } catch (error) {
+      console.error('Firecrawl error for query:', query, error);
+    }
+  }
+
+  return null;
+}
+
 Deno.serve(async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response(null, { headers: corsHeaders });
@@ -68,51 +169,29 @@ Deno.serve(async (req) => {
 
     let cnpj: string | null = null;
 
-    // Step 1: Try to find CNPJ via Firecrawl search
-    if (firecrawlApiKey) {
-      const searchQuery = `"${business_name}" CNPJ ${city || ""} site:consultacnpj.com OR site:casadosdados.com.br OR site:cnpj.info`;
+    // Step 1: Check if lead already has website content with CNPJ
+    const { data: leadData } = await supabaseClient
+      .from('google_maps_leads')
+      .select('scrape_data, website')
+      .eq('id', lead_id)
+      .eq('user_id', user.id)
+      .single();
+
+    if (leadData?.scrape_data) {
+      const scrapeContent = typeof leadData.scrape_data === 'string' 
+        ? leadData.scrape_data 
+        : JSON.stringify(leadData.scrape_data);
       
-      console.log('Searching for CNPJ via Firecrawl:', searchQuery);
-
-      try {
-        const firecrawlResponse = await fetch('https://api.firecrawl.dev/v1/search', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${firecrawlApiKey}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            query: searchQuery,
-            limit: 5,
-            lang: 'pt',
-            country: 'BR',
-          }),
-        });
-
-        if (firecrawlResponse.ok) {
-          const searchData = await firecrawlResponse.json();
-          console.log('Firecrawl search results:', JSON.stringify(searchData).substring(0, 500));
-
-          // Try to extract CNPJ from search results
-          if (searchData.data && Array.isArray(searchData.data)) {
-            for (const result of searchData.data) {
-              const textToSearch = `${result.title || ''} ${result.description || ''} ${result.url || ''}`;
-              const foundCnpj = extractCnpjFromText(textToSearch);
-              if (foundCnpj) {
-                cnpj = foundCnpj;
-                console.log('Found CNPJ in search results:', cnpj);
-                break;
-              }
-            }
-          }
-        } else {
-          console.error('Firecrawl search failed:', await firecrawlResponse.text());
-        }
-      } catch (firecrawlError) {
-        console.error('Firecrawl error:', firecrawlError);
+      const cnpjFromScrape = extractCnpjFromText(scrapeContent);
+      if (cnpjFromScrape && isValidCnpj(cnpjFromScrape)) {
+        cnpj = cnpjFromScrape;
+        console.log('Found CNPJ in existing scrape data:', cnpj);
       }
-    } else {
-      console.log('Firecrawl API key not available, skipping search');
+    }
+
+    // Step 2: Try Firecrawl search if no CNPJ found yet
+    if (!cnpj && firecrawlApiKey) {
+      cnpj = await searchCnpjWithFirecrawl(firecrawlApiKey, business_name, city);
     }
 
     // If we couldn't find CNPJ, return early
@@ -120,14 +199,14 @@ Deno.serve(async (req) => {
       return new Response(
         JSON.stringify({ 
           success: false, 
-          error: 'CNPJ não encontrado. Tente buscar manualmente.',
+          error: 'CNPJ não encontrado. Tente analisar o website primeiro ou buscar manualmente.',
           searched: true
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Step 2: Query Brasil API with the found CNPJ
+    // Step 3: Query Brasil API with the found CNPJ
     console.log('Querying Brasil API for CNPJ:', cnpj);
 
     const brasilApiResponse = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cnpj}`);
@@ -148,7 +227,7 @@ Deno.serve(async (req) => {
     const cnpjData = await brasilApiResponse.json();
     console.log('Brasil API data received:', JSON.stringify(cnpjData).substring(0, 500));
 
-    // Step 3: Update lead with enriched data
+    // Step 4: Update lead with enriched data
     const updateData = {
       cnpj,
       razao_social: cnpjData.razao_social || null,

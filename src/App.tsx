@@ -11,7 +11,7 @@ import Dashboard from "./pages/Dashboard";
 import Campaigns from "./pages/Campaigns";
 import CampaignNew from "./pages/CampaignNew";
 import CampaignLeadsPage from "./pages/CampaignLeadsPage";
-import GoogleMapsLeads from "./pages/GoogleMapsLeads";
+// GoogleMapsLeads removed - leads are accessed via campaigns
 import Prospeccao from "./pages/Prospeccao";
 import Settings from "./pages/Settings";
 import SearchHistory from "./pages/SearchHistory";
@@ -41,7 +41,7 @@ const App = () => (
             {/* Redirect /campaigns/:id to /campaigns/:id/leads */}
             <Route path="/campaigns/:id" element={<Navigate to="leads" replace />} />
             <Route path="/campaigns/:id/leads" element={<CampaignLeadsPage />} />
-            <Route path="/google-maps-leads" element={<GoogleMapsLeads />} />
+            {/* google-maps-leads removed - leads accessed via campaigns */}
             <Route path="/prospeccao" element={<Prospeccao />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/searches" element={<SearchHistory />} />
