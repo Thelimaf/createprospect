@@ -387,7 +387,7 @@ const GlowCard = ({
       onMouseEnter={() => setIsHovering(true)}
       onMouseLeave={() => setIsHovering(false)}
       variants={fadeUp}
-      className="relative bg-[#1a1a1a] rounded-2xl p-6 border border-gray-800 hover:border-primary/40 transition-all duration-300 group overflow-hidden"
+      className="relative bg-landing-card rounded-2xl p-6 border border-landing hover:border-primary/40 transition-all duration-300 group overflow-hidden"
     >
       {/* Mouse glow effect */}
       <div
@@ -474,7 +474,7 @@ const TopFreelancersSection = () => {
   ];
 
   return (
-    <section ref={sectionRef} className="relative py-24 bg-[#080808] overflow-hidden">
+    <section ref={sectionRef} className="relative py-24 bg-landing overflow-hidden">
       {/* Grid background pattern with parallax */}
       <motion.div 
         style={{ y: backgroundY, opacity }}
@@ -483,16 +483,16 @@ const TopFreelancersSection = () => {
         <div 
           className="absolute inset-0"
           style={{
-            backgroundImage: `linear-gradient(rgba(139,92,246,0.4) 1px, transparent 1px),
-                              linear-gradient(90deg, rgba(139,92,246,0.4) 1px, transparent 1px)`,
+            backgroundImage: `linear-gradient(hsl(250 95% 70% / 0.4) 1px, transparent 1px),
+                              linear-gradient(90deg, hsl(250 95% 70% / 0.4) 1px, transparent 1px)`,
             backgroundSize: '60px 60px'
           }}
         />
       </motion.div>
       
       {/* Gradient overlay for depth */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#080808] via-transparent to-[#080808]" />
-      <div className="absolute inset-0 bg-gradient-to-r from-[#080808] via-transparent to-[#080808]" />
+      <div className="absolute inset-0 bg-gradient-to-b from-[hsl(230_15%_8%)] via-transparent to-[hsl(230_15%_8%)]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-[hsl(230_15%_8%)] via-transparent to-[hsl(230_15%_8%)]" />
       
       {/* Central glow */}
       <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[600px] rounded-full bg-primary/10 blur-[150px]" />
