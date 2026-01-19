@@ -50,6 +50,39 @@ export type Database = {
         }
         Relationships: []
       }
+      email_verification_tokens: {
+        Row: {
+          created_at: string
+          email: string
+          expires_at: string
+          full_name: string | null
+          id: string
+          password_hash: string
+          token: string
+          used: boolean
+        }
+        Insert: {
+          created_at?: string
+          email: string
+          expires_at: string
+          full_name?: string | null
+          id?: string
+          password_hash: string
+          token: string
+          used?: boolean
+        }
+        Update: {
+          created_at?: string
+          email?: string
+          expires_at?: string
+          full_name?: string | null
+          id?: string
+          password_hash?: string
+          token?: string
+          used?: boolean
+        }
+        Relationships: []
+      }
       google_maps_leads: {
         Row: {
           address: string | null
@@ -495,6 +528,7 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      cleanup_expired_email_tokens: { Args: never; Returns: undefined }
       is_admin: { Args: never; Returns: boolean }
     }
     Enums: {

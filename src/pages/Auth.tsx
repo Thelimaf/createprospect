@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Separator } from '@/components/ui/separator';
-import { Sparkles, ArrowLeft } from 'lucide-react';
+import { Sparkles, ArrowLeft, Mail, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 import { z } from 'zod';
 
@@ -37,12 +37,14 @@ const authSchema = z.object({
 });
 
 export default function Auth() {
-const [isLogin, setIsLogin] = useState(true);
+  const [isLogin, setIsLogin] = useState(true);
   const [isForgotPassword, setIsForgotPassword] = useState(false);
+  const [isPendingVerification, setIsPendingVerification] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const { user } = useAuth();
   const navigate = useNavigate();
 
@@ -51,6 +53,14 @@ const [isLogin, setIsLogin] = useState(true);
       navigate('/dashboard');
     }
   }, [user, navigate]);
+
+  // Cooldown timer for resend button
+  useEffect(() => {
+    if (resendCooldown > 0) {
+      const timer = setTimeout(() => setResendCooldown(resendCooldown - 1), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [resendCooldown]);
 
 const handleGoogleSignIn = async () => {
     setLoading(true);
@@ -122,31 +132,60 @@ const handleGoogleSignIn = async () => {
         }
         toast.success('Bem-vindo de volta!');
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: `${window.location.origin}/`,
-            data: {
-              full_name: fullName,
-            },
-          },
+        // Send verification email instead of direct signup
+        const { data, error } = await supabase.functions.invoke('send-email-verification', {
+          body: { email, password, fullName },
         });
+
         if (error) {
-          if (error.message.includes('already registered')) {
-            toast.error('Este email já está cadastrado. Por favor, faça login.');
-          } else {
-            toast.error(error.message);
-          }
+          console.error('Error sending verification:', error);
+          toast.error('Erro ao enviar email de verificação. Tente novamente.');
           setLoading(false);
           return;
         }
-        toast.success('Conta criada! Bem-vindo ao ProspectAI.');
+
+        if (data?.error) {
+          toast.error(data.error);
+          setLoading(false);
+          return;
+        }
+
+        // Show pending verification UI
+        setIsPendingVerification(true);
+        setResendCooldown(60);
+        setLoading(false);
+        toast.success('Email de verificação enviado!');
       }
     } catch (error) {
       toast.error('Ocorreu um erro inesperado');
       setLoading(false);
     }
+  };
+
+  const handleResendVerification = async () => {
+    if (resendCooldown > 0) return;
+    
+    setLoading(true);
+    try {
+      const { data, error } = await supabase.functions.invoke('send-email-verification', {
+        body: { email, password, fullName },
+      });
+
+      if (error) throw error;
+
+      setResendCooldown(60);
+      toast.success('Email reenviado!');
+    } catch (error) {
+      toast.error('Erro ao reenviar email');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleUseAnotherEmail = () => {
+    setIsPendingVerification(false);
+    setEmail('');
+    setPassword('');
   };
 
   return (
@@ -169,7 +208,51 @@ const handleGoogleSignIn = async () => {
             <span className="text-2xl font-bold text-foreground">ProspectAI</span>
           </div>
 
-{isForgotPassword ? (
+{isPendingVerification ? (
+            // Pending Verification Mode
+            <div className="text-center">
+              <div className="mx-auto mb-6 flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
+                <Mail className="h-10 w-10 text-primary" />
+              </div>
+              
+              <h1 className="text-3xl font-bold text-foreground mb-3">
+                Verifique seu email
+              </h1>
+              
+              <p className="text-muted-foreground mb-2">
+                Enviamos um link de verificação para:
+              </p>
+              <p className="font-medium text-foreground mb-6">
+                {email}
+              </p>
+              
+              <p className="text-sm text-muted-foreground mb-8">
+                Clique no link do email para ativar sua conta. O link expira em 1 hora.
+              </p>
+
+              <div className="space-y-4">
+                <Button
+                  variant="outline"
+                  className="w-full gap-2"
+                  onClick={handleResendVerification}
+                  disabled={loading || resendCooldown > 0}
+                >
+                  <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+                  {resendCooldown > 0 
+                    ? `Reenviar em ${resendCooldown}s` 
+                    : 'Reenviar email'}
+                </Button>
+                
+                <button
+                  type="button"
+                  className="text-sm text-primary hover:text-primary/80 transition-colors"
+                  onClick={handleUseAnotherEmail}
+                >
+                  Usar outro email
+                </button>
+              </div>
+            </div>
+          ) : isForgotPassword ? (
             // Forgot Password Mode
             <>
               <h1 className="text-3xl font-bold text-foreground">
