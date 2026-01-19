@@ -18,7 +18,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    
+
     // Get user from auth header
     const authHeader = req.headers.get('Authorization');
     if (!authHeader) {
@@ -28,43 +28,52 @@ serve(async (req) => {
       );
     }
 
-    const token = authHeader.replace('Bearer ', '');
-    
-    // Create auth client with anon key + user token to validate the JWT
+    const match = authHeader.match(/^Bearer\s+(.+)$/i);
+    if (!match?.[1]) {
+      return new Response(
+        JSON.stringify({ error: 'Não autorizado' }),
+        { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    const token = match[1].trim();
+
+    // Validate JWT via claims (recommended for signing-keys)
     const supabaseAuth = createClient(supabaseUrl, supabaseAnonKey, {
       global: {
-        headers: { Authorization: `Bearer ${token}` }
+        headers: { Authorization: `Bearer ${token}` },
       },
       auth: {
         autoRefreshToken: false,
-        persistSession: false
-      }
+        persistSession: false,
+      },
     });
-    
-    // Validate the JWT token using the auth client
-    const { data: { user }, error: authError } = await supabaseAuth.auth.getUser();
-    
-    if (authError || !user) {
-      console.error('Auth error:', authError);
+
+    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getClaims(token);
+
+    if (claimsError || !claimsData?.claims) {
+      console.error('Claims error:', claimsError);
       return new Response(
         JSON.stringify({ error: 'Token inválido' }),
         { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-    
-    // Create admin client with service role key for privileged operations
-    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
+
+    const userEmail = (claimsData.claims as any).email as string | undefined;
 
     // Verify master user
-    if (user.email !== MASTER_EMAIL) {
-      console.log('Access denied for:', user.email);
+    if (userEmail !== MASTER_EMAIL) {
+      console.log('Access denied for:', userEmail);
       return new Response(
         JSON.stringify({ error: 'Acesso negado - apenas administradores' }),
         { status: 403, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    console.log('Admin access granted for:', user.email);
+    console.log('Admin access granted for:', userEmail);
+
+    // Create admin client with service role key for privileged operations
+    const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey);
 
     if (req.method === 'GET') {
       // List all users with their subscriptions and usage
