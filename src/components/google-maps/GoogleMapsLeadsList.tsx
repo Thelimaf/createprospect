@@ -41,6 +41,7 @@ import {
   normalizeMapsUrl,
   logExternalLinkAttempt 
 } from "@/lib/external-links";
+import * as XLSX from 'xlsx';
 
 interface Lead {
   id: string;
@@ -246,39 +247,51 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
       .replace(/{city}/g, lead.city || "");
   };
 
-  const exportToCsv = () => {
-    const headers = ["Nome", "Telefone", "Email", "Endereço", "Status", "Link WhatsApp"];
-    const rows = filteredLeads.map((lead) => {
+  const exportToExcel = () => {
+    // Preparar dados para Excel
+    const data = filteredLeads.map((lead) => {
       const normalizedPhone = lead.phone ? normalizePhoneBR(lead.phone) : "";
-      // Use wa.me for CSV export - universal format
       const whatsappUrl = lead.phone ? `https://wa.me/${normalizedPhone}` : "";
-      return [
-        lead.business_name,
-        lead.phone || "",
-        lead.email || "",
-        lead.address || "",
-        statusConfig[lead.status as keyof typeof statusConfig]?.label || lead.status,
-        whatsappUrl,
-      ];
+      return {
+        "Nome": lead.business_name,
+        "Telefone": lead.phone || "",
+        "Email": lead.email || "",
+        "Endereço": lead.address || "",
+        "Cidade": lead.city || "",
+        "Avaliação": lead.rating || "",
+        "Status": statusConfig[lead.status as keyof typeof statusConfig]?.label || lead.status,
+        "Link WhatsApp": whatsappUrl,
+        "Website": lead.website || "",
+      };
     });
 
-    const csvContent = [headers, ...rows]
-      .map((row) => row.map((cell) => `"${cell}"`).join(","))
-      .join("\n");
+    // Criar workbook e worksheet
+    const worksheet = XLSX.utils.json_to_sheet(data);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, "Leads");
 
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    
-    // Custom filename based on campaign
+    // Ajustar largura das colunas
+    const colWidths = [
+      { wch: 35 }, // Nome
+      { wch: 18 }, // Telefone
+      { wch: 30 }, // Email
+      { wch: 40 }, // Endereço
+      { wch: 18 }, // Cidade
+      { wch: 10 }, // Avaliação
+      { wch: 15 }, // Status
+      { wch: 35 }, // Link WhatsApp
+      { wch: 35 }, // Website
+    ];
+    worksheet['!cols'] = colWidths;
+
+    // Gerar arquivo
     const timestamp = new Date().toISOString().split("T")[0];
     const filename = campaignName 
-      ? `leads-${campaignName.replace(/[^a-zA-Z0-9]/g, '_')}-${timestamp}.csv`
-      : `leads_google_maps_${timestamp}.csv`;
-    
-    link.download = filename;
-    link.click();
-    toast.success("CSV exportado com sucesso!");
+      ? `leads-${campaignName.replace(/[^a-zA-Z0-9]/g, '_')}-${timestamp}.xlsx`
+      : `leads_google_maps_${timestamp}.xlsx`;
+
+    XLSX.writeFile(workbook, filename);
+    toast.success("Excel exportado com sucesso!");
   };
 
   const openAddToCampaignDialog = (lead: Lead) => {
@@ -440,9 +453,9 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
           </SelectContent>
         </Select>
 
-        <Button variant="outline" onClick={exportToCsv} className="ml-auto">
+        <Button variant="outline" onClick={exportToExcel} className="ml-auto">
           <Download className="mr-2 h-4 w-4" />
-          Exportar CSV
+          Exportar Excel
         </Button>
       </div>
 

@@ -958,7 +958,7 @@ const PricingSection = () => {
     ],
     blockedFeatures: [
       { text: "Dados completos em todos leads" },
-      { text: "Export CSV" },
+      { text: "Export Excel (.xlsx)" },
       { text: "WhatsApp 1-click ilimitado" },
       { text: "Templates IA para mensagens" },
       { text: "CRM Kanban completo" },
@@ -976,7 +976,7 @@ const PricingSection = () => {
       { text: "Campanhas ilimitadas", highlight: true },
       { text: "Leads 100% reais do Google Maps", included: true },
       { text: "Ver telefone, WhatsApp, e-mail, site", included: true },
-      { text: "Export CSV completo", included: true },
+      { text: "Export Excel completo", included: true },
       { text: "WhatsApp 1-click para todos leads", included: true },
       { text: "Templates de mensagem com IA", included: true },
       { text: "CRM Kanban completo", included: true },

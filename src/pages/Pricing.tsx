@@ -41,7 +41,7 @@ export default function Pricing() {
 
   const freeBlockedFeatures = [
     { text: 'Dados completos em todos leads', icon: Users },
-    { text: 'Export CSV', icon: Download },
+    { text: 'Export Excel (.xlsx)', icon: Download },
     { text: 'WhatsApp 1-click ilimitado', icon: MessageSquare },
     { text: 'Templates IA para mensagens', icon: Sparkles },
     { text: 'CRM Kanban completo', icon: Kanban },
@@ -52,7 +52,7 @@ export default function Pricing() {
     { text: 'Campanhas ilimitadas', icon: Infinity, highlight: true },
     { text: 'Leads 100% reais do Google Maps', icon: Check },
     { text: 'Ver telefone, WhatsApp, e-mail, site', icon: Phone },
-    { text: 'Export CSV completo', icon: Download },
+    { text: 'Export Excel completo', icon: Download },
     { text: 'WhatsApp 1-click para todos leads', icon: MessageSquare },
     { text: 'Templates de mensagem com IA', icon: Sparkles },
     { text: 'CRM Kanban completo', icon: Kanban },
@@ -76,7 +76,7 @@ export default function Pricing() {
     },
     {
       question: 'Quais os benefícios do Starter?',
-      answer: 'Com o Starter você tem 100 buscas/mês (≈2.000 leads), campanhas ilimitadas, export CSV, WhatsApp 1-click para todos leads, templates de mensagem com IA, CRM Kanban completo, e suporte prioritário.',
+      answer: 'Com o Starter você tem 100 buscas/mês (≈2.000 leads), campanhas ilimitadas, export Excel, WhatsApp 1-click para todos leads, templates de mensagem com IA, CRM Kanban completo, e suporte prioritário.',
     },
     {
       question: 'Quais formas de pagamento?',

@@ -182,7 +182,7 @@ export default function Billing() {
                         <AlertDialogDescription>
                           Ao cancelar, você perderá acesso a:
                           <ul className="list-disc list-inside mt-2 space-y-1">
-                            <li>Export para CSV</li>
+                            <li>Export para Excel</li>
                             <li>WhatsApp com 1 clique</li>
                             <li>Templates de mensagem</li>
                             <li>Analytics</li>
