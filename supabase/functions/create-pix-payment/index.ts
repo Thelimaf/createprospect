@@ -6,6 +6,36 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+const ADMIN_EMAIL = 'anderson.ferlimajunior@gmail.com';
+
+async function sendAdminNotification(
+  resendApiKey: string,
+  subject: string,
+  html: string
+) {
+  try {
+    const response = await fetch('https://api.resend.com/emails', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${resendApiKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        from: 'ProspectAI <onboarding@resend.dev>',
+        to: [ADMIN_EMAIL],
+        subject,
+        html,
+      }),
+    });
+
+    const result = await response.json();
+    console.log('Email notification sent:', result);
+    return result;
+  } catch (error) {
+    console.error('Error sending email notification:', error);
+  }
+}
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -16,6 +46,7 @@ serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const abacateApiKey = Deno.env.get('ABACATE_PAY_API_KEY');
+    const resendApiKey = Deno.env.get('RESEND_API_KEY');
 
     if (!abacateApiKey) {
       console.error('ABACATE_PAY_API_KEY not configured');
@@ -201,6 +232,62 @@ serve(async (req) => {
     }
 
     console.log('PIX payment created successfully:', pixData.id);
+
+    // Send admin notification about new PIX generated
+    if (resendApiKey) {
+      const emailHtml = `
+        <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+          <div style="background: linear-gradient(135deg, #8b5cf6, #6366f1); padding: 20px; border-radius: 12px 12px 0 0;">
+            <h1 style="color: white; margin: 0; font-size: 24px;">🔔 Novo PIX Gerado</h1>
+          </div>
+          <div style="background: #1a1a2e; padding: 24px; border-radius: 0 0 12px 12px; color: #e0e0e0;">
+            <h2 style="color: #f59e0b; margin-top: 0;">Dados do Cliente</h2>
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">Nome:</td>
+                <td style="padding: 8px 0; color: #fff; font-weight: bold;">${customer_name}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">Email:</td>
+                <td style="padding: 8px 0; color: #fff;">${customer_email}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">Telefone:</td>
+                <td style="padding: 8px 0; color: #fff;">${customer_phone}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">CPF:</td>
+                <td style="padding: 8px 0; color: #fff;">${formattedCpf}</td>
+              </tr>
+            </table>
+            <hr style="border: none; border-top: 1px solid #374151; margin: 16px 0;">
+            <table style="width: 100%; border-collapse: collapse;">
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">Valor:</td>
+                <td style="padding: 8px 0; color: #22c55e; font-weight: bold; font-size: 18px;">R$ 27,90</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">ID do PIX:</td>
+                <td style="padding: 8px 0; color: #fff; font-family: monospace; font-size: 12px;">${pixData.id}</td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">Status:</td>
+                <td style="padding: 8px 0;"><span style="background: #f59e0b; color: #000; padding: 4px 12px; border-radius: 4px; font-weight: bold;">AGUARDANDO</span></td>
+              </tr>
+              <tr>
+                <td style="padding: 8px 0; color: #9ca3af;">User ID:</td>
+                <td style="padding: 8px 0; color: #fff; font-family: monospace; font-size: 12px;">${user.id}</td>
+              </tr>
+            </table>
+            <p style="color: #6b7280; font-size: 12px; margin-top: 24px; text-align: center;">
+              ProspectAI - Sistema de Prospecção Inteligente
+            </p>
+          </div>
+        </div>
+      `;
+      
+      await sendAdminNotification(resendApiKey, '🔔 Novo PIX Gerado - ProspectAI', emailHtml);
+    }
 
     return new Response(
       JSON.stringify({
