@@ -24,6 +24,18 @@ const toneInstructions: Record<string, string> = {
   friendly: 'Use um tom muito amigável e acolhedor.',
 };
 
+// Message styles for variation
+const messageStyles = [
+  'Comece com uma observação positiva sobre o negócio ou nicho',
+  'Comece se apresentando brevemente antes de falar do objetivo',
+  'Comece mencionando que encontrou a empresa no Google Maps',
+  'Comece com uma pergunta interessante sobre o negócio',
+  'Comece elogiando a presença online ou avaliação do negócio',
+  'Comece de forma direta mencionando uma oportunidade',
+  'Comece com uma frase que gere curiosidade',
+  'Comece fazendo uma conexão com a região/cidade do negócio',
+];
+
 serve(async (req) => {
   // Handle CORS preflight
   if (req.method === 'OPTIONS') {
@@ -70,16 +82,24 @@ ${lead.category ? `- Categoria: ${lead.category}` : ''}
 ${lead.city ? `- Cidade: ${lead.city}` : ''}
 ${lead.rating ? `- Avaliação: ${lead.rating} estrelas` : ''}` : '';
 
+    // Select random style for variation
+    const randomStyle = messageStyles[Math.floor(Math.random() * messageStyles.length)];
+
     const userPrompt = `Crie uma mensagem de WhatsApp para primeiro contato.
+
+ESTILO OBRIGATÓRIO: ${randomStyle}
 
 OBJETIVO DA CAMPANHA: ${campaign.goal}
 ${campaign.context ? `SOBRE MIM/MINHA EMPRESA: ${campaign.context}` : ''}
 TOM: ${toneInstructions[campaign.tone] || toneInstructions.professional}
 ${leadInfo}
 
-Crie uma mensagem genérica que funcione para qualquer lead desta campanha.
-Use {nome} onde o nome do negócio deve aparecer.
-A mensagem deve ser persuasiva mas não agressiva.`;
+REGRAS:
+- Siga o ESTILO OBRIGATÓRIO para começar a mensagem
+- Use {nome} onde o nome do negócio deve aparecer
+- Seja criativo e varie a estrutura da mensagem
+- A mensagem deve ser persuasiva mas não agressiva
+- Termine com uma pergunta ou call-to-action`;
 
     console.log("Generating WhatsApp message for campaign:", campaign.goal);
 
@@ -96,7 +116,7 @@ A mensagem deve ser persuasiva mas não agressiva.`;
           { role: "user", content: userPrompt },
         ],
         max_tokens: 300,
-        temperature: 0.7,
+        temperature: 0.95,
       }),
     });
 
