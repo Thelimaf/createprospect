@@ -6,7 +6,6 @@ const corsHeaders = {
 // Helper: Extract Brazilian phone number
 function extractPhone(text: string | null | undefined): string | null {
   if (!text) return null;
-  // Match Brazilian phone patterns: (XX) XXXXX-XXXX, XX XXXXX-XXXX, +55 XX XXXXX-XXXX
   const patterns = [
     /(?:\+55\s?)?(?:\(?\d{2}\)?[\s.-]?)?\d{4,5}[\s.-]?\d{4}/g,
   ];
@@ -14,7 +13,6 @@ function extractPhone(text: string | null | undefined): string | null {
   for (const pattern of patterns) {
     const matches = text.match(pattern);
     if (matches && matches.length > 0) {
-      // Clean and return first valid phone
       const phone = matches[0].replace(/\D/g, '');
       if (phone.length >= 10 && phone.length <= 13) {
         return phone;
@@ -34,25 +32,11 @@ function extractEmail(text: string | null | undefined): string | null {
 // Helper: Extract CNPJ
 function extractCnpj(text: string | null | undefined): string | null {
   if (!text) return null;
-  // Match CNPJ patterns: XX.XXX.XXX/XXXX-XX or just numbers
   const match = text.match(/\d{2}\.?\d{3}\.?\d{3}\/?\d{4}-?\d{2}/);
   if (match) {
     return match[0].replace(/\D/g, '');
   }
   return null;
-}
-
-// Fetch CNPJ data from Brasil API
-async function fetchBrasilApi(cnpj: string): Promise<any | null> {
-  try {
-    const cleanCnpj = cnpj.replace(/\D/g, '');
-    const response = await fetch(`https://brasilapi.com.br/api/cnpj/v1/${cleanCnpj}`);
-    if (!response.ok) return null;
-    return await response.json();
-  } catch (error) {
-    console.error('Brasil API error:', error);
-    return null;
-  }
 }
 
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
@@ -125,79 +109,74 @@ Deno.serve(async (req) => {
     const results = searchData.data || [];
     console.log(`Found ${results.length} results from Firecrawl`);
 
+    // 1. Fetch all existing websites for this user (batch duplicate check)
+    const { data: existingLeads } = await supabase
+      .from('google_maps_leads')
+      .select('website, business_name')
+      .eq('user_id', user_id);
+
+    const existingWebsites = new Set(existingLeads?.map(l => l.website?.toLowerCase()).filter(Boolean));
+    const existingNames = new Set(existingLeads?.map(l => l.business_name?.toLowerCase()).filter(Boolean));
+
+    // 2. Process all leads in parallel (no Brasil API - that's on-demand later)
+    const processedLeads = results.map((result: any) => {
+      const content = result.markdown || result.description || '';
+      const title = result.title || '';
+      const url = result.url || '';
+
+      // Extract contact information
+      const phone = extractPhone(content) || extractPhone(title);
+      const email = extractEmail(content);
+      const cnpj = extractCnpj(content);
+
+      // Build lead data (without Brasil API enrichment - that's on-demand)
+      return {
+        user_id,
+        campaign_id: campaignId && campaignId !== 'none' ? campaignId : null,
+        business_name: title || url,
+        website: url,
+        phone,
+        email,
+        cnpj, // Just extracted, not enriched
+        source: 'firecrawl_web',
+        status: 'new',
+        scrape_data: {
+          original_title: title,
+          original_url: url,
+          markdown_preview: content?.substring(0, 500),
+        },
+      };
+    });
+
+    // 3. Filter out duplicates
+    const newLeads = processedLeads.filter((lead: any) => {
+      const websiteLower = lead.website?.toLowerCase();
+      const nameLower = lead.business_name?.toLowerCase();
+      
+      if (websiteLower && existingWebsites.has(websiteLower)) {
+        console.log('Duplicate skipped (website):', lead.website);
+        return false;
+      }
+      if (nameLower && existingNames.has(nameLower)) {
+        console.log('Duplicate skipped (name):', lead.business_name);
+        return false;
+      }
+      return true;
+    });
+
+    console.log(`${newLeads.length} new leads after deduplication`);
+
+    // 4. Batch insert all new leads at once
     let savedCount = 0;
-    const savedLeads: any[] = [];
+    if (newLeads.length > 0) {
+      const { error: insertError } = await supabase
+        .from('google_maps_leads')
+        .insert(newLeads);
 
-    for (const result of results) {
-      try {
-        const content = result.markdown || result.description || '';
-        const title = result.title || '';
-        const url = result.url || '';
-
-        // Extract contact information
-        const phone = extractPhone(content) || extractPhone(title);
-        const email = extractEmail(content);
-        const cnpj = extractCnpj(content);
-
-        // Try to enrich with Brasil API if CNPJ found
-        let cnpjData: any = null;
-        if (cnpj) {
-          cnpjData = await fetchBrasilApi(cnpj);
-        }
-
-        // Build lead data
-        const leadData = {
-          user_id,
-          campaign_id: campaignId && campaignId !== 'none' ? campaignId : null,
-          business_name: cnpjData?.nome_fantasia || cnpjData?.razao_social || title || url,
-          website: url,
-          phone,
-          email,
-          cnpj: cnpjData?.cnpj || cnpj,
-          razao_social: cnpjData?.razao_social,
-          nome_fantasia: cnpjData?.nome_fantasia,
-          cnpj_status: cnpjData?.situacao_cadastral,
-          socios: cnpjData?.qsa ? cnpjData.qsa : null,
-          cnae_principal: cnpjData?.cnae_fiscal_descricao,
-          capital_social: cnpjData?.capital_social,
-          data_abertura: cnpjData?.data_inicio_atividade,
-          city: cnpjData?.municipio,
-          state: cnpjData?.uf,
-          address: cnpjData ? `${cnpjData.logradouro || ''} ${cnpjData.numero || ''}, ${cnpjData.bairro || ''}`.trim() : null,
-          zip_code: cnpjData?.cep,
-          source: 'firecrawl_web',
-          status: 'new',
-          scrape_data: {
-            original_title: title,
-            original_url: url,
-            markdown_preview: content?.substring(0, 500),
-          },
-        };
-
-        // Check for duplicates by website or business_name
-        const { data: existing } = await supabase
-          .from('google_maps_leads')
-          .select('id')
-          .eq('user_id', user_id)
-          .or(`website.eq.${url},business_name.eq.${leadData.business_name}`)
-          .limit(1);
-
-        if (!existing || existing.length === 0) {
-          const { error: insertError } = await supabase
-            .from('google_maps_leads')
-            .insert(leadData);
-
-          if (insertError) {
-            console.error('Error inserting lead:', insertError);
-          } else {
-            savedCount++;
-            savedLeads.push(leadData);
-          }
-        } else {
-          console.log('Duplicate lead skipped:', leadData.business_name);
-        }
-      } catch (leadError) {
-        console.error('Error processing lead:', leadError);
+      if (insertError) {
+        console.error('Batch insert error:', insertError);
+      } else {
+        savedCount = newLeads.length;
       }
     }
 
@@ -208,7 +187,7 @@ Deno.serve(async (req) => {
         success: true, 
         leads_saved: savedCount,
         total_found: results.length,
-        leads: savedLeads,
+        leads: newLeads,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
