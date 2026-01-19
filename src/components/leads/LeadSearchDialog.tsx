@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -12,6 +12,7 @@ import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
 import { supabase } from '@/integrations/supabase/client';
 import { useCheckLimit } from '@/hooks/useCheckLimit';
+import { useUserPlan } from '@/hooks/useUserPlan';
 import { UpgradeModal, UpgradeModalVariant } from '@/components/billing/UpgradeModal';
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
@@ -33,6 +34,11 @@ export function LeadSearchDialog({
   onSearchComplete,
 }: LeadSearchDialogProps) {
   const { checkLimit, incrementUsage, isChecking } = useCheckLimit();
+  const { isPro } = useUserPlan();
+  
+  // Plan-based limits: Free = max 20 per search, Starter = max 100
+  const maxLeadsPerSearch = useMemo(() => isPro ? 100 : 20, [isPro]);
+  
   const [query, setQuery] = useState('');
   const [limit, setLimit] = useState([20]);
   const [isLoading, setIsLoading] = useState(false);
@@ -148,20 +154,20 @@ export function LeadSearchDialog({
               <div className="flex items-center justify-between">
                 <Label className="text-foreground">Quantidade</Label>
                 <Badge variant="secondary" className="px-3">
-                  {limit[0]} leads
+                  {Math.min(limit[0], maxLeadsPerSearch)} leads
                 </Badge>
               </div>
               <Slider
-                value={limit}
-                onValueChange={setLimit}
+                value={[Math.min(limit[0], maxLeadsPerSearch)]}
+                onValueChange={(val) => setLimit([Math.min(val[0], maxLeadsPerSearch)])}
                 min={5}
-                max={100}
+                max={maxLeadsPerSearch}
                 step={5}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-muted-foreground">
                 <span>5</span>
-                <span>100</span>
+                <span>{maxLeadsPerSearch}</span>
               </div>
             </div>
 
