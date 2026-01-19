@@ -28,7 +28,11 @@ import {
   Plus,
   Briefcase,
   Lock,
-  Crown
+  Crown,
+  Building,
+  Eye,
+  Loader2,
+  CheckCircle
 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
@@ -37,6 +41,8 @@ import { useUserPlan } from "@/hooks/useUserPlan";
 import { ExternalLinkButton } from "@/components/shared/ExternalLinkButton";
 import { IframeWarningBanner } from "@/components/shared/IframeWarningBanner";
 import { LeadUrlsTooltip } from "@/components/shared/LeadUrlsTooltip";
+import { LeadDetailsDialog } from "./LeadDetailsDialog";
+import { brasilApi, firecrawlApi } from "@/lib/api/enrichment";
 import { 
   normalizePhoneBR, 
   buildWhatsAppUrl, 
@@ -60,13 +66,28 @@ interface Lead {
   website: string | null;
   address: string | null;
   city: string | null;
+  state: string | null;
   google_maps_url: string | null;
   rating: number | null;
   reviews_count: number | null;
   status: string;
   last_contact_date: string | null;
   campaign_id: string | null;
+  // CNPJ enrichment fields
+  cnpj?: string | null;
+  razao_social?: string | null;
+  nome_fantasia?: string | null;
+  cnpj_status?: string | null;
+  cnae_principal?: string | null;
+  socios?: Json | null;
+  capital_social?: number | null;
+  data_abertura?: string | null;
+  enriched_at?: string | null;
+  // Scrape data
+  scrape_data?: Json | null;
 }
+
+type Json = string | number | boolean | null | { [key: string]: Json | undefined } | Json[];
 
 interface Campaign {
   id: string;
@@ -103,6 +124,14 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
   const [userCampaigns, setUserCampaigns] = useState<Campaign[]>([]);
   const [campaignNames, setCampaignNames] = useState<Record<string, string>>({});
+  
+  // Lead details dialog state
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [detailsLead, setDetailsLead] = useState<Lead | null>(null);
+  
+  // Enrichment loading states
+  const [enrichingLeadId, setEnrichingLeadId] = useState<string | null>(null);
+  const [scrapingLeadId, setScrapingLeadId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!user) return;
@@ -321,6 +350,11 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
     setAddToCampaignOpen(true);
   };
 
+  const openDetailsDialog = (lead: Lead) => {
+    setDetailsLead(lead);
+    setDetailsDialogOpen(true);
+  };
+
   const handleAddToCampaign = async () => {
     if (!selectedLead || !selectedCampaignId) return;
 
@@ -340,6 +374,46 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
       setAddToCampaignOpen(false);
       setSelectedLead(null);
       setSelectedCampaignId("");
+    }
+  };
+
+  const handleEnrichCnpj = async (lead: Lead) => {
+    setEnrichingLeadId(lead.id);
+    try {
+      const result = await brasilApi.enrichCnpj(lead.id, lead.business_name, lead.city || undefined);
+      if (result.success) {
+        toast.success("CNPJ encontrado e dados enriquecidos!");
+        fetchLeads();
+      } else {
+        toast.error(result.error || "Erro ao buscar CNPJ");
+      }
+    } catch (error) {
+      console.error("Error enriching CNPJ:", error);
+      toast.error("Erro ao buscar dados do CNPJ");
+    } finally {
+      setEnrichingLeadId(null);
+    }
+  };
+
+  const handleScrapeWebsite = async (lead: Lead) => {
+    if (!lead.website) {
+      toast.error("Lead não possui website cadastrado");
+      return;
+    }
+    setScrapingLeadId(lead.id);
+    try {
+      const result = await firecrawlApi.scrape(lead.website, lead.id);
+      if (result.success) {
+        toast.success("Website analisado com sucesso!");
+        fetchLeads();
+      } else {
+        toast.error(result.error || "Erro ao analisar website");
+      }
+    } catch (error) {
+      console.error("Error scraping website:", error);
+      toast.error("Erro ao analisar website");
+    } finally {
+      setScrapingLeadId(null);
     }
   };
 
@@ -653,8 +727,55 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
                   )}
                 </div>
 
-                {/* Status Change Buttons */}
+                {/* Enrichment & Details Buttons */}
                 <div className="flex flex-wrap gap-2 mt-3 pt-3 border-t border-border">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => openDetailsDialog(lead)}
+                    className="text-primary border-primary/30 hover:bg-primary/10"
+                  >
+                    <Eye className="mr-1 h-3 w-3" />
+                    Detalhes
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleEnrichCnpj(lead)}
+                    disabled={enrichingLeadId === lead.id || !!lead.cnpj}
+                    className={lead.cnpj ? "text-green-500 border-green-500/30" : ""}
+                  >
+                    {enrichingLeadId === lead.id ? (
+                      <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                    ) : lead.cnpj ? (
+                      <CheckCircle className="mr-1 h-3 w-3" />
+                    ) : (
+                      <Building className="mr-1 h-3 w-3" />
+                    )}
+                    {lead.cnpj ? "CNPJ ✓" : "Buscar CNPJ"}
+                  </Button>
+                  {lead.website && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleScrapeWebsite(lead)}
+                      disabled={scrapingLeadId === lead.id || !!(lead.scrape_data && typeof lead.scrape_data === 'object' && 'content' in lead.scrape_data)}
+                      className={(lead.scrape_data && typeof lead.scrape_data === 'object' && 'content' in lead.scrape_data) ? "text-green-500 border-green-500/30" : ""}
+                    >
+                      {scrapingLeadId === lead.id ? (
+                        <Loader2 className="mr-1 h-3 w-3 animate-spin" />
+                      ) : (lead.scrape_data && typeof lead.scrape_data === 'object' && 'content' in lead.scrape_data) ? (
+                        <CheckCircle className="mr-1 h-3 w-3" />
+                      ) : (
+                        <Globe className="mr-1 h-3 w-3" />
+                      )}
+                      {(lead.scrape_data && typeof lead.scrape_data === 'object' && 'content' in lead.scrape_data) ? "Site ✓" : "Analisar Site"}
+                    </Button>
+                  )}
+                </div>
+
+                {/* Status Change Buttons */}
+                <div className="flex flex-wrap gap-2 mt-2">
                   <Button
                     size="sm"
                     variant="ghost"
@@ -688,6 +809,16 @@ export function GoogleMapsLeadsList({ campaignId, campaignName }: GoogleMapsLead
           );
           })}
         </div>
+      )}
+
+      {/* Lead Details Dialog */}
+      {detailsLead && (
+        <LeadDetailsDialog
+          open={detailsDialogOpen}
+          onClose={() => setDetailsDialogOpen(false)}
+          lead={detailsLead as any}
+          onLeadUpdated={fetchLeads}
+        />
       )}
 
       {/* Add to Campaign Dialog */}
