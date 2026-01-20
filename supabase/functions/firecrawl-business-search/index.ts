@@ -180,6 +180,12 @@ Deno.serve(async (req) => {
       }
     }
 
+    // Calculate statistics for better feedback
+    const duplicatesCount = results.length - newLeads.length;
+    const withCnpj = newLeads.filter((l: any) => l.cnpj).length;
+    const withEmail = newLeads.filter((l: any) => l.email).length;
+    const withPhone = newLeads.filter((l: any) => l.phone).length;
+
     console.log(`Saved ${savedCount} leads from Firecrawl search`);
 
     return new Response(
@@ -187,6 +193,13 @@ Deno.serve(async (req) => {
         success: true, 
         leads_saved: savedCount,
         total_found: results.length,
+        stats: {
+          new: savedCount,
+          duplicates: duplicatesCount,
+          with_cnpj: withCnpj,
+          with_email: withEmail,
+          with_phone: withPhone,
+        },
         leads: newLeads,
       }),
       { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }

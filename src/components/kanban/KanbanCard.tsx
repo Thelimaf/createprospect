@@ -24,6 +24,9 @@ interface Lead {
   updated_at: string;
   city: string | null;
   campaign_id: string | null;
+  cnpj?: string | null;
+  email?: string | null;
+  scrape_data?: any;
 }
 
 interface KanbanCardProps {
@@ -122,6 +125,25 @@ export function KanbanCard({
             {daysInStatus}d
           </Badge>
         </div>
+      </div>
+
+      {/* Data enrichment badges */}
+      <div className="flex flex-wrap gap-1 mb-2">
+        {lead.cnpj && (
+          <Badge variant="outline" className="text-[9px] px-1 py-0 bg-blue-500/10 text-blue-500 border-blue-500/30">
+            CNPJ ✓
+          </Badge>
+        )}
+        {lead.email && (
+          <Badge variant="outline" className="text-[9px] px-1 py-0 bg-purple-500/10 text-purple-500 border-purple-500/30">
+            Email ✓
+          </Badge>
+        )}
+        {lead.scrape_data && (
+          <Badge variant="outline" className="text-[9px] px-1 py-0 bg-teal-500/10 text-teal-500 border-teal-500/30">
+            Site ✓
+          </Badge>
+        )}
       </div>
 
       {/* Phone */}
