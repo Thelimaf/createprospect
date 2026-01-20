@@ -106,7 +106,20 @@ export function ProspectarTab() {
         await incrementUsage();
 
         const leadsFound = data?.leads_saved || 0;
-        toast.success(`${leadsFound} leads encontrados e salvos!`);
+        const totalFound = data?.total_found || 0;
+        const duplicates = data?.duplicates || (totalFound - leadsFound);
+        
+        if (leadsFound > 0) {
+          toast.success(`✅ ${leadsFound} novos leads salvos`, {
+            description: duplicates > 0 ? `${duplicates} já existiam na sua base` : undefined,
+          });
+        } else if (duplicates > 0) {
+          toast.info(`Busca concluída: ${duplicates} leads já existem na sua base`, {
+            description: 'Tente buscar em outra cidade ou segmento',
+          });
+        } else {
+          toast.info('Nenhum resultado encontrado para essa busca');
+        }
       } else {
         // Use Firecrawl business search with data extraction
         setLoadingMessage('Buscando empresas na web...');
@@ -125,9 +138,25 @@ export function ProspectarTab() {
         // Increment usage after successful search
         await incrementUsage();
 
-        const leadsFound = data?.leads_saved || 0;
-        const totalFound = data?.total_found || 0;
-        toast.success(`${leadsFound} leads salvos de ${totalFound} resultados encontrados!`);
+        const stats = data?.stats || {};
+        const leadsFound = stats.new || data?.leads_saved || 0;
+        const duplicates = stats.duplicates || 0;
+        
+        if (leadsFound > 0) {
+          const extras = [];
+          if (stats.with_cnpj > 0) extras.push(`${stats.with_cnpj} com CNPJ`);
+          if (stats.with_email > 0) extras.push(`${stats.with_email} com email`);
+          
+          toast.success(`✅ ${leadsFound} novos leads salvos`, {
+            description: extras.length > 0 ? extras.join(', ') : (duplicates > 0 ? `${duplicates} já existiam` : undefined),
+          });
+        } else if (duplicates > 0) {
+          toast.info(`Busca concluída: ${duplicates} leads já existem na sua base`, {
+            description: 'Tente buscar em outra cidade ou segmento',
+          });
+        } else {
+          toast.info('Nenhum resultado encontrado para essa busca');
+        }
       }
     } catch (error: any) {
       console.error('Search error:', error);
