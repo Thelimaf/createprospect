@@ -37,6 +37,7 @@ import { CampaignOverview } from '@/components/campaign/CampaignOverview';
 import { ConfigModal } from '@/components/leads/ConfigModal';
 import { LeadsExpandedModal } from '@/components/leads/LeadsExpandedModal';
 import { UpgradeModal, UpgradeModalVariant } from '@/components/billing/UpgradeModal';
+import { LeadDetailsDialog } from '@/components/google-maps/LeadDetailsDialog';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { useCheckLimit } from '@/hooks/useCheckLimit';
@@ -73,6 +74,17 @@ interface Lead {
   category: string | null;
   last_contact_date: string | null;
   enriched_at?: string | null;
+  state?: string | null;
+  reviews_count?: number | null;
+  cnpj?: string | null;
+  razao_social?: string | null;
+  nome_fantasia?: string | null;
+  cnpj_status?: string | null;
+  cnae_principal?: string | null;
+  socios?: any;
+  capital_social?: number | null;
+  data_abertura?: string | null;
+  scrape_data?: any;
 }
 
 interface Campaign {
@@ -169,6 +181,8 @@ export default function CampaignLeadsPage() {
   const [whatsappDialogOpen, setWhatsappDialogOpen] = useState(false);
   const [selectedLeadForWhatsApp, setSelectedLeadForWhatsApp] = useState<Lead | null>(null);
   const [searchDialogOpen, setSearchDialogOpen] = useState(false);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [selectedLeadForDetails, setSelectedLeadForDetails] = useState<Lead | null>(null);
 
   // Upgrade modal
   const [upgradeModalOpen, setUpgradeModalOpen] = useState(false);
@@ -373,6 +387,12 @@ export default function CampaignLeadsPage() {
   const handleWhatsAppClick = (lead: Lead) => {
     setSelectedLeadForWhatsApp(lead);
     setWhatsappDialogOpen(true);
+  };
+
+  // Handle lead details click
+  const handleOpenLeadDetails = (lead: Lead) => {
+    setSelectedLeadForDetails(lead);
+    setDetailsDialogOpen(true);
   };
 
   // Enrich lead email with Hunter.io
@@ -758,6 +778,7 @@ export default function CampaignLeadsPage() {
                         selectedLeadId={selectedLeadId}
                         onSelectLead={setSelectedLeadId}
                         onWhatsAppClick={(lead: any) => handleWhatsAppClick(lead)}
+                        onLeadClick={(lead: any) => handleOpenLeadDetails(lead)}
                         whatsappMessage=""
                       />
                     ))}
@@ -783,6 +804,7 @@ export default function CampaignLeadsPage() {
                 onWhatsAppClick={handleWhatsAppClick}
                 onEnrichEmail={handleEnrichEmail}
                 enrichingLeadIds={enrichingLeadIds}
+                onLeadClick={handleOpenLeadDetails}
               />
             </motion.div>
           )}
@@ -872,6 +894,16 @@ export default function CampaignLeadsPage() {
         onOpenChange={setUpgradeModalOpen}
         variant={upgradeModalVariant}
       />
+
+      {/* Lead Details Dialog */}
+      {selectedLeadForDetails && (
+        <LeadDetailsDialog
+          open={detailsDialogOpen}
+          onClose={() => setDetailsDialogOpen(false)}
+          lead={selectedLeadForDetails}
+          onLeadUpdated={fetchData}
+        />
+      )}
     </AppShell>
   );
 }
