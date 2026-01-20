@@ -35,6 +35,7 @@ interface KanbanColumnProps {
   selectedLeadId?: string | null;
   onSelectLead?: (leadId: string) => void;
   onWhatsAppClick?: (lead: Lead) => void;
+  onLeadClick?: (lead: Lead) => void;
   whatsappMessage?: string;
 }
 
@@ -46,6 +47,7 @@ export function KanbanColumn({
   selectedLeadId,
   onSelectLead,
   onWhatsAppClick,
+  onLeadClick,
   whatsappMessage,
 }: KanbanColumnProps) {
   const { isOver, setNodeRef } = useDroppable({
@@ -116,7 +118,7 @@ export function KanbanColumn({
                   key={lead.id}
                   lead={lead}
                   isSelected={selectedLeadId === lead.id}
-                  onClick={() => onSelectLead?.(lead.id)}
+                  onClick={() => onLeadClick?.(lead)}
                   onWhatsAppClick={() => onWhatsAppClick?.(lead)}
                   whatsappMessage={whatsappMessage}
                 />

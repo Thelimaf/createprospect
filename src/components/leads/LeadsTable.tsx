@@ -37,6 +37,7 @@ import {
   Loader2,
   Lock,
   Crown,
+  FileText,
 } from 'lucide-react';
 import { ExternalLinkButton } from '@/components/shared/ExternalLinkButton';
 import { buildWhatsAppUrl, ensureHttps } from '@/lib/external-links';
@@ -69,6 +70,7 @@ interface LeadsTableProps {
   onWhatsAppClick: (lead: Lead) => void;
   onEnrichEmail?: (leadId: string, website: string) => Promise<void>;
   enrichingLeadIds?: Set<string>;
+  onLeadClick?: (lead: Lead) => void;
 }
 
 type SortField = 'business_name' | 'rating' | 'status' | 'city' | 'updated_at';
@@ -115,7 +117,7 @@ function LockedData({ feature }: { feature: string }) {
   );
 }
 
-export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEmail, enrichingLeadIds = new Set() }: LeadsTableProps) {
+export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEmail, enrichingLeadIds = new Set(), onLeadClick }: LeadsTableProps) {
   const { isFree, canSendWhatsApp, canSearchEmails, isLeadUnlocked } = useUserPlan();
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [sortField, setSortField] = useState<SortField>('updated_at');
@@ -347,7 +349,7 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
                   <SortIndicator field="rating" />
                 </div>
               </TableHead>
-              <TableHead className="w-24">Ações</TableHead>
+              <TableHead className="w-32">Ações</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -527,6 +529,23 @@ export function LeadsTable({ leads, onStatusChange, onWhatsAppClick, onEnrichEma
                         context="table_website"
                         leadId={lead.id}
                       />
+                    )}
+                    {onLeadClick && (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-primary hover:text-primary/80 hover:bg-primary/10"
+                            onClick={() => onLeadClick(lead)}
+                          >
+                            <FileText className="h-4 w-4" />
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <span>Ver detalhes e enriquecer dados</span>
+                        </TooltipContent>
+                      </Tooltip>
                     )}
                   </div>
                 </TableCell>

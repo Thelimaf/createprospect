@@ -22,7 +22,8 @@ import {
   Loader2,
   AlertCircle,
   CheckCircle,
-  ExternalLink
+  ExternalLink,
+  Sparkles
 } from "lucide-react";
 import { brasilApi, firecrawlApi, formatCnpj, formatCurrency, formatDate } from "@/lib/api/enrichment";
 import { toast } from "sonner";
@@ -44,16 +45,16 @@ interface ScrapeData {
 interface Lead {
   id: string;
   business_name: string;
-  category: string | null;
-  phone: string | null;
-  email: string | null;
-  website: string | null;
-  address: string | null;
-  city: string | null;
-  state: string | null;
-  google_maps_url: string | null;
-  rating: number | null;
-  reviews_count: number | null;
+  category?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
+  address?: string | null;
+  city?: string | null;
+  state?: string | null;
+  google_maps_url?: string | null;
+  rating?: number | null;
+  reviews_count?: number | null;
   status: string;
   // CNPJ enrichment fields
   cnpj?: string | null;
@@ -79,6 +80,7 @@ interface LeadDetailsDialogProps {
 export function LeadDetailsDialog({ open, onClose, lead, onLeadUpdated }: LeadDetailsDialogProps) {
   const [isEnrichingCnpj, setIsEnrichingCnpj] = useState(false);
   const [isScrapingWebsite, setIsScrapingWebsite] = useState(false);
+  const [isEnrichingAll, setIsEnrichingAll] = useState(false);
   const [localLead, setLocalLead] = useState(lead);
 
   // Update local lead when prop changes
@@ -168,6 +170,76 @@ export function LeadDetailsDialog({ open, onClose, lead, onLeadUpdated }: LeadDe
     }
   };
 
+  // Enrich all data (CNPJ + Website scrape)
+  const handleEnrichAll = async () => {
+    setIsEnrichingAll(true);
+    const results: string[] = [];
+
+    try {
+      // Step 1: Search CNPJ
+      if (!localLead.cnpj) {
+        toast.loading("Buscando CNPJ...", { id: "enrich-all" });
+        const cnpjResult = await brasilApi.enrichCnpj(lead.id, lead.business_name, lead.city || undefined);
+        
+        if (cnpjResult.success && cnpjResult.data) {
+          const enrichData = cnpjResult.data as any;
+          setLocalLead(prev => ({
+            ...prev,
+            cnpj: enrichData.cnpj,
+            razao_social: enrichData.razao_social,
+            nome_fantasia: enrichData.nome_fantasia,
+            cnpj_status: enrichData.situacao,
+            cnae_principal: enrichData.cnae,
+            socios: enrichData.socios,
+            capital_social: enrichData.capital_social,
+            data_abertura: enrichData.data_abertura,
+            enriched_at: new Date().toISOString(),
+          }));
+          results.push("CNPJ encontrado");
+        } else {
+          results.push("CNPJ não encontrado");
+        }
+      } else {
+        results.push("CNPJ já existia");
+      }
+
+      // Step 2: Scrape website
+      if (localLead.website && !localLead.scrape_data?.content) {
+        toast.loading("Analisando website...", { id: "enrich-all" });
+        const scrapeResult = await firecrawlApi.scrape(localLead.website, lead.id);
+        
+        if (scrapeResult.success && scrapeResult.data) {
+          const data = scrapeResult.data as any;
+          setLocalLead(prev => ({
+            ...prev,
+            scrape_data: {
+              content: data.data?.markdown,
+              links: data.data?.links,
+              title: data.data?.metadata?.title,
+              description: data.data?.metadata?.description,
+              scraped_at: new Date().toISOString(),
+            },
+          }));
+          results.push("Site analisado");
+        } else {
+          results.push("Falha ao analisar site");
+        }
+      } else if (!localLead.website) {
+        results.push("Sem website");
+      } else {
+        results.push("Site já analisado");
+      }
+
+      toast.success(`Enriquecimento concluído: ${results.join(", ")}`, { id: "enrich-all" });
+      onLeadUpdated?.();
+    } catch (error) {
+      console.error("Error enriching all:", error);
+      toast.error("Erro ao enriquecer dados", { id: "enrich-all" });
+    } finally {
+      setIsEnrichingAll(false);
+    }
+  };
+
   const hasCnpjData = !!localLead.cnpj;
   const hasWebsiteData = !!localLead.scrape_data?.content;
 
@@ -180,6 +252,25 @@ export function LeadDetailsDialog({ open, onClose, lead, onLeadUpdated }: LeadDe
             {localLead.business_name}
           </DialogTitle>
         </DialogHeader>
+
+        {/* Enrich All Button */}
+        <Button 
+          onClick={handleEnrichAll}
+          disabled={isEnrichingAll || isEnrichingCnpj || isScrapingWebsite}
+          className="w-full mb-4 bg-gradient-to-r from-primary to-purple-600 hover:from-primary/90 hover:to-purple-600/90"
+        >
+          {isEnrichingAll ? (
+            <>
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+              Enriquecendo dados...
+            </>
+          ) : (
+            <>
+              <Sparkles className="h-4 w-4 mr-2" />
+              Enriquecer Dados Completos
+            </>
+          )}
+        </Button>
 
         <Tabs defaultValue="info" className="flex-1 flex flex-col min-h-0">
           <TabsList className="grid w-full grid-cols-3">
