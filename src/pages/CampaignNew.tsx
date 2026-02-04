@@ -11,6 +11,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/contexts/AuthContext';
 import { ArrowLeft, ArrowRight, Check, Briefcase, Smile, Heart } from 'lucide-react';
 import { toast } from 'sonner';
+import { useBetaTester } from '@/hooks/useBetaTester';
+import { BetaTesterWelcomeModal } from '@/components/billing/BetaTesterWelcomeModal';
 
 type Step = 1 | 2 | 3;
 
@@ -40,6 +42,11 @@ export default function CampaignNew() {
   const navigate = useNavigate();
   const [step, setStep] = useState<Step>(1);
   const [loading, setLoading] = useState(false);
+  const [showBetaWelcome, setShowBetaWelcome] = useState(false);
+  const [createdCampaignId, setCreatedCampaignId] = useState<string | null>(null);
+  
+  // Beta tester hook
+  const { shouldShowWelcome, markWelcomeAsSeen } = useBetaTester();
   
   // Dados do formulário
   const [name, setName] = useState('');
@@ -88,7 +95,14 @@ export default function CampaignNew() {
       if (error) throw error;
 
       toast.success('Campanha criada!');
-      navigate(`/campaigns/${data.id}`);
+      
+      // Verificar se deve mostrar popup de beta tester
+      if (shouldShowWelcome) {
+        setCreatedCampaignId(data.id);
+        setShowBetaWelcome(true);
+      } else {
+        navigate(`/campaigns/${data.id}`);
+      }
     } catch (error) {
       console.error('Erro ao criar campanha:', error);
       toast.error('Falha ao criar campanha');
@@ -97,8 +111,22 @@ export default function CampaignNew() {
     }
   };
 
+  const handleBetaWelcomeClose = async () => {
+    await markWelcomeAsSeen();
+    setShowBetaWelcome(false);
+    if (createdCampaignId) {
+      navigate(`/campaigns/${createdCampaignId}`);
+    }
+  };
+
   return (
     <AppShell title="Criar Campanha">
+      {/* Beta Tester Welcome Modal */}
+      <BetaTesterWelcomeModal 
+        open={showBetaWelcome} 
+        onClose={handleBetaWelcomeClose} 
+      />
+      
       <div className="mx-auto max-w-2xl">
         {/* Etapas de Progresso */}
         <div className="mb-8 flex items-center justify-center gap-2">

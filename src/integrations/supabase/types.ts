@@ -337,27 +337,60 @@ export type Database = {
       profiles: {
         Row: {
           avatar_url: string | null
+          beta_welcome_shown: boolean | null
           created_at: string
           duplicate_behavior: string | null
           full_name: string | null
           id: string
+          is_beta_tester: boolean | null
           updated_at: string
         }
         Insert: {
           avatar_url?: string | null
+          beta_welcome_shown?: boolean | null
           created_at?: string
           duplicate_behavior?: string | null
           full_name?: string | null
           id: string
+          is_beta_tester?: boolean | null
           updated_at?: string
         }
         Update: {
           avatar_url?: string | null
+          beta_welcome_shown?: boolean | null
           created_at?: string
           duplicate_behavior?: string | null
           full_name?: string | null
           id?: string
+          is_beta_tester?: boolean | null
           updated_at?: string
+        }
+        Relationships: []
+      }
+      promo_config: {
+        Row: {
+          created_at: string | null
+          current_count: number
+          id: string
+          is_active: boolean
+          max_beta_users: number
+          updated_at: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          current_count?: number
+          id?: string
+          is_active?: boolean
+          max_beta_users?: number
+          updated_at?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          current_count?: number
+          id?: string
+          is_active?: boolean
+          max_beta_users?: number
+          updated_at?: string | null
         }
         Relationships: []
       }
