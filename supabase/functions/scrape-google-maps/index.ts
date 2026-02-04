@@ -242,17 +242,18 @@ serve(async (req) => {
           source: "google_maps",
         };
 
-        const { error: insertError } = await supabaseClient
+        // Use upsert with composite key (user_id, place_id) to avoid conflicts
+        const { error: upsertError } = await supabaseClient
           .from("google_maps_leads")
-          .insert(lead);
+          .upsert(lead, { 
+            onConflict: 'user_id,place_id',
+            ignoreDuplicates: false 
+          });
 
-        if (!insertError) {
+        if (!upsertError) {
           newCount++;
-        } else if (insertError.code === "23505") {
-          // Unique violation - lead was inserted by another process
-          existingCount++;
         } else {
-          console.error(`Error inserting lead ${lead.business_name}:`, insertError);
+          console.error(`Error upserting lead ${lead.business_name}:`, upsertError);
         }
       }
     }

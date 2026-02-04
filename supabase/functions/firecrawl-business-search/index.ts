@@ -166,15 +166,24 @@ Deno.serve(async (req) => {
 
     console.log(`${newLeads.length} new leads after deduplication`);
 
-    // 4. Batch insert all new leads at once
+    // 4. Batch upsert all new leads at once (using composite key user_id + website)
     let savedCount = 0;
     if (newLeads.length > 0) {
-      const { error: insertError } = await supabase
-        .from('google_maps_leads')
-        .insert(newLeads);
+      // Add place_id based on website hash for upsert to work correctly
+      const leadsWithPlaceId = newLeads.map((lead: any) => ({
+        ...lead,
+        place_id: lead.website ? `firecrawl_${btoa(lead.website).slice(0, 50)}` : null,
+      }));
 
-      if (insertError) {
-        console.error('Batch insert error:', insertError);
+      const { error: upsertError } = await supabase
+        .from('google_maps_leads')
+        .upsert(leadsWithPlaceId, {
+          onConflict: 'user_id,place_id',
+          ignoreDuplicates: false
+        });
+
+      if (upsertError) {
+        console.error('Batch upsert error:', upsertError);
       } else {
         savedCount = newLeads.length;
       }
