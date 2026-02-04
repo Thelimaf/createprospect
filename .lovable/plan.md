@@ -1,71 +1,100 @@
 
 
-## Plano: Corrigir Envio de Emails com Domínio Verificado
+## Plano: Corrigir Deduplicação e Limpar Dados de Teste
 
 ### Problema Identificado
 
-Os emails estão sendo enviados de `noreply@resend.dev` (domínio de teste), mas seu domínio verificado é `studiomamute.com.br`. O Resend bloqueia emails de teste para destinatários externos.
+A verificação de duplicados na Edge Function `scrape-google-maps` está incorreta:
 
-### Solução
-
-Atualizar o remetente em ambas as Edge Functions de email para usar o domínio verificado.
-
----
-
-### Alteração 1: send-email-verification
-
-**Arquivo:** `supabase/functions/send-email-verification/index.ts`
-
-**Linha 115 - Alterar de:**
+**Código Atual (linha 176-180):**
 ```typescript
-from: "ProspectAI <noreply@resend.dev>",
+const { data: existingLead } = await supabaseClient
+  .from("google_maps_leads")
+  .select("*")
+  .eq("place_id", place.placeId)  // ❌ Verifica globalmente
+  .single();
 ```
 
-**Para:**
+Isso significa que se **qualquer usuário** já salvou um lead com determinado `place_id`, ele é considerado duplicado para **todos os usuários**.
+
+**Solução - Adicionar filtro por user_id:**
 ```typescript
-from: "ProspectAI <noreply@studiomamute.com.br>",
-```
-
----
-
-### Alteração 2: send-password-reset
-
-**Arquivo:** `supabase/functions/send-password-reset/index.ts`
-
-**Linha 98 - Alterar de:**
-```typescript
-from: "ProspectAI <noreply@resend.dev>",
-```
-
-**Para:**
-```typescript
-from: "ProspectAI <noreply@studiomamute.com.br>",
+const { data: existingLead } = await supabaseClient
+  .from("google_maps_leads")
+  .select("*")
+  .eq("user_id", user.id)         // ✅ Filtrar por usuário
+  .eq("place_id", place.placeId)
+  .maybeSingle();
 ```
 
 ---
 
-### Resumo das Alterações
+### Alterações Necessárias
 
-| Arquivo | Linha | Antes | Depois |
-|---------|-------|-------|--------|
-| `send-email-verification/index.ts` | 115 | `noreply@resend.dev` | `noreply@studiomamute.com.br` |
-| `send-password-reset/index.ts` | 98 | `noreply@resend.dev` | `noreply@studiomamute.com.br` |
+#### 1. Corrigir Deduplicação na Edge Function
+
+**Arquivo:** `supabase/functions/scrape-google-maps/index.ts`
+
+**Linhas 176-180** - Adicionar filtro `user_id`:
+
+```typescript
+// ANTES
+const { data: existingLead } = await supabaseClient
+  .from("google_maps_leads")
+  .select("*")
+  .eq("place_id", place.placeId)
+  .single();
+
+// DEPOIS
+const { data: existingLead } = await supabaseClient
+  .from("google_maps_leads")
+  .select("*")
+  .eq("user_id", user.id)
+  .eq("place_id", place.placeId)
+  .maybeSingle();
+```
+
+---
+
+#### 2. Limpar Dados do João (via Backend)
+
+Para limpar os dados do João, você precisa executar estas queries no painel do Lovable Cloud:
+
+```sql
+-- 1. Deletar leads do João
+DELETE FROM google_maps_leads 
+WHERE user_id = 'd0c7136d-0627-403c-85af-65097bfce84d';
+
+-- 2. Deletar buscas do João
+DELETE FROM google_maps_searches 
+WHERE user_id = 'd0c7136d-0627-403c-85af-65097bfce84d';
+
+-- 3. Deletar campanhas do João
+DELETE FROM campaigns 
+WHERE user_id = 'd0c7136d-0627-403c-85af-65097bfce84d';
+
+-- 4. Resetar uso do João
+UPDATE user_usage 
+SET searches_used_lifetime = 0, searches_used_monthly = 0 
+WHERE user_id = 'd0c7136d-0627-403c-85af-65097bfce84d';
+```
+
+---
+
+### Resumo
+
+| Arquivo | Alteração |
+|---------|-----------|
+| `scrape-google-maps/index.ts` | Linha 177: adicionar `.eq("user_id", user.id)` |
+| `scrape-google-maps/index.ts` | Linha 180: trocar `.single()` por `.maybeSingle()` |
+| Backend (manual) | Executar DELETE para limpar dados de teste |
 
 ---
 
 ### Resultado Esperado
 
-Após as alterações:
-- Emails de verificação de conta chegarão normalmente
-- Emails de recuperação de senha chegarão normalmente
-- Sem mais erro 403 do Resend
-
----
-
-### Teste Recomendado
-
-1. Testar cadastro com um email novo
-2. Verificar se o email de verificação chega
-3. Testar recuperação de senha
-4. Confirmar que não vai para spam
+Após a correção:
+- Cada usuário terá sua própria base de leads isolada
+- Se João buscar 20 leads, ele receberá 20 (a menos que ele mesmo já tenha esses leads)
+- Outros usuários não afetam a contagem de duplicados do João
 
