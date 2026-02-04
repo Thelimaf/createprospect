@@ -1,107 +1,94 @@
 
 
-## Plano: Correção Urgente - Constraint Incompatível com ON CONFLICT
+## Plano: Limpar Banco de Leads e Garantir Sistema 100% Funcional
 
-### Diagnóstico do Problema
+### Estado Atual
 
-A busca de João por "Academias em Londrina" **retornou 20 resultados da API Serper**, mas **TODOS os 20 inserts falharam** com o erro:
+O sistema está **quase pronto**, mas há dois problemas identificados:
 
-```
-"there is no unique or exclusion constraint matching the ON CONFLICT specification"
-```
-
----
-
-### Causa Raiz
-
-A migração anterior criou um **índice parcial** (com cláusula `WHERE`):
-
-```sql
-CREATE UNIQUE INDEX google_maps_leads_user_place_unique 
-ON public.google_maps_leads (user_id, place_id) 
-WHERE (place_id IS NOT NULL)  -- ISSO É O PROBLEMA!
-```
-
-**Índices parciais não funcionam com `ON CONFLICT`** no PostgreSQL. O Supabase client usa `ON CONFLICT` internamente quando chamamos `.upsert()`, e isso requer uma constraint UNIQUE real ou índice único **SEM** cláusula WHERE.
+1. **Edge function ainda não redeployada** - A constraint correta existe no banco, mas a função está usando versão cacheada
+2. **Dados antigos no banco** - 315 leads de testes anteriores precisam ser removidos
 
 ---
 
-### Fluxo do Erro
+### O Que Será Feito
 
 ```text
-┌────────────────────────────────────────────────────────────────────┐
-│                     O QUE ACONTECEU COM JOÃO                       │
-├────────────────────────────────────────────────────────────────────┤
-│                                                                     │
-│  1. João buscou "Academias em Londrina" (20 leads)                 │
-│                         ↓                                           │
-│  2. API Serper retornou 20 academias com sucesso                   │
-│                         ↓                                           │
-│  3. Edge function tentou upsert com onConflict: 'user_id,place_id' │
-│                         ↓                                           │
-│  4. PostgreSQL: "Não existe constraint UNIQUE válida para          │
-│     user_id + place_id que funcione com ON CONFLICT"               │
-│     (índices parciais não contam!)                                 │
-│                         ↓                                           │
-│  5. TODOS os 20 upserts falharam com erro 42P10                    │
-│                         ↓                                           │
-│  6. Resultado: 0 leads salvos, mesmo com 20 disponíveis            │
-│                                                                     │
-└────────────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                         AÇÕES DE LIMPEZA E CORREÇÃO                         │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                              │
+│  1. LIMPEZA DO BANCO DE DADOS                                               │
+│     ├─ Excluir TODOS os leads da tabela google_maps_leads (315 registros)   │
+│     └─ Excluir TODOS os históricos de busca google_maps_searches (22)       │
+│                                                                              │
+│  2. REDEPLOY DAS EDGE FUNCTIONS                                             │
+│     ├─ scrape-google-maps (forçar reconhecimento da nova constraint)        │
+│     └─ firecrawl-business-search (garantir consistência)                    │
+│                                                                              │
+└─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Solução
+### Detalhes da Limpeza
 
-Recriar o índice **SEM** a cláusula `WHERE`:
+| Tabela | Registros Atuais | Ação |
+|--------|------------------|------|
+| `google_maps_leads` | 315 leads | Excluir tudo |
+| `google_maps_searches` | 22 buscas | Excluir tudo |
+
+**Por usuário que será limpo:**
+- Anderson Lima: 193 leads
+- Anderson: 60 leads  
+- Alessandro Evangelista: 35 leads
+- Usuário sem nome: 20 leads
+- João Silva: 7 leads
+
+---
+
+### Resultado Esperado
+
+Após a execução:
+
+| Cenário | Antes | Depois |
+|---------|-------|--------|
+| João busca "Academias em Londrina" (20) | Recebe 0 | Recebe ~20 |
+| Maria busca mesmos termos (20) | Bloqueada por João | Recebe ~20 (isolados) |
+| Dados entre usuários | Misturados/conflitos | Totalmente isolados |
+| Constraint funcionando | Não (cache) | Sim (nova constraint) |
+
+---
+
+### Comandos SQL que Serão Executados
 
 ```sql
--- Remover o índice parcial atual
-DROP INDEX IF EXISTS google_maps_leads_user_place_unique;
+-- Limpar todos os leads de busca do Google Maps
+DELETE FROM google_maps_leads;
 
--- Criar índice ÚNICO completo (sem WHERE)
-CREATE UNIQUE INDEX google_maps_leads_user_place_unique 
-ON public.google_maps_leads (user_id, place_id);
+-- Limpar histórico de buscas
+DELETE FROM google_maps_searches;
 ```
-
-**Nota:** Para criar um índice único, precisamos garantir que não há duplicatas existentes de `(user_id, place_id)`. Vou verificar e limpar se necessário.
-
----
-
-### Alterações Necessárias
-
-| Tipo | Componente | Ação |
-|------|------------|------|
-| 🗄️ DB | Índice `google_maps_leads_user_place_unique` | Recriar SEM cláusula WHERE |
-| 🗄️ DB | Dados existentes | Verificar/limpar duplicatas de (user_id, place_id) |
-| 🔄 Deploy | Edge function `scrape-google-maps` | Re-deploy para aplicar nova constraint |
 
 ---
 
 ### Seção Técnica
 
-**Por que índices parciais não funcionam com ON CONFLICT:**
+**Por que os erros continuavam após a migração:**
 
-O PostgreSQL exige que a constraint ou índice usado em `ON CONFLICT` cubra **todas** as linhas da tabela, não apenas um subconjunto. Índices parciais (com `WHERE`) são otimizações de performance, mas não servem como alvos válidos para `ON CONFLICT`.
+As Edge Functions no Lovable Cloud/Supabase rodam em workers isolados. Quando uma migração altera constraints, as funções que já estão em execução podem continuar usando o schema antigo em cache. O redeploy força o worker a buscar o schema atualizado.
 
-**Referência PostgreSQL:**
-> "For ON CONFLICT DO UPDATE, a unique index inference specification must uniquely identify a single row. A partial unique index is not sufficient."
-
-**Verificação de duplicatas:**
-Antes de criar o índice único completo, executar:
+**Verificação da constraint atual (confirmada):**
 ```sql
-SELECT user_id, place_id, COUNT(*) 
-FROM google_maps_leads 
-WHERE place_id IS NOT NULL
-GROUP BY user_id, place_id 
-HAVING COUNT(*) > 1;
+CREATE UNIQUE INDEX google_maps_leads_user_place_unique 
+ON public.google_maps_leads USING btree (user_id, place_id)
+-- SEM cláusula WHERE - CORRETO!
 ```
 
-Se houver duplicatas, manter apenas o registro mais recente de cada par.
-
-**Impacto esperado após correção:**
-- João busca 20 leads → Recebe ~20 leads (menos duplicatas reais dele mesmo)
-- Sistema 100% funcional para todos os usuários
-- Isolamento de dados por usuário garantido
+**Fluxo após correção:**
+1. Serper retorna 20 leads
+2. Edge function tenta upsert com `onConflict: 'user_id,place_id'`
+3. PostgreSQL reconhece a constraint correta
+4. Upsert funciona - 20 leads salvos
+5. Usuário vê 20 leads na interface
 
