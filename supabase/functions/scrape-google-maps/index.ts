@@ -172,12 +172,13 @@ serve(async (req) => {
       const city = addressParts.length >= 2 ? addressParts[addressParts.length - 2]?.trim() : null;
       const state = addressParts.length >= 1 ? addressParts[addressParts.length - 1]?.trim() : null;
 
-      // LAYER 1 & 8: Check if lead already exists for smart merge
+      // LAYER 1 & 8: Check if lead already exists FOR THIS USER for smart merge
       const { data: existingLead } = await supabaseClient
         .from("google_maps_leads")
         .select("*")
+        .eq("user_id", user.id)
         .eq("place_id", place.placeId)
-        .single();
+        .maybeSingle();
 
       if (existingLead) {
         // Lead already exists
