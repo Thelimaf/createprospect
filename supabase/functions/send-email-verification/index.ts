@@ -112,7 +112,7 @@ const handler = async (req: Request): Promise<Response> => {
 
     // Send verification email
     const emailResponse = await resend.emails.send({
-      from: "ProspectAI <noreply@resend.dev>",
+      from: "ProspectAI <noreply@studiomamute.com.br>",
       to: [email],
       subject: "Verifique seu email - ProspectAI",
       html: `

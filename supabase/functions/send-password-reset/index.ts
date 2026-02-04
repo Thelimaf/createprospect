@@ -95,7 +95,7 @@ serve(async (req: Request) => {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        from: "ProspectAI <noreply@resend.dev>",
+        from: "ProspectAI <noreply@studiomamute.com.br>",
         to: [email],
         subject: "Redefinir sua senha - ProspectAI",
         html: `
