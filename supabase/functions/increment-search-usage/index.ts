@@ -55,6 +55,47 @@ serve(async (req) => {
 
     console.log('Incrementing search usage for user:', user.id);
 
+    // Get user profile to check beta tester status
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('is_beta_tester')
+      .eq('id', user.id)
+      .single();
+
+    // Get current usage
+    const { data: usage } = await supabase
+      .from('user_usage')
+      .select('*')
+      .eq('user_id', user.id)
+      .single();
+
+    const now = new Date().toISOString();
+
+    // Beta testers use monthly counter (like Starter plan)
+    if (profile?.is_beta_tester) {
+      console.log('Beta tester - using monthly counter:', user.id);
+      const newMonthlyCount = (usage?.searches_used_monthly || 0) + 1;
+      
+      await supabase
+        .from('user_usage')
+        .upsert({
+          user_id: user.id,
+          searches_used_monthly: newMonthlyCount,
+          searches_used_lifetime: (usage?.searches_used_lifetime || 0) + 1,
+          last_search_at: now,
+        }, { onConflict: 'user_id' });
+
+      return new Response(
+        JSON.stringify({ 
+          success: true, 
+          plan: 'beta_tester',
+          searches_used_monthly: newMonthlyCount,
+          remaining: Math.max(0, 100 - newMonthlyCount)
+        }),
+        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
     // Get user subscription with plan
     const { data: subscription, error: subError } = await supabase
       .from('user_subscriptions')
@@ -69,13 +110,6 @@ serve(async (req) => {
         { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
-
-    // Get current usage
-    const { data: usage } = await supabase
-      .from('user_usage')
-      .select('*')
-      .eq('user_id', user.id)
-      .single();
 
     const planSlug = subscription.subscription_plans.slug;
     const now = new Date().toISOString();
