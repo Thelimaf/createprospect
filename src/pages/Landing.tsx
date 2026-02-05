@@ -272,7 +272,7 @@ const HeroSection = () => {
             variants={fadeUp}
             className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-bold text-white leading-tight"
           >
-            Prospete Clientes com{" "}
+            Prospecte Clientes com{" "}
             <span className="text-gradient-hero">Inteligência</span>
           </motion.h1>
 
