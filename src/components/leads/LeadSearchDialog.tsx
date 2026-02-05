@@ -10,6 +10,13 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Slider } from '@/components/ui/slider';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { supabase } from '@/integrations/supabase/client';
 import { useCheckLimit } from '@/hooks/useCheckLimit';
 import { useUserPlan } from '@/hooks/useUserPlan';
@@ -17,6 +24,20 @@ import { UpgradeModal, UpgradeModalVariant } from '@/components/billing/UpgradeM
 import { toast } from 'sonner';
 import confetti from 'canvas-confetti';
 import { Search, Loader2, MapPin } from 'lucide-react';
+
+const COUNTRIES = [
+  { value: 'br', label: '🇧🇷 Brasil' },
+  { value: 'us', label: '🇺🇸 Estados Unidos' },
+  { value: 'ca', label: '🇨🇦 Canadá' },
+  { value: 'mx', label: '🇲🇽 México' },
+  { value: 'ar', label: '🇦🇷 Argentina' },
+  { value: 'pt', label: '🇵🇹 Portugal' },
+  { value: 'es', label: '🇪🇸 Espanha' },
+  { value: 'uk', label: '🇬🇧 Reino Unido' },
+  { value: 'de', label: '🇩🇪 Alemanha' },
+  { value: 'fr', label: '🇫🇷 França' },
+  { value: 'it', label: '🇮🇹 Itália' },
+];
 
 interface LeadSearchDialogProps {
   open: boolean;
@@ -41,6 +62,7 @@ export function LeadSearchDialog({
   
   const [query, setQuery] = useState('');
   const [limit, setLimit] = useState([20]);
+  const [country, setCountry] = useState('br');
   const [isLoading, setIsLoading] = useState(false);
   
   // Upgrade modal state
@@ -78,6 +100,7 @@ export function LeadSearchDialog({
           page: 1, 
           campaignId,
           mode: 'normal',
+          country, // Pass country for correct DDI normalization
         },
       });
 
@@ -134,6 +157,25 @@ export function LeadSearchDialog({
           </DialogHeader>
 
           <div className="space-y-6 py-4">
+            {/* Country Selector */}
+            <div className="space-y-2">
+              <Label htmlFor="country" className="text-foreground">
+                País
+              </Label>
+              <Select value={country} onValueChange={setCountry}>
+                <SelectTrigger id="country" className="bg-input border-border">
+                  <SelectValue placeholder="Selecione o país..." />
+                </SelectTrigger>
+                <SelectContent className="bg-popover">
+                  {COUNTRIES.map((c) => (
+                    <SelectItem key={c.value} value={c.value}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
             {/* Search Input */}
             <div className="space-y-2">
               <Label htmlFor="search-query" className="text-foreground">
@@ -141,7 +183,7 @@ export function LeadSearchDialog({
               </Label>
               <Input
                 id="search-query"
-                placeholder="Encontre clientes no seu bairro"
+                placeholder={country === 'br' ? 'Encontre clientes no seu bairro' : 'Find customers in your area'}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}

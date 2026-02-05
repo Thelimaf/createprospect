@@ -10,6 +10,24 @@ import {
 import { Slider } from '@/components/ui/slider';
 import { useUserPlan } from '@/hooks/useUserPlan';
 
+const COUNTRIES = [
+  { value: 'br', label: '🇧🇷 Brasil' },
+  { value: 'us', label: '🇺🇸 Estados Unidos' },
+  { value: 'ca', label: '🇨🇦 Canadá' },
+  { value: 'mx', label: '🇲🇽 México' },
+  { value: 'ar', label: '🇦🇷 Argentina' },
+  { value: 'pt', label: '🇵🇹 Portugal' },
+  { value: 'es', label: '🇪🇸 Espanha' },
+  { value: 'uk', label: '🇬🇧 Reino Unido' },
+  { value: 'de', label: '🇩🇪 Alemanha' },
+  { value: 'fr', label: '🇫🇷 França' },
+  { value: 'it', label: '🇮🇹 Itália' },
+  { value: 'cl', label: '🇨🇱 Chile' },
+  { value: 'co', label: '🇨🇴 Colômbia' },
+  { value: 'pe', label: '🇵🇪 Peru' },
+  { value: 'uy', label: '🇺🇾 Uruguai' },
+];
+
 const SEGMENTS = [
   { value: 'all', label: 'Todos os Segmentos' },
   { value: 'saude', label: 'Saúde' },
@@ -61,6 +79,7 @@ export interface SearchFiltersData {
   state: string;
   city: string;
   quantity: number;
+  country: string;
 }
 
 interface SearchFiltersProps {
@@ -76,8 +95,28 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
     onChange({ ...filters, [key]: value });
   };
 
+  // Show state selector only for Brazil
+  const showStateSelector = filters.country === 'br';
+
   return (
     <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      {/* Country Selector */}
+      <div className="space-y-2">
+        <Label htmlFor="country">País</Label>
+        <Select value={filters.country} onValueChange={(v) => handleChange('country', v)}>
+          <SelectTrigger id="country">
+            <SelectValue placeholder="Selecione o país..." />
+          </SelectTrigger>
+          <SelectContent className="bg-popover max-h-[300px]">
+            {COUNTRIES.map((country) => (
+              <SelectItem key={country.value} value={country.value}>
+                {country.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
       <div className="space-y-2">
         <Label htmlFor="term">Tipo de Negócio</Label>
         <Input
@@ -104,33 +143,35 @@ export function SearchFilters({ filters, onChange }: SearchFiltersProps) {
         </Select>
       </div>
 
-      <div className="space-y-2">
-        <Label htmlFor="state">Estado</Label>
-        <Select value={filters.state} onValueChange={(v) => handleChange('state', v)}>
-          <SelectTrigger id="state">
-            <SelectValue placeholder="Selecione..." />
-          </SelectTrigger>
-          <SelectContent className="bg-popover max-h-[300px]">
-            {STATES.map((st) => (
-              <SelectItem key={st.value} value={st.value}>
-                {st.label}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
+      {showStateSelector && (
+        <div className="space-y-2">
+          <Label htmlFor="state">Estado</Label>
+          <Select value={filters.state} onValueChange={(v) => handleChange('state', v)}>
+            <SelectTrigger id="state">
+              <SelectValue placeholder="Selecione..." />
+            </SelectTrigger>
+            <SelectContent className="bg-popover max-h-[300px]">
+              {STATES.map((st) => (
+                <SelectItem key={st.value} value={st.value}>
+                  {st.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      )}
 
       <div className="space-y-2">
         <Label htmlFor="city">Cidade</Label>
         <Input
           id="city"
-          placeholder="Ex: São Paulo, Curitiba..."
+          placeholder={filters.country === 'br' ? 'Ex: São Paulo, Curitiba...' : 'Ex: New York, Madrid...'}
           value={filters.city}
           onChange={(e) => handleChange('city', e.target.value)}
         />
       </div>
 
-      <div className="sm:col-span-2 lg:col-span-4 space-y-3">
+      <div className={`space-y-3 ${showStateSelector ? 'sm:col-span-2 lg:col-span-4' : 'sm:col-span-2 lg:col-span-3'}`}>
         <div className="flex items-center justify-between">
           <Label>Quantidade de Empresas</Label>
           <span className="text-sm font-medium text-primary">{filters.quantity} empresas</span>

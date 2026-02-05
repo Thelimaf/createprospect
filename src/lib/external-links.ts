@@ -31,19 +31,53 @@ export function isRunningInIframe(): boolean {
   }
 }
 
+// Known country codes with expected phone number lengths
+const KNOWN_COUNTRY_CODES: Record<string, { code: string; minLen: number; maxLen: number }> = {
+  '55':  { code: '55',  minLen: 12, maxLen: 13 }, // BR: 55 + DDD(2) + 8-9 digits
+  '1':   { code: '1',   minLen: 11, maxLen: 11 }, // US/CA: 1 + 10 digits
+  '54':  { code: '54',  minLen: 12, maxLen: 13 }, // AR
+  '52':  { code: '52',  minLen: 12, maxLen: 13 }, // MX
+  '351': { code: '351', minLen: 12, maxLen: 12 }, // PT
+  '34':  { code: '34',  minLen: 11, maxLen: 11 }, // ES
+  '44':  { code: '44',  minLen: 12, maxLen: 12 }, // UK
+  '49':  { code: '49',  minLen: 12, maxLen: 14 }, // DE
+  '33':  { code: '33',  minLen: 11, maxLen: 11 }, // FR
+  '39':  { code: '39',  minLen: 12, maxLen: 12 }, // IT
+  '56':  { code: '56',  minLen: 11, maxLen: 12 }, // CL
+  '57':  { code: '57',  minLen: 12, maxLen: 12 }, // CO
+  '51':  { code: '51',  minLen: 11, maxLen: 11 }, // PE
+  '598': { code: '598', minLen: 11, maxLen: 12 }, // UY
+};
+
 /**
- * Normalize Brazilian phone number to format 55DDDNUMBER
+ * Normalize phone to international format
+ * Intelligently detects if already has a valid country code
  */
-export function normalizePhoneBR(phone: string): string {
-  const digits = phone.replace(/\D/g, '');
+export function normalizePhone(phone: string, defaultCountryCode: string = '55'): string {
+  if (!phone) return phone;
   
-  // If already starts with 55, return as is
-  if (digits.startsWith('55')) {
-    return digits;
+  let digits = phone.replace(/\D/g, '');
+  
+  // Check if already starts with a known country code AND has valid length
+  for (const [code, info] of Object.entries(KNOWN_COUNTRY_CODES)) {
+    if (digits.startsWith(code) && digits.length >= info.minLen && digits.length <= info.maxLen) {
+      return digits; // Already correct, don't modify
+    }
   }
   
-  // Add country code
-  return `55${digits}`;
+  // Remove leading zeros (common in some countries like UK)
+  digits = digits.replace(/^0+/, '');
+  
+  // Add default country code
+  return defaultCountryCode + digits;
+}
+
+/**
+ * Normalize Brazilian phone number to format 55DDDNUMBER
+ * @deprecated Use normalizePhone() instead for international support
+ */
+export function normalizePhoneBR(phone: string): string {
+  return normalizePhone(phone, '55');
 }
 
 /**
@@ -51,7 +85,8 @@ export function normalizePhoneBR(phone: string): string {
  * Never uses api.whatsapp.com or web.whatsapp.com
  */
 export function buildWhatsAppUrl(phone: string, text?: string): string {
-  const normalizedPhone = normalizePhoneBR(phone);
+  // Use the smart normalizePhone function
+  const normalizedPhone = normalizePhone(phone);
   
   if (text) {
     const encodedText = encodeURIComponent(text);

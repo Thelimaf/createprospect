@@ -1,10 +1,45 @@
-import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import { createClient } from "npm:@supabase/supabase-js@2";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
   "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
 };
+
+// Country codes mapping (ISO 3166-1 alpha-2 → DDI)
+const COUNTRY_CODES: Record<string, string> = {
+  br: "55",  // Brazil
+  us: "1",   // USA
+  ca: "1",   // Canada
+  mx: "52",  // Mexico
+  ar: "54",  // Argentina
+  pt: "351", // Portugal
+  es: "34",  // Spain
+  uk: "44",  // UK
+  de: "49",  // Germany
+  fr: "33",  // France
+  it: "39",  // Italy
+  cl: "56",  // Chile
+  co: "57",  // Colombia
+  pe: "51",  // Peru
+  uy: "598", // Uruguay
+};
+
+// Known country code prefixes for validation
+const KNOWN_PREFIXES = ["1", "33", "34", "39", "44", "49", "51", "52", "54", "55", "56", "57", "351", "598"];
+
+// Check if phone number already starts with a known country code
+function startsWithKnownCountryCode(phone: string): boolean {
+  for (const prefix of KNOWN_PREFIXES) {
+    if (phone.startsWith(prefix)) {
+      // Additional validation: phone should be long enough to include country code + number
+      const expectedMinLength = prefix.length + 8; // At least 8 more digits after country code
+      if (phone.length >= expectedMinLength) {
+        return true;
+      }
+    }
+  }
+  return false;
+}
 
 // Helper to check if value is better (non-null/non-empty)
 function getBetterValue<T>(existing: T | null | undefined, newVal: T | null | undefined): T | null | undefined {
@@ -14,7 +49,7 @@ function getBetterValue<T>(existing: T | null | undefined, newVal: T | null | un
   return existing;
 }
 
-serve(async (req) => {
+Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
@@ -36,11 +71,23 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
-    const { query, limit = 20, page = 1, campaignId, mode = "normal", checkRecent = false } = await req.json();
+    const { 
+      query, 
+      limit = 20, 
+      page = 1, 
+      campaignId, 
+      mode = "normal", 
+      checkRecent = false,
+      country = "br" // Default to Brazil for backwards compatibility
+    } = await req.json();
 
     if (!query) {
       throw new Error("Query is required");
     }
+
+    // Get country code for phone normalization
+    const countryCode = COUNTRY_CODES[country] || "55";
+    console.log(`Using country: ${country}, DDI: ${countryCode}`);
 
     // LAYER 3: Check for recent search if requested
     if (checkRecent) {
@@ -91,14 +138,14 @@ serve(async (req) => {
 
     // LAYER 2: Use 'start' parameter for proper pagination
     const start = (page - 1) * 20;
-    console.log(`Scraping Google Maps for: "${query}" with limit ${limit}, page ${page}, start ${start}, mode ${mode}`);
+    console.log(`Scraping Google Maps for: "${query}" with limit ${limit}, page ${page}, start ${start}, mode ${mode}, country ${country}`);
 
     const serperApiKey = Deno.env.get("SERPER_API_KEY");
     if (!serperApiKey) {
       throw new Error("SERPER_API_KEY not configured");
     }
 
-    // Call Serper.dev Google Maps API with corrected pagination
+    // Call Serper.dev Google Maps API with dynamic country settings
     const serperResponse = await fetch("https://google.serper.dev/maps", {
       method: "POST",
       headers: {
@@ -109,8 +156,8 @@ serve(async (req) => {
         q: query,
         num: Math.min(limit, 20),
         ...(start > 0 && { start }), // Only include start if > 0
-        hl: "pt",
-        gl: "br",
+        hl: country === "br" ? "pt" : (country === "es" || country === "mx" || country === "ar" ? "es" : "en"),
+        gl: country, // Dynamic geolocation based on country parameter
       }),
     });
 
@@ -157,14 +204,23 @@ serve(async (req) => {
     let updatedCount = 0;
 
     for (const place of placesToProcess) {
-      // Clean phone number - remove non-numeric characters
-      let cleanPhone = place.phoneNumber?.replace(/\D/g, "") || null;
+      // Clean phone number - remove non-numeric characters but preserve + prefix
+      let cleanPhone = place.phoneNumber?.replace(/[^\d+]/g, "") || null;
       
-      // Ensure Brazilian phone format
-      if (cleanPhone && cleanPhone.length === 10) {
-        cleanPhone = "55" + cleanPhone;
-      } else if (cleanPhone && cleanPhone.length === 11) {
-        cleanPhone = "55" + cleanPhone;
+      // Smart phone normalization based on country
+      if (cleanPhone) {
+        // If starts with +, remove it (already has country code)
+        if (cleanPhone.startsWith('+')) {
+          cleanPhone = cleanPhone.slice(1);
+        } 
+        // Check if already has a valid country code
+        else if (!startsWithKnownCountryCode(cleanPhone)) {
+          // Remove leading zeros (common in some countries)
+          cleanPhone = cleanPhone.replace(/^0+/, '');
+          // Add the appropriate country code
+          cleanPhone = countryCode + cleanPhone;
+        }
+        // If it already starts with a known code, keep it as is
       }
 
       // Extract city from address
