@@ -1,203 +1,188 @@
 
-## Plano: Mudar Plano Starter para Vitalício (R$ 27,90)
+## Plano: Corrigir Beta Testers Sem Acesso às Buscas
 
-### Resumo da Mudança
+### Problema Identificado
 
-Atualmente o plano Starter cobra **R$ 27,90/mês** com 100 buscas mensais. A nova estrutura será:
+A investigação revelou que alguns Beta Testers têm a flag `is_beta_tester = true` no perfil, **mas não possuem o plano Starter atribuído**:
 
-| Aspecto | Antes | Depois |
-|---------|-------|--------|
-| Modelo | Mensal (assinatura) | Pagamento único vitalício |
-| Preço | R$ 27,90/mês | R$ 27,90 (uma vez) |
-| Buscas | 100/mês | 100/mês para sempre |
-| Renovação | A cada 30 dias | Nunca expira |
+| Usuário | is_beta_tester | plan_slug | Problema |
+|---------|----------------|-----------|----------|
+| Israel Freitas | ✅ true | ❌ null | Sem assinatura |
+| Michel | ✅ true | ❌ free | Plano Free |
+| Ronei Vinagre | ✅ true | ❌ null | Sem assinatura |
+| Willian Sena | ✅ true | ✅ starter | OK |
+
+O sistema atual só dá acesso PRO para `plan_slug = 'starter'`, ignorando a flag `is_beta_tester`.
 
 ---
 
-### Arquivos a Serem Modificados
+### Solução em Duas Frentes
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         PÁGINAS E COMPONENTES                               │
+│                         CORREÇÃO NECESSÁRIA                                 │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  1. src/pages/Pricing.tsx                                                   │
-│     ├─ Mudar "/mês" → "vitalício" no preço                                 │
-│     ├─ Atualizar FAQs (remover pergunta sobre cancelamento)                │
-│     └─ Mudar textos "100 buscas/mês" → "100 buscas/mês para sempre"        │
+│  1. EDGE FUNCTION: check-user-limits/index.ts                               │
+│     ├─ Adicionar verificação da flag is_beta_tester no perfil               │
+│     ├─ Se is_beta_tester = true → tratar como plano Starter (100 buscas)   │
+│     └─ Priorizar verificação ANTES de checar o plano Free                   │
 │                                                                             │
-│  2. src/pages/Landing.tsx                                                   │
-│     ├─ Seção PricingSection: mudar period "/mês" → "vitalício"             │
-│     └─ Atualizar FAQs na seção FAQ                                         │
+│  2. EDGE FUNCTION: increment-search-usage/index.ts                          │
+│     └─ Adicionar mesma lógica para beta testers                             │
 │                                                                             │
-│  3. src/pages/Checkout.tsx                                                  │
-│     ├─ Mudar título "Assinar" → "Adquirir"                                 │
-│     └─ Mudar subtítulo "R$ 27,90/mês" → "R$ 27,90 (pagamento único)"       │
-│                                                                             │
-│  4. src/pages/Billing.tsx                                                   │
-│     ├─ Remover lógica de "Próxima renovação"                               │
-│     ├─ Remover botão "Cancelar Assinatura"                                 │
-│     └─ Mostrar "Acesso Vitalício" para usuários PRO                        │
-│                                                                             │
-│  5. src/components/billing/PixPayment.tsx                                   │
-│     └─ Mudar "Plano Starter - Mensal" → "Plano Starter - Vitalício"        │
-│                                                                             │
-│  6. src/components/billing/UsageCard.tsx                                    │
-│     ├─ Remover "Renova em" para usuários PRO                               │
-│     ├─ Mudar "Buscas este mês" → "Buscas utilizadas"                       │
-│     └─ Mostrar "Acesso Vitalício" badge                                    │
-│                                                                             │
-│  7. src/components/billing/UpgradeModal.tsx                                 │
-│     ├─ Mudar "R$ 27,90/mês" → "R$ 27,90 (vitalício)"                       │
-│     └─ Mudar "100 buscas por mês" → "100 buscas/mês para sempre"           │
-│                                                                             │
-│  8. src/components/billing/PlanBadge.tsx                                    │
-│     └─ (Opcional) Adicionar indicador "VITALÍCIO"                          │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                           EDGE FUNCTIONS                                    │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  9. supabase/functions/create-pix-payment/index.ts                          │
-│     └─ Mudar descrição "Plano Starter Mensal" → "Plano Starter Vitalício"  │
-│                                                                             │
-│  10. supabase/functions/check-pix-payment/index.ts                          │
-│     ├─ Remover lógica de "current_period_end" (ou setar null)              │
-│     └─ Ajustar notificação de email (remover próxima cobrança)             │
-│                                                                             │
-│  11. supabase/functions/check-user-limits/index.ts                          │
-│     └─ Ajustar para não verificar renovação mensal (vitalício)             │
-│                                                                             │
-└─────────────────────────────────────────────────────────────────────────────┘
-
-┌─────────────────────────────────────────────────────────────────────────────┐
-│                              HOOKS                                          │
-├─────────────────────────────────────────────────────────────────────────────┤
-│                                                                             │
-│  12. src/hooks/useUserPlan.ts                                               │
-│     └─ (Opcional) Ajustar lógica de limite mensal vs vitalício             │
+│  3. MIGRAÇÃO SQL (Opcional mas recomendado):                                │
+│     └─ Corrigir beta testers existentes atribuindo plano Starter            │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Mudanças de Copy Detalhadas
-
-#### Preços e Valores
-
-| Local | Antes | Depois |
-|-------|-------|--------|
-| Pricing.tsx | `R$ 27,90/mês` | `R$ 27,90` (vitalício) |
-| Landing.tsx | `period: "/mês"` | `period: " (vitalício)"` |
-| Checkout.tsx | `Pagamento via PIX` | `Pagamento único via PIX` |
-| UpgradeModal | `R$ 27,90/mês` | `R$ 27,90 uma vez` |
-
-#### Features e Benefícios
-
-| Local | Antes | Depois |
-|-------|-------|--------|
-| Pricing | `100 buscas/mês` | `100 buscas/mês para sempre` |
-| Landing | `100 buscas/mês` | `100 buscas/mês para sempre` |
-| UpgradeModal | `100 buscas por mês` | `100 buscas/mês para sempre` |
-
-#### CTAs (Call to Action)
-
-| Local | Antes | Depois |
-|-------|-------|--------|
-| Pricing | `Assinar Agora` | `Comprar Agora` |
-| Landing | `Assinar Agora` | `Comprar Agora` |
-| Checkout | `Assinar Plano Starter` | `Adquirir Acesso Vitalício` |
-| UpgradeModal | `Assinar Agora com PIX` | `Comprar Agora com PIX` |
-
-#### FAQs a Atualizar/Remover
-
-| FAQ | Ação |
-|-----|------|
-| "Posso cancelar quando quiser?" | **Remover** (não há assinatura) |
-| "O plano renova automaticamente?" | **Adicionar**: "Não. Pague uma vez, use para sempre." |
-| "Quais os benefícios do Starter?" | **Manter** com ajuste de copy |
-
----
-
-### Lógica de Negócio
-
-A mudança principal na lógica é:
-
-1. **Sem renovação**: O campo `current_period_end` não será usado para expirar o acesso
-2. **Reset mensal mantido**: As 100 buscas ainda resetam a cada 30 dias
-3. **Sem cancelamento**: Usuários PRO têm acesso permanente
+### Fluxo Corrigido
 
 ```text
-ANTES (Mensal):
-┌────────────────┐    ┌────────────────┐    ┌────────────────┐
-│   Pagamento    │───>│  Acesso 30d    │───>│   Renovação    │
-│   R$ 27,90     │    │  100 buscas    │    │   ou perde     │
-└────────────────┘    └────────────────┘    └────────────────┘
+ANTES (Incorreto):
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│ Beta Tester      │────>│ Verifica plano   │────>│ plan = free/null │
+│ is_beta = true   │     │ (ignora flag)    │     │ → BLOQUEADO!     │
+└──────────────────┘     └──────────────────┘     └──────────────────┘
 
-DEPOIS (Vitalício):
-┌────────────────┐    ┌────────────────────────────────────────┐
-│   Pagamento    │───>│        Acesso PERMANENTE               │
-│   R$ 27,90     │    │   100 buscas/mês (reset automático)    │
-└────────────────┘    └────────────────────────────────────────┘
+DEPOIS (Correto):
+┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
+│ Beta Tester      │────>│ Verifica perfil  │────>│ is_beta = true   │
+│ is_beta = true   │     │ is_beta_tester?  │     │ → ACESSO PRO! ✅ │
+└──────────────────┘     └──────────────────┘     └──────────────────┘
 ```
 
 ---
 
-### Seção Técnica
+### Mudanças Técnicas
 
-#### Mudança na Edge Function check-pix-payment
+#### 1. check-user-limits/index.ts
+
+Adicionar após a verificação de master e antes de verificar o plano:
 
 ```typescript
-// ANTES
-periodEnd.setDate(periodEnd.getDate() + 30);
-// ...
-current_period_end: periodEnd.toISOString(),
+// Verificar se é beta tester (após pegar subscription)
+const { data: profile } = await supabase
+  .from('profiles')
+  .select('is_beta_tester')
+  .eq('id', user.id)
+  .single();
 
-// DEPOIS
-// Setar null ou uma data muito distante (ex: 2099)
-current_period_end: null, // Vitalício - sem expiração
+// Beta testers têm acesso PRO mesmo sem plano Starter
+if (profile?.is_beta_tester) {
+  console.log('Beta tester detected:', user.id);
+  
+  // Usar lógica do plano Starter (100 buscas/mês)
+  const monthlyLimit = 100;
+  let monthlyUsed = usage?.searches_used_monthly || 0;
+  
+  // Reset se necessário
+  if (usage?.reset_date && new Date(usage.reset_date) <= new Date()) {
+    await supabase
+      .from('user_usage')
+      .update({
+        searches_used_monthly: 0,
+        reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+      })
+      .eq('user_id', user.id);
+    monthlyUsed = 0;
+  }
+
+  const remaining = Math.max(0, monthlyLimit - monthlyUsed);
+  const allowed = monthlyUsed < monthlyLimit;
+
+  return new Response(
+    JSON.stringify({ 
+      allowed, 
+      plan_name: 'beta_tester',
+      remaining_searches: remaining,
+      current_usage: monthlyUsed,
+      limit: monthlyLimit,
+      message: allowed ? null : 'Você atingiu o limite de 100 buscas deste mês'
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
 ```
 
-#### Mudança no useUserPlan.ts
+#### 2. increment-search-usage/index.ts
 
-A lógica atual já funciona porque:
-- Usuários com `plan?.slug === 'starter'` são tratados como PRO
-- O reset de buscas mensais é independente da expiração do plano
+Adicionar mesma verificação:
 
-Apenas ajustar o componente UsageCard para não mostrar "Renova em".
+```typescript
+// Verificar se é beta tester
+const { data: profile } = await supabase
+  .from('profiles')
+  .select('is_beta_tester')
+  .eq('id', user.id)
+  .single();
 
-#### Email de Notificação (check-pix-payment)
+if (profile?.is_beta_tester) {
+  console.log('Beta tester - using monthly counter:', user.id);
+  // Usar contador mensal (igual ao Starter)
+  const newMonthlyCount = (usage?.searches_used_monthly || 0) + 1;
+  
+  await supabase
+    .from('user_usage')
+    .upsert({
+      user_id: user.id,
+      searches_used_monthly: newMonthlyCount,
+      searches_used_lifetime: (usage?.searches_used_lifetime || 0) + 1,
+      last_search_at: now,
+    }, { onConflict: 'user_id' });
 
-Remover a linha:
-```html
-<tr>
-  <td>Próxima Cobrança:</td>
-  <td>${periodEnd.toLocaleDateString('pt-BR')}</td>
-</tr>
+  return new Response(
+    JSON.stringify({ 
+      success: true, 
+      plan: 'beta_tester',
+      searches_used_monthly: newMonthlyCount,
+      remaining: Math.max(0, 100 - newMonthlyCount)
+    }),
+    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+  );
+}
 ```
 
-Substituir por:
-```html
-<tr>
-  <td>Tipo:</td>
-  <td>ACESSO VITALÍCIO</td>
-</tr>
+#### 3. Migração SQL (Recomendado)
+
+Para corrigir beta testers existentes sem plano Starter:
+
+```sql
+-- Atribuir plano Starter para beta testers sem assinatura válida
+INSERT INTO user_subscriptions (user_id, plan_id, status, upgrade_source)
+SELECT 
+  p.id,
+  (SELECT id FROM subscription_plans WHERE slug = 'starter'),
+  'active',
+  'beta_tester'
+FROM profiles p
+LEFT JOIN user_subscriptions us ON us.user_id = p.id
+WHERE p.is_beta_tester = true
+  AND (us.id IS NULL OR us.plan_id = (SELECT id FROM subscription_plans WHERE slug = 'free'))
+ON CONFLICT (user_id) 
+DO UPDATE SET 
+  plan_id = (SELECT id FROM subscription_plans WHERE slug = 'starter'),
+  status = 'active',
+  upgrade_source = 'beta_tester';
 ```
 
 ---
 
-### Arquivos Finais Afetados
+### Resultado Esperado
 
-1. `src/pages/Pricing.tsx` - Copy de preços e FAQs
-2. `src/pages/Landing.tsx` - Copy de preços e FAQs  
-3. `src/pages/Checkout.tsx` - Título e subtítulo
-4. `src/pages/Billing.tsx` - Remover renovação/cancelamento
-5. `src/components/billing/PixPayment.tsx` - Label do plano
-6. `src/components/billing/UsageCard.tsx` - Remover "Renova em"
-7. `src/components/billing/UpgradeModal.tsx` - Copy de upgrade
-8. `supabase/functions/create-pix-payment/index.ts` - Descrição
-9. `supabase/functions/check-pix-payment/index.ts` - Lógica e email
-10. `supabase/functions/check-user-limits/index.ts` - (Opcional) Ajustar mensagem
+| Beta Tester | Antes | Depois |
+|-------------|-------|--------|
+| Acesso a buscas | ❌ Bloqueado (pede pagamento) | ✅ 100 buscas/mês |
+| Limite mensal | N/A | 100 buscas com reset automático |
+| Features PRO | ❌ Bloqueadas | ✅ Todas liberadas |
+
+---
+
+### Arquivos a Modificar
+
+1. `supabase/functions/check-user-limits/index.ts`
+2. `supabase/functions/increment-search-usage/index.ts`
+3. Migração SQL para corrigir dados existentes
