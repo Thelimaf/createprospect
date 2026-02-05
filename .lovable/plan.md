@@ -1,14 +1,34 @@
 
 
-## Plano: Beta Testers com Buscas Ilimitadas por 1 Mês
+## Plano: Corrigir Edge Functions de Pagamento PIX
 
-### Mudança Proposta
+### Problema Identificado
 
-| Aspecto | Antes | Depois |
-|---------|-------|--------|
-| Limite de buscas | 100/mês | ∞ Ilimitado |
-| Período | Reset mensal | 1 mês de acesso ilimitado |
-| Após 1 mês | Reset contador | Verificar se continua beta |
+Os logs mostram que as Edge Functions de pagamento estão retornando **404**:
+
+```text
+OPTIONS | 404 | https://hixkhrhvvensttvzdojg.supabase.co/functions/v1/create-pix-payment
+```
+
+A causa raiz é que o deploy falha com **"Bundle generation timed out"** porque as funções usam importações `esm.sh` antigas que são lentas para resolver.
+
+---
+
+### Causa Raiz
+
+```typescript
+// PROBLEMA - Importações lentas que causam timeout
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+```
+
+---
+
+### Solução
+
+Refatorar ambas as Edge Functions de pagamento PIX para usar:
+1. `Deno.serve()` ao invés de `serve()` importado
+2. `npm:@supabase/supabase-js@2` ao invés de `esm.sh`
 
 ---
 
@@ -16,16 +36,18 @@
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                           EDGE FUNCTIONS                                    │
+│                         EDGE FUNCTIONS DE PIX                               │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  1. supabase/functions/check-user-limits/index.ts                           │
-│     ├─ Remover verificação de limite de 100 buscas para beta testers       │
-│     ├─ Retornar allowed: true sempre para beta testers                     │
-│     └─ Mostrar remaining_searches: 999999 (ilimitado)                      │
+│  1. supabase/functions/create-pix-payment/index.ts                          │
+│     ├─ Remover: import { serve } from "https://deno.land/std..."            │
+│     ├─ Mudar: esm.sh → npm:@supabase/supabase-js@2                          │
+│     └─ Usar: Deno.serve() ao invés de serve()                               │
 │                                                                             │
-│  2. supabase/functions/increment-search-usage/index.ts                      │
-│     └─ Manter contagem para estatísticas, mas não bloquear                 │
+│  2. supabase/functions/check-pix-payment/index.ts                           │
+│     ├─ Remover: import { serve } from "https://deno.land/std..."            │
+│     ├─ Mudar: esm.sh → npm:@supabase/supabase-js@2                          │
+│     └─ Usar: Deno.serve() ao invés de serve()                               │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
@@ -34,79 +56,43 @@
 
 ### Mudanças Técnicas
 
-#### 1. check-user-limits/index.ts
-
-Simplificar a lógica do beta tester para sempre permitir:
+#### Antes (Causa Timeout)
 
 ```typescript
-// Beta testers get UNLIMITED access for the first month
-if (profile?.is_beta_tester) {
-  console.log('Beta tester detected - unlimited access:', user.id);
-  
-  return new Response(
-    JSON.stringify({ 
-      allowed: true,  // Sempre permitido
-      plan_name: 'beta_tester',
-      remaining_searches: 999999,  // Ilimitado
-      current_usage: usage?.searches_used_monthly || 0,
-      limit: 999999,  // Sem limite
-      message: null
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
-}
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+serve(async (req) => {
+  // ...código
+});
 ```
 
-#### 2. increment-search-usage/index.ts
-
-Manter a contagem para estatísticas, mas sem bloquear:
+#### Depois (Deploy Rápido)
 
 ```typescript
-// Beta testers - track usage for stats but no limits
-if (profile?.is_beta_tester) {
-  console.log('Beta tester - unlimited access, tracking for stats:', user.id);
-  const newMonthlyCount = (usage?.searches_used_monthly || 0) + 1;
-  
-  await supabase
-    .from('user_usage')
-    .upsert({
-      user_id: user.id,
-      searches_used_monthly: newMonthlyCount,
-      searches_used_lifetime: (usage?.searches_used_lifetime || 0) + 1,
-      last_search_at: now,
-    }, { onConflict: 'user_id' });
+import { createClient } from "npm:@supabase/supabase-js@2";
 
-  return new Response(
-    JSON.stringify({ 
-      success: true, 
-      plan: 'beta_tester',
-      searches_used_monthly: newMonthlyCount,
-      remaining: 999999  // Ilimitado
-    }),
-    { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-  );
-}
+Deno.serve(async (req) => {
+  // ...código (mantém toda a lógica existente)
+});
 ```
 
 ---
 
-### Fluxo do Beta Tester
+### Impacto
 
-```text
-┌────────────────┐     ┌────────────────────────────────────────┐
-│   Beta Tester  │────>│        ACESSO ILIMITADO                │
-│ is_beta = true │     │   Sem limite de buscas por 1 mês       │
-└────────────────┘     │   Contagem apenas para estatísticas    │
-                       └────────────────────────────────────────┘
-```
+| Métrica | Antes | Depois |
+|---------|-------|--------|
+| Deploy | ❌ Timeout | ✅ Sucesso |
+| Status HTTP | 404 | 200 |
+| Vendas | Perdidas | Recuperadas |
 
 ---
 
-### Resultado Esperado
+### Próximos Passos após Aprovação
 
-| Beta Tester | Antes | Depois |
-|-------------|-------|--------|
-| Limite de buscas | 100/mês | ∞ Ilimitado |
-| Acesso bloqueado | Após 100 buscas | Nunca (enquanto for beta) |
-| Contagem | Sim | Sim (apenas estatísticas) |
+1. Atualizar `create-pix-payment/index.ts` com novas importações
+2. Atualizar `check-pix-payment/index.ts` com novas importações
+3. Fazer deploy das funções
+4. Testar geração de PIX no checkout
 
