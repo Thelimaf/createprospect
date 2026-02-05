@@ -28,7 +28,7 @@ export function PlanBadge({ className, showIcon = true }: PlanBadgeProps) {
         className
       )}>
         {showIcon && <Crown className="h-3 w-3" />}
-        STARTER
+        VITALÍCIO
       </div>
     );
   }

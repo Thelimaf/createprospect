@@ -24,7 +24,7 @@ export function UpgradeModal({
   onContinueLastSearch,
 }: UpgradeModalProps) {
   const starterBenefits = [
-    { icon: Search, text: '100 buscas por mês', highlight: true },
+    { icon: Search, text: '100 buscas/mês para sempre', highlight: true },
     { icon: Users, text: '~2.000 clientes/mês', highlight: true },
     { icon: BarChart3, text: 'Campanhas ilimitadas' },
     { icon: FileSpreadsheet, text: 'Export Excel completo' },
@@ -34,7 +34,7 @@ export function UpgradeModal({
   ];
 
   const simpleBenefits = [
-    '100 buscas por mês',
+    '100 buscas/mês para sempre',
     '~2.000 clientes/mês',
     'Campanhas ilimitadas',
     'Export Excel completo',
@@ -76,7 +76,7 @@ export function UpgradeModal({
             <Button asChild className="w-full">
               <Link to="/checkout" onClick={() => onOpenChange(false)}>
                 <Crown className="h-4 w-4 mr-2" />
-                Fazer Upgrade Agora - R$ 27,90/mês
+                Comprar Acesso Vitalício - R$ 27,90
               </Link>
             </Button>
           </div>
@@ -153,10 +153,10 @@ export function UpgradeModal({
             <div className="bg-gradient-to-r from-purple-500/10 to-purple-600/5 rounded-xl p-4 border border-purple-500/20">
               <div className="flex items-baseline justify-center gap-1">
                 <span className="text-3xl font-bold text-purple-400">R$ 27,90</span>
-                <span className="text-muted-foreground">/mês</span>
+                <span className="text-muted-foreground"> (vitalício)</span>
               </div>
               <p className="text-center text-sm text-muted-foreground mt-1">
-                Menos de <span className="text-purple-400 font-medium">R$ 0,02</span> por cliente encontrado
+                Pague uma vez, use <span className="text-purple-400 font-medium">para sempre</span>
               </p>
             </div>
 
@@ -168,7 +168,7 @@ export function UpgradeModal({
             >
               <Link to="/checkout">
                 <Crown className="h-5 w-5 mr-2" />
-                Assinar Agora com PIX
+                Comprar Agora com PIX
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Link>
             </Button>
@@ -177,7 +177,7 @@ export function UpgradeModal({
             <div className="flex items-center justify-center gap-6 pt-2">
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Check className="h-3.5 w-3.5 text-green-500" />
-                Cancele quando quiser
+                Pagamento único
               </div>
               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                 <Check className="h-3.5 w-3.5 text-green-500" />

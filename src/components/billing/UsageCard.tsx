@@ -96,11 +96,7 @@ export function UsageCard() {
     );
   }
 
-  // STARTER plan view
-  const renewalDate = subscription?.current_period_end 
-    ? format(new Date(subscription.current_period_end), "dd 'de' MMMM", { locale: ptBR })
-    : null;
-
+  // STARTER plan view (vitalício)
   return (
     <Card className="border-primary/30">
       <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -108,37 +104,30 @@ export function UsageCard() {
           <Crown className="h-5 w-5 text-primary" />
           Plano Starter
           <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-green-500/20 text-green-400">
-            Ativo
+            Vitalício
           </span>
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-4">
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Search className="h-4 w-4" />
-              Buscas este mês
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-2xl font-bold">{searchesUsed}</span>
-              <span className="text-muted-foreground">/ {searchesLimit}</span>
-            </div>
-            <div className="relative">
-              <Progress value={usagePercent} className="h-2" />
-              <div 
-                className={cn("absolute top-0 left-0 h-full rounded-full transition-all", getProgressColor())}
-                style={{ width: `${Math.min(usagePercent, 100)}%` }}
-              />
-            </div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Search className="h-4 w-4" />
+            Buscas utilizadas este mês
           </div>
-
-          <div className="space-y-2">
-            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-              <Calendar className="h-4 w-4" />
-              Renova em
-            </div>
-            <div className="text-2xl font-bold">{renewalDate || '-'}</div>
+          <div className="flex items-center justify-between">
+            <span className="text-2xl font-bold">{searchesUsed}</span>
+            <span className="text-muted-foreground">/ {searchesLimit}</span>
           </div>
+          <div className="relative">
+            <Progress value={usagePercent} className="h-2" />
+            <div 
+              className={cn("absolute top-0 left-0 h-full rounded-full transition-all", getProgressColor())}
+              style={{ width: `${Math.min(usagePercent, 100)}%` }}
+            />
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Suas buscas resetam todo mês automaticamente
+          </p>
         </div>
 
         <div className="grid grid-cols-2 gap-4 pt-2 border-t border-border">
@@ -148,13 +137,13 @@ export function UsageCard() {
           </div>
           <div className="flex items-center gap-2 text-sm">
             <Infinity className="h-4 w-4 text-primary" />
-            <span>Campanhas ilimitadas</span>
+            <span>Acesso permanente</span>
           </div>
         </div>
 
         <Button asChild variant="outline" className="w-full">
           <Link to="/billing">
-            Gerenciar Assinatura
+            Ver Histórico
           </Link>
         </Button>
       </CardContent>

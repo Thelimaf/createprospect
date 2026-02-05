@@ -170,7 +170,7 @@ export function PixPayment({ chargeId, brCode, brCodeBase64, expiresAt, amount }
             R$ {amount.toFixed(2).replace('.', ',')}
           </div>
           <div className="text-sm text-muted-foreground">
-            Plano Starter - Mensal
+            Plano Starter - Acesso Vitalício
           </div>
         </div>
 

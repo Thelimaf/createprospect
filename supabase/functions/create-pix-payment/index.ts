@@ -157,7 +157,7 @@ serve(async (req) => {
       body: JSON.stringify({
         amount: 2790, // R$ 27,90 em centavos
         expiresIn: 1800, // 30 minutos em segundos
-        description: 'ProspectAI - Plano Starter Mensal',
+        description: 'ProspectAI - Plano Starter Vitalício',
         customer: {
           name: customer_name,
           cellphone: formattedPhone,

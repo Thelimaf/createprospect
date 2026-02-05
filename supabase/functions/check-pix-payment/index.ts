@@ -139,8 +139,8 @@ serve(async (req) => {
       console.log('Payment confirmed! Upgrading user:', user.id);
 
       const now = new Date();
-      const periodEnd = new Date(now);
-      periodEnd.setDate(periodEnd.getDate() + 30);
+      // Vitalício: sem data de expiração
+      const periodEnd = null;
 
       // Update payment status
       await supabase
@@ -159,7 +159,7 @@ serve(async (req) => {
         .single();
 
       if (starterPlan) {
-        // Update subscription to starter with upgrade_source = 'payment'
+        // Update subscription to starter with upgrade_source = 'payment' (vitalício)
         await supabase
           .from('user_subscriptions')
           .upsert({
@@ -168,15 +168,17 @@ serve(async (req) => {
             status: 'active',
             upgrade_source: 'payment',
             current_period_start: now.toISOString(),
-            current_period_end: periodEnd.toISOString(),
+            current_period_end: null, // Vitalício - sem expiração
           }, { onConflict: 'user_id' });
 
-        // Reset monthly usage
+        // Reset monthly usage (continua resetando mensalmente)
+        const nextReset = new Date(now);
+        nextReset.setDate(nextReset.getDate() + 30);
         await supabase
           .from('user_usage')
           .update({
             searches_used_monthly: 0,
-            reset_date: periodEnd.toISOString(),
+            reset_date: nextReset.toISOString(),
           })
           .eq('user_id', user.id);
       }
@@ -222,11 +224,11 @@ serve(async (req) => {
                 </tr>
                 <tr>
                   <td style="padding: 8px 0; color: #9ca3af;">Plano:</td>
-                  <td style="padding: 8px 0;"><span style="background: #f59e0b; color: #000; padding: 4px 12px; border-radius: 4px; font-weight: bold;">STARTER</span></td>
+                  <td style="padding: 8px 0;"><span style="background: #f59e0b; color: #000; padding: 4px 12px; border-radius: 4px; font-weight: bold;">STARTER VITALÍCIO</span></td>
                 </tr>
                 <tr>
-                  <td style="padding: 8px 0; color: #9ca3af;">Próxima Cobrança:</td>
-                  <td style="padding: 8px 0; color: #fff;">${periodEnd.toLocaleDateString('pt-BR')}</td>
+                  <td style="padding: 8px 0; color: #9ca3af;">Tipo:</td>
+                  <td style="padding: 8px 0; color: #22c55e; font-weight: bold;">ACESSO PERMANENTE</td>
                 </tr>
               </table>
               <p style="color: #6b7280; font-size: 12px; margin-top: 24px; text-align: center;">
@@ -236,7 +238,7 @@ serve(async (req) => {
           </div>
         `;
         
-        await sendAdminNotification(resendApiKey, '💰 VENDA APROVADA - ProspectAI', emailHtml);
+        await sendAdminNotification(resendApiKey, '💰 VENDA APROVADA - ProspectAI (Vitalício)', emailHtml);
       }
 
       return new Response(

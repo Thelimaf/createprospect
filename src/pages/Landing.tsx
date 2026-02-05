@@ -968,11 +968,11 @@ const PricingSection = () => {
   const starterPlan = {
     name: "Starter",
     price: "R$ 27,90",
-    period: "/mês",
-    subtitle: "Prospecção profissional completa",
+    period: " (vitalício)",
+    subtitle: "Acesso permanente à prospecção profissional",
     popular: true,
     features: [
-      { text: "100 buscas/mês (≈2.000 leads)", highlight: true },
+      { text: "100 buscas/mês para sempre", highlight: true },
       { text: "Campanhas ilimitadas", highlight: true },
       { text: "Leads 100% reais do Google Maps", included: true },
       { text: "Ver telefone, WhatsApp, e-mail, site", included: true },
@@ -1122,12 +1122,12 @@ const PricingSection = () => {
             {/* Payment methods */}
             <div className="flex items-center justify-center gap-4 mb-6 py-4 border-t border-white/10">
               <span className="text-xs text-gray-400 px-3 py-1.5 rounded-full bg-primary/10 border border-primary/30 font-medium">PIX Instantâneo</span>
-              <span className="text-xs text-gray-500">Pagamento 100% seguro</span>
+              <span className="text-xs text-gray-500">Pagamento único 100% seguro</span>
             </div>
 
             <Link to="/checkout?plan=starter" className="block">
               <Button className="w-full bg-primary hover:bg-primary/90 text-white glow-purple h-12 text-base font-semibold">
-                Assinar Agora
+                Comprar Agora
                 <ArrowRight className="w-4 h-4 ml-2" />
               </Button>
             </Link>
@@ -1150,8 +1150,8 @@ const FAQSection = () => {
       answer: "Não, as 3 buscas são vitalícias. Use quando quiser, sem prazo de validade.",
     },
     {
-      question: "Posso cancelar quando quiser?",
-      answer: "Sim, sem fidelidade. Cancele a qualquer momento diretamente pelo painel, sem burocracia.",
+      question: "O plano Starter é vitalício mesmo?",
+      answer: "Sim! Pague R$ 27,90 uma única vez e tenha acesso para sempre. Sem mensalidade, sem renovação automática.",
     },
     {
       question: "Como funciona o WhatsApp?",
@@ -1159,7 +1159,7 @@ const FAQSection = () => {
     },
     {
       question: "Quais os benefícios do Starter?",
-      answer: "Com o Starter você tem 100 buscas/mês (≈2.000 leads), campanhas ilimitadas, export CSV, WhatsApp 1-click para todos leads, templates de mensagem com IA, CRM Kanban completo, e suporte prioritário. Tudo por menos de R$1/dia.",
+      answer: "Com o Starter você tem 100 buscas/mês para sempre, campanhas ilimitadas, export Excel, WhatsApp 1-click para todos leads, templates de mensagem com IA, CRM Kanban completo, e suporte prioritário.",
     },
     {
       question: "Tem suporte?",
