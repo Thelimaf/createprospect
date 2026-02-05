@@ -71,9 +71,9 @@ serve(async (req) => {
 
     const now = new Date().toISOString();
 
-    // Beta testers use monthly counter (like Starter plan)
+    // Beta testers - track usage for stats but no limits
     if (profile?.is_beta_tester) {
-      console.log('Beta tester - using monthly counter:', user.id);
+      console.log('Beta tester - unlimited access, tracking for stats:', user.id);
       const newMonthlyCount = (usage?.searches_used_monthly || 0) + 1;
       
       await supabase
@@ -90,7 +90,7 @@ serve(async (req) => {
           success: true, 
           plan: 'beta_tester',
           searches_used_monthly: newMonthlyCount,
-          remaining: Math.max(0, 100 - newMonthlyCount)
+          remaining: 999999
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
