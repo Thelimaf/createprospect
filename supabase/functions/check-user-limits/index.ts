@@ -72,37 +72,18 @@ serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    // Beta testers get PRO access (100 searches/month) regardless of plan
+    // Beta testers get UNLIMITED access
     if (profile?.is_beta_tester) {
-      console.log('Beta tester detected:', user.id);
+      console.log('Beta tester detected - unlimited access:', user.id);
       
-      const monthlyLimit = 100;
-      let monthlyUsed = usage?.searches_used_monthly || 0;
-      
-      // Reset if needed
-      if (usage?.reset_date && new Date(usage.reset_date) <= new Date()) {
-        console.log('Resetting monthly usage for beta tester:', user.id);
-        await supabase
-          .from('user_usage')
-          .update({
-            searches_used_monthly: 0,
-            reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-          })
-          .eq('user_id', user.id);
-        monthlyUsed = 0;
-      }
-
-      const remaining = Math.max(0, monthlyLimit - monthlyUsed);
-      const allowed = monthlyUsed < monthlyLimit;
-
       return new Response(
         JSON.stringify({ 
-          allowed, 
+          allowed: true,
           plan_name: 'beta_tester',
-          remaining_searches: remaining,
-          current_usage: monthlyUsed,
-          limit: monthlyLimit,
-          message: allowed ? null : 'Você atingiu o limite de 100 buscas deste mês'
+          remaining_searches: 999999,
+          current_usage: usage?.searches_used_monthly || 0,
+          limit: 999999,
+          message: null
         }),
         { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
