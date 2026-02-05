@@ -132,7 +132,7 @@ export default function Billing() {
               )}
             </CardTitle>
             <CardDescription>
-              {isPro ? 'Prospecção profissional ilimitada' : 'Plano básico com 3 buscas vitalícias'}
+              {isPro ? 'Acesso vitalício à prospecção profissional' : 'Plano básico com 3 buscas vitalícias'}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -143,68 +143,20 @@ export default function Billing() {
               </div>
             ) : isPro ? (
               <>
-                <div className="grid md:grid-cols-2 gap-4">
-                  <div className="flex items-center gap-3">
-                    <Calendar className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Próxima renovação</p>
-                      <p className="font-medium">{renewalDate || '-'}</p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="h-5 w-5 text-muted-foreground" />
-                    <div>
-                      <p className="text-sm text-muted-foreground">Valor</p>
-                      <p className="font-medium">R$ 27,90/mês</p>
-                    </div>
+                <div className="flex items-center gap-3">
+                  <CreditCard className="h-5 w-5 text-muted-foreground" />
+                  <div>
+                    <p className="text-sm text-muted-foreground">Tipo de acesso</p>
+                    <p className="font-medium text-primary">Vitalício (R$ 27,90 pagamento único)</p>
                   </div>
                 </div>
 
-                {subscription?.status === 'cancelled' && (
-                  <div className="flex items-center gap-2 p-3 rounded-lg bg-yellow-500/10 border border-yellow-500/30 text-yellow-400">
-                    <AlertTriangle className="h-4 w-4" />
-                    <span className="text-sm">
-                      Assinatura cancelada. Acesso até {renewalDate}.
-                    </span>
-                  </div>
-                )}
-
-                {subscription?.status === 'active' && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button variant="outline" className="text-destructive hover:text-destructive">
-                        Cancelar Assinatura
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Cancelar assinatura?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          Ao cancelar, você perderá acesso a:
-                          <ul className="list-disc list-inside mt-2 space-y-1">
-                            <li>Export para Excel</li>
-                            <li>WhatsApp com 1 clique</li>
-                            <li>Templates de mensagem</li>
-                            <li>Analytics</li>
-                          </ul>
-                          <p className="mt-3">
-                            Você manterá acesso até {renewalDate}, depois voltará para o plano Free.
-                          </p>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Manter Assinatura</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={handleCancelSubscription}
-                          disabled={cancelling}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                        >
-                          {cancelling ? 'Cancelando...' : 'Confirmar Cancelamento'}
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
+                <div className="flex items-center gap-2 p-3 rounded-lg bg-green-500/10 border border-green-500/30 text-green-400">
+                  <Crown className="h-4 w-4" />
+                  <span className="text-sm">
+                    Acesso permanente ativo. Suas 100 buscas resetam todo mês automaticamente.
+                  </span>
+                </div>
               </>
             ) : (
               <div className="space-y-4">
@@ -214,7 +166,7 @@ export default function Billing() {
                 <Button asChild>
                   <Link to="/pricing">
                     <Crown className="h-4 w-4 mr-2" />
-                    Fazer Upgrade para Starter
+                    Comprar Acesso Vitalício
                     <ArrowUpRight className="h-4 w-4 ml-2" />
                   </Link>
                 </Button>

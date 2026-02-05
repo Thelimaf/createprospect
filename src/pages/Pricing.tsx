@@ -48,7 +48,7 @@ export default function Pricing() {
   ];
 
   const starterFeatures = [
-    { text: '100 buscas/mês (≈2.000 leads)', icon: Search, highlight: true },
+    { text: '100 buscas/mês para sempre', icon: Search, highlight: true },
     { text: 'Campanhas ilimitadas', icon: Infinity, highlight: true },
     { text: 'Leads 100% reais do Google Maps', icon: Check },
     { text: 'Ver telefone, WhatsApp, e-mail, site', icon: Phone },
@@ -71,16 +71,16 @@ export default function Pricing() {
       answer: 'Não. Suas 3 buscas são vitalícias, mas quando acabarem você precisa fazer upgrade para continuar prospectando.',
     },
     {
-      question: 'Posso cancelar quando quiser?',
-      answer: 'Sim. Sem fidelidade, sem multa. Cancele a qualquer momento e você mantém acesso até o final do período pago.',
+      question: 'O plano Starter é vitalício?',
+      answer: 'Sim! Pague uma vez R$ 27,90 e tenha acesso para sempre. Sem mensalidade, sem renovação automática.',
     },
     {
       question: 'Quais os benefícios do Starter?',
-      answer: 'Com o Starter você tem 100 buscas/mês (≈2.000 leads), campanhas ilimitadas, export Excel, WhatsApp 1-click para todos leads, templates de mensagem com IA, CRM Kanban completo, e suporte prioritário.',
+      answer: 'Com o Starter você tem 100 buscas/mês para sempre, campanhas ilimitadas, export Excel, WhatsApp 1-click para todos leads, templates de mensagem com IA, CRM Kanban completo, e suporte prioritário.',
     },
     {
       question: 'Quais formas de pagamento?',
-      answer: 'PIX com confirmação instantânea. Pagamento 100% seguro via Abacate Pay.',
+      answer: 'PIX com confirmação instantânea. Pagamento único, 100% seguro via Abacate Pay.',
     },
   ];
 
@@ -197,10 +197,10 @@ export default function Pricing() {
 
             <CardHeader className="text-center pb-2 pt-8">
               <CardTitle className="text-2xl text-primary font-bold">STARTER</CardTitle>
-              <CardDescription>Prospecção profissional completa</CardDescription>
+              <CardDescription>Acesso vitalício à prospecção profissional</CardDescription>
               <div className="py-4">
                 <span className="text-5xl font-bold text-primary">R$ 27,90</span>
-                <span className="text-muted-foreground">/mês</span>
+                <span className="text-muted-foreground"> (vitalício)</span>
               </div>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -223,12 +223,12 @@ export default function Pricing() {
                 <div className="flex items-center gap-1 px-3 py-1.5 rounded-full bg-primary/10 text-primary text-xs font-medium border border-primary/30">
                   <span className="font-bold">PIX</span>
                 </div>
-                <span className="text-xs text-muted-foreground">Pagamento 100% seguro</span>
+                <span className="text-xs text-muted-foreground">Pagamento único 100% seguro</span>
               </div>
 
               <Button asChild className="w-full" size="lg">
                 <Link to="/checkout">
-                  Assinar Agora
+                  Comprar Agora
                   <ArrowRight className="h-4 w-4 ml-2" />
                 </Link>
               </Button>

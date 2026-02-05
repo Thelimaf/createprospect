@@ -171,8 +171,8 @@ export default function Checkout() {
       <main className="container mx-auto px-4 py-12">
         <div className="max-w-md mx-auto">
           <div className="text-center mb-8">
-            <h1 className="text-2xl font-bold mb-2">Assinar Plano Starter</h1>
-            <p className="text-muted-foreground">R$ 27,90/mês • Pagamento via PIX</p>
+            <h1 className="text-2xl font-bold mb-2">Adquirir Acesso Vitalício</h1>
+            <p className="text-muted-foreground">R$ 27,90 (pagamento único) • PIX</p>
           </div>
 
           {pixData ? (
