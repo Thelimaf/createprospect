@@ -57,7 +57,7 @@ Deno.serve(async (req) => {
     // Get user profile to check beta tester status
     const { data: profile } = await supabase
       .from('profiles')
-      .select('is_beta_tester')
+      .select('is_beta_tester, created_at')
       .eq('id', user.id)
       .single();
 
@@ -68,31 +68,40 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    const now = new Date().toISOString();
+    const now = new Date();
+    const nowIso = now.toISOString();
 
-    // Beta testers - track usage for stats but no limits
+    // Beta testers - track usage for stats but no limits (for 30 days after signup)
     if (profile?.is_beta_tester) {
-      console.log('Beta tester - unlimited access, tracking for stats:', user.id);
-      const newMonthlyCount = (usage?.searches_used_monthly || 0) + 1;
+      const createdAt = new Date(profile.created_at);
+      const expiresAt = new Date(createdAt.getTime() + 30 * 24 * 60 * 60 * 1000);
       
-      await supabase
-        .from('user_usage')
-        .upsert({
-          user_id: user.id,
-          searches_used_monthly: newMonthlyCount,
-          searches_used_lifetime: (usage?.searches_used_lifetime || 0) + 1,
-          last_search_at: now,
-        }, { onConflict: 'user_id' });
+      if (now < expiresAt) {
+        console.log('Beta tester - unlimited access, tracking for stats:', user.id);
+        const newMonthlyCount = (usage?.searches_used_monthly || 0) + 1;
+        
+        await supabase
+          .from('user_usage')
+          .upsert({
+            user_id: user.id,
+            searches_used_monthly: newMonthlyCount,
+            searches_used_lifetime: (usage?.searches_used_lifetime || 0) + 1,
+            last_search_at: nowIso,
+          }, { onConflict: 'user_id' });
 
-      return new Response(
-        JSON.stringify({ 
-          success: true, 
-          plan: 'beta_tester',
-          searches_used_monthly: newMonthlyCount,
-          remaining: 999999
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+        return new Response(
+          JSON.stringify({ 
+            success: true, 
+            plan: 'beta_tester',
+            searches_used_monthly: newMonthlyCount,
+            remaining: 999999
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        console.log('Beta tester period expired for user:', user.id);
+        // Continue to check regular subscription below
+      }
     }
 
     // Get user subscription with plan

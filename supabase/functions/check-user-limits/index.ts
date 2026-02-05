@@ -60,7 +60,7 @@ Deno.serve(async (req) => {
     // Get user profile to check beta tester status
     const { data: profile } = await supabase
       .from('profiles')
-      .select('is_beta_tester')
+      .select('is_beta_tester, created_at')
       .eq('id', user.id)
       .single();
 
@@ -71,21 +71,33 @@ Deno.serve(async (req) => {
       .eq('user_id', user.id)
       .single();
 
-    // Beta testers get UNLIMITED access
+    // Beta testers get UNLIMITED access for 30 days after signup
     if (profile?.is_beta_tester) {
-      console.log('Beta tester detected - unlimited access:', user.id);
+      const createdAt = new Date(profile.created_at);
+      const expiresAt = new Date(createdAt.getTime() + 30 * 24 * 60 * 60 * 1000);
+      const now = new Date();
+      const daysRemaining = Math.ceil((expiresAt.getTime() - now.getTime()) / (24 * 60 * 60 * 1000));
       
-      return new Response(
-        JSON.stringify({ 
-          allowed: true,
-          plan_name: 'beta_tester',
-          remaining_searches: 999999,
-          current_usage: usage?.searches_used_monthly || 0,
-          limit: 999999,
-          message: null
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+      if (now < expiresAt) {
+        console.log('Beta tester - unlimited access, expires in', daysRemaining, 'days:', user.id);
+        
+        return new Response(
+          JSON.stringify({ 
+            allowed: true,
+            plan_name: 'beta_tester',
+            remaining_searches: 999999,
+            current_usage: usage?.searches_used_monthly || 0,
+            limit: 999999,
+            days_remaining: daysRemaining,
+            expires_at: expiresAt.toISOString(),
+            message: null
+          }),
+          { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+        );
+      } else {
+        console.log('Beta tester period expired for user:', user.id);
+        // Continue to check regular subscription below
+      }
     }
 
     // Get user subscription with plan
