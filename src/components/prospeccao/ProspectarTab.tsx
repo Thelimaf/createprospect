@@ -26,6 +26,7 @@ export function ProspectarTab() {
     state: 'all',
     city: '',
     quantity: 20,
+    country: 'br', // Default to Brazil
   });
   const [loading, setLoading] = useState(false);
   const [loadingMessage, setLoadingMessage] = useState('');
@@ -83,20 +84,22 @@ export function ProspectarTab() {
         query += ` ${filters.segment}`;
       }
       query += ` em ${filters.city}`;
-      if (filters.state !== 'all') {
+      // Only add state for Brazilian searches
+      if (filters.country === 'br' && filters.state !== 'all') {
         query += `, ${filters.state}`;
       }
 
       const campaignId = selectedCampaign !== 'none' ? selectedCampaign : null;
 
       if (source === 'google_maps') {
-        // Use existing Google Maps scraper
+        // Use existing Google Maps scraper with country parameter
         const { data, error } = await supabase.functions.invoke('scrape-google-maps', {
           body: { 
             query, 
             limit: filters.quantity,
             user_id: user?.id,
             campaignId,
+            country: filters.country, // Pass country for correct DDI
           },
         });
 
@@ -130,6 +133,7 @@ export function ProspectarTab() {
             limit: filters.quantity,
             user_id: user?.id,
             campaignId,
+            country: filters.country, // Pass country for correct DDI
           },
         });
 
