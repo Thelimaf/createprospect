@@ -1,58 +1,33 @@
 
-## Plano: Corrigir Beta Testers Sem Acesso às Buscas
 
-### Problema Identificado
+## Plano: Beta Testers com Buscas Ilimitadas por 1 Mês
 
-A investigação revelou que alguns Beta Testers têm a flag `is_beta_tester = true` no perfil, **mas não possuem o plano Starter atribuído**:
+### Mudança Proposta
 
-| Usuário | is_beta_tester | plan_slug | Problema |
-|---------|----------------|-----------|----------|
-| Israel Freitas | ✅ true | ❌ null | Sem assinatura |
-| Michel | ✅ true | ❌ free | Plano Free |
-| Ronei Vinagre | ✅ true | ❌ null | Sem assinatura |
-| Willian Sena | ✅ true | ✅ starter | OK |
-
-O sistema atual só dá acesso PRO para `plan_slug = 'starter'`, ignorando a flag `is_beta_tester`.
+| Aspecto | Antes | Depois |
+|---------|-------|--------|
+| Limite de buscas | 100/mês | ∞ Ilimitado |
+| Período | Reset mensal | 1 mês de acesso ilimitado |
+| Após 1 mês | Reset contador | Verificar se continua beta |
 
 ---
 
-### Solução em Duas Frentes
+### Arquivos a Modificar
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         CORREÇÃO NECESSÁRIA                                 │
+│                           EDGE FUNCTIONS                                    │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  1. EDGE FUNCTION: check-user-limits/index.ts                               │
-│     ├─ Adicionar verificação da flag is_beta_tester no perfil               │
-│     ├─ Se is_beta_tester = true → tratar como plano Starter (100 buscas)   │
-│     └─ Priorizar verificação ANTES de checar o plano Free                   │
+│  1. supabase/functions/check-user-limits/index.ts                           │
+│     ├─ Remover verificação de limite de 100 buscas para beta testers       │
+│     ├─ Retornar allowed: true sempre para beta testers                     │
+│     └─ Mostrar remaining_searches: 999999 (ilimitado)                      │
 │                                                                             │
-│  2. EDGE FUNCTION: increment-search-usage/index.ts                          │
-│     └─ Adicionar mesma lógica para beta testers                             │
-│                                                                             │
-│  3. MIGRAÇÃO SQL (Opcional mas recomendado):                                │
-│     └─ Corrigir beta testers existentes atribuindo plano Starter            │
+│  2. supabase/functions/increment-search-usage/index.ts                      │
+│     └─ Manter contagem para estatísticas, mas não bloquear                 │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
-```
-
----
-
-### Fluxo Corrigido
-
-```text
-ANTES (Incorreto):
-┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│ Beta Tester      │────>│ Verifica plano   │────>│ plan = free/null │
-│ is_beta = true   │     │ (ignora flag)    │     │ → BLOQUEADO!     │
-└──────────────────┘     └──────────────────┘     └──────────────────┘
-
-DEPOIS (Correto):
-┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│ Beta Tester      │────>│ Verifica perfil  │────>│ is_beta = true   │
-│ is_beta = true   │     │ is_beta_tester?  │     │ → ACESSO PRO! ✅ │
-└──────────────────┘     └──────────────────┘     └──────────────────┘
 ```
 
 ---
@@ -61,47 +36,21 @@ DEPOIS (Correto):
 
 #### 1. check-user-limits/index.ts
 
-Adicionar após a verificação de master e antes de verificar o plano:
+Simplificar a lógica do beta tester para sempre permitir:
 
 ```typescript
-// Verificar se é beta tester (após pegar subscription)
-const { data: profile } = await supabase
-  .from('profiles')
-  .select('is_beta_tester')
-  .eq('id', user.id)
-  .single();
-
-// Beta testers têm acesso PRO mesmo sem plano Starter
+// Beta testers get UNLIMITED access for the first month
 if (profile?.is_beta_tester) {
-  console.log('Beta tester detected:', user.id);
+  console.log('Beta tester detected - unlimited access:', user.id);
   
-  // Usar lógica do plano Starter (100 buscas/mês)
-  const monthlyLimit = 100;
-  let monthlyUsed = usage?.searches_used_monthly || 0;
-  
-  // Reset se necessário
-  if (usage?.reset_date && new Date(usage.reset_date) <= new Date()) {
-    await supabase
-      .from('user_usage')
-      .update({
-        searches_used_monthly: 0,
-        reset_date: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
-      })
-      .eq('user_id', user.id);
-    monthlyUsed = 0;
-  }
-
-  const remaining = Math.max(0, monthlyLimit - monthlyUsed);
-  const allowed = monthlyUsed < monthlyLimit;
-
   return new Response(
     JSON.stringify({ 
-      allowed, 
+      allowed: true,  // Sempre permitido
       plan_name: 'beta_tester',
-      remaining_searches: remaining,
-      current_usage: monthlyUsed,
-      limit: monthlyLimit,
-      message: allowed ? null : 'Você atingiu o limite de 100 buscas deste mês'
+      remaining_searches: 999999,  // Ilimitado
+      current_usage: usage?.searches_used_monthly || 0,
+      limit: 999999,  // Sem limite
+      message: null
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
@@ -110,19 +59,12 @@ if (profile?.is_beta_tester) {
 
 #### 2. increment-search-usage/index.ts
 
-Adicionar mesma verificação:
+Manter a contagem para estatísticas, mas sem bloquear:
 
 ```typescript
-// Verificar se é beta tester
-const { data: profile } = await supabase
-  .from('profiles')
-  .select('is_beta_tester')
-  .eq('id', user.id)
-  .single();
-
+// Beta testers - track usage for stats but no limits
 if (profile?.is_beta_tester) {
-  console.log('Beta tester - using monthly counter:', user.id);
-  // Usar contador mensal (igual ao Starter)
+  console.log('Beta tester - unlimited access, tracking for stats:', user.id);
   const newMonthlyCount = (usage?.searches_used_monthly || 0) + 1;
   
   await supabase
@@ -139,34 +81,23 @@ if (profile?.is_beta_tester) {
       success: true, 
       plan: 'beta_tester',
       searches_used_monthly: newMonthlyCount,
-      remaining: Math.max(0, 100 - newMonthlyCount)
+      remaining: 999999  // Ilimitado
     }),
     { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
   );
 }
 ```
 
-#### 3. Migração SQL (Recomendado)
+---
 
-Para corrigir beta testers existentes sem plano Starter:
+### Fluxo do Beta Tester
 
-```sql
--- Atribuir plano Starter para beta testers sem assinatura válida
-INSERT INTO user_subscriptions (user_id, plan_id, status, upgrade_source)
-SELECT 
-  p.id,
-  (SELECT id FROM subscription_plans WHERE slug = 'starter'),
-  'active',
-  'beta_tester'
-FROM profiles p
-LEFT JOIN user_subscriptions us ON us.user_id = p.id
-WHERE p.is_beta_tester = true
-  AND (us.id IS NULL OR us.plan_id = (SELECT id FROM subscription_plans WHERE slug = 'free'))
-ON CONFLICT (user_id) 
-DO UPDATE SET 
-  plan_id = (SELECT id FROM subscription_plans WHERE slug = 'starter'),
-  status = 'active',
-  upgrade_source = 'beta_tester';
+```text
+┌────────────────┐     ┌────────────────────────────────────────┐
+│   Beta Tester  │────>│        ACESSO ILIMITADO                │
+│ is_beta = true │     │   Sem limite de buscas por 1 mês       │
+└────────────────┘     │   Contagem apenas para estatísticas    │
+                       └────────────────────────────────────────┘
 ```
 
 ---
@@ -175,14 +106,7 @@ DO UPDATE SET
 
 | Beta Tester | Antes | Depois |
 |-------------|-------|--------|
-| Acesso a buscas | ❌ Bloqueado (pede pagamento) | ✅ 100 buscas/mês |
-| Limite mensal | N/A | 100 buscas com reset automático |
-| Features PRO | ❌ Bloqueadas | ✅ Todas liberadas |
+| Limite de buscas | 100/mês | ∞ Ilimitado |
+| Acesso bloqueado | Após 100 buscas | Nunca (enquanto for beta) |
+| Contagem | Sim | Sim (apenas estatísticas) |
 
----
-
-### Arquivos a Modificar
-
-1. `supabase/functions/check-user-limits/index.ts`
-2. `supabase/functions/increment-search-usage/index.ts`
-3. Migração SQL para corrigir dados existentes
