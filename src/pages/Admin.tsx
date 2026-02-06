@@ -267,7 +267,7 @@ export default function Admin() {
     return new Intl.NumberFormat('pt-BR', {
       style: 'currency',
       currency: 'BRL',
-    }).format(value / 100);
+    }).format(value);
   };
 
   if (authLoading || (!isMaster && loading)) {
