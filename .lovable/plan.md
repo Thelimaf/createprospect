@@ -1,187 +1,157 @@
 
 
-## Plano: Corrigir Normalização de Telefones nas Buscas de Campanha
+## Diagnóstico Completo: Dashboard e Buscas do Usuário Master
 
-### Problema Identificado
+### Problemas Identificados
 
-Quando o usuário busca leads **dentro das campanhas** (não na página de Prospecção B2B), o parâmetro `country` não está sendo enviado para a Edge Function. Isso faz com que telefones de buscas internacionais recebam o DDI `55` (Brasil) incorretamente.
+Foram identificados **3 problemas críticos** que impedem o funcionamento do sistema:
 
-### Locais com Problema
+---
+
+### Problema 1: Edge Functions NÃO estão deployadas (404)
+
+As Edge Functions críticas retornam erro **404 - NOT_FOUND** porque o deploy falha por timeout:
+
+| Edge Function | Status | Impacto |
+|---------------|--------|---------|
+| `admin-users` | ❌ 404 | Dashboard admin não carrega |
+| `check-user-limits` | ❌ 404 | Verificação de limites falha |
+| `simulate-pix-payment` | ❌ 404 | Simulador de pagamentos falha |
+
+**Causa:** Uso de imports antigos (`esm.sh` e `deno.land/std`) que causam timeout no bundler.
+
+---
+
+### Problema 2: Assinatura do Usuário Master aponta para plano ERRADO
+
+Os dados do banco mostram inconsistência:
+
+```text
+user_subscriptions.plan_id = 862e4b4a-7018-46a8-9ec9-9659a7703dce
+                               ↓
+subscription_plans.slug = "free" ❌ (deveria ser "starter")
+```
+
+Planos disponíveis:
+- `862e4b4a-7018-46a8-9ec9-9659a7703dce` → **Free** (ATUAL - ERRADO)
+- `9e83220d-b0c2-454f-a1b5-d328698d09bc` → **Starter** (CORRETO)
+
+Mesmo o usuário master tendo bypass por email, a UI mostra o plano errado.
+
+---
+
+### Problema 3: 8 Edge Functions com imports antigos
+
+Edge Functions que causarão timeout no deploy:
 
 | Arquivo | Problema |
 |---------|----------|
-| `CampaignLeadsPage.tsx` | Busca inline (linha 319-327) não passa `country` |
-| `GoogleMapsScraper.tsx` | `executeSearch` e `handleLoadMore` não passam `country` |
-| `LeadSearchDialog.tsx` | ✅ Já corrigido - passa `country` corretamente |
+| `admin-users/index.ts` | `esm.sh` + `deno.land/std` |
+| `simulate-pix-payment/index.ts` | `esm.sh` + `deno.land/std` |
+| `verify-email/index.ts` | `esm.sh` + `deno.land/std` |
+| `exa-webhook/index.ts` | `esm.sh` + `deno.land/std` |
+| `reset-password/index.ts` | `esm.sh` + `deno.land/std` |
+| `generate-outreach/index.ts` | `esm.sh` + `deno.land/std` |
+| `send-password-reset/index.ts` | `esm.sh` + `deno.land/std` |
+| `create-search/index.ts` | `esm.sh` + `deno.land/std` |
+| `send-email-verification/index.ts` | `esm.sh` + `Resend` |
+
+---
+
+### Solução Proposta
+
+#### Etapa 1: Corrigir imports em TODAS as Edge Functions
+
+Mudar de:
+```typescript
+import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
+import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+
+serve(async (req) => { ... });
+```
+
+Para:
+```typescript
+import { createClient } from "npm:@supabase/supabase-js@2";
+
+Deno.serve(async (req) => { ... });
+```
+
+#### Etapa 2: Corrigir assinatura do usuário master no banco
+
+Executar migração SQL para corrigir o `plan_id`:
+
+```sql
+UPDATE user_subscriptions 
+SET plan_id = '9e83220d-b0c2-454f-a1b5-d328698d09bc'
+WHERE user_id = '70422b9f-33a8-4c21-b124-9f0ede3b2059';
+```
+
+#### Etapa 3: Deploy das Edge Functions corrigidas
+
+Fazer deploy de todas as funções corrigidas:
+- `admin-users`
+- `check-user-limits` (já corrigida)
+- `simulate-pix-payment`
+- `verify-email`
+- `exa-webhook`
+- `reset-password`
+- `generate-outreach`
+- `send-password-reset`
+- `create-search`
+- `send-email-verification`
+
+---
 
 ### Arquivos a Modificar
 
 ```text
 ┌─────────────────────────────────────────────────────────────────────────────┐
-│                         ARQUIVOS A MODIFICAR                                │
+│                    EDGE FUNCTIONS A CORRIGIR                                │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  1. src/pages/CampaignLeadsPage.tsx                                         │
-│     ├─ Adicionar estado 'country' (default: "br")                          │
-│     ├─ Adicionar seletor de país na UI de busca inline                     │
-│     └─ Passar 'country' para scrape-google-maps                            │
+│  1. supabase/functions/admin-users/index.ts                                 │
+│     ├─ Remover: import { serve } from "https://deno.land/std..."           │
+│     ├─ Mudar: esm.sh → npm:@supabase/supabase-js@2                         │
+│     └─ Usar: Deno.serve() ao invés de serve()                              │
 │                                                                             │
-│  2. src/components/google-maps/GoogleMapsScraper.tsx                        │
-│     ├─ Adicionar estado 'country' (default: "br")                          │
-│     ├─ Adicionar seletor de país na UI                                     │
-│     └─ Passar 'country' em executeSearch e handleLoadMore                  │
+│  2. supabase/functions/simulate-pix-payment/index.ts                        │
+│     ├─ Mesmas correções                                                    │
+│                                                                             │
+│  3. supabase/functions/verify-email/index.ts                                │
+│     ├─ Mesmas correções                                                    │
+│                                                                             │
+│  4. supabase/functions/exa-webhook/index.ts                                 │
+│     ├─ Mesmas correções                                                    │
+│                                                                             │
+│  5. supabase/functions/reset-password/index.ts                              │
+│     ├─ Mesmas correções                                                    │
+│                                                                             │
+│  6. supabase/functions/generate-outreach/index.ts                           │
+│     ├─ Mesmas correções                                                    │
+│                                                                             │
+│  7. supabase/functions/send-password-reset/index.ts                         │
+│     ├─ Mesmas correções                                                    │
+│                                                                             │
+│  8. supabase/functions/create-search/index.ts                               │
+│     ├─ Mesmas correções                                                    │
+│                                                                             │
+│  9. supabase/functions/send-email-verification/index.ts                     │
+│     ├─ Mesmas correções                                                    │
+│     └─ Mudar: esm.sh/resend → npm:resend                                   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-### Mudanças Técnicas
-
-#### 1. CampaignLeadsPage.tsx
-
-**Adicionar estado e seletor de país:**
-```typescript
-// Novo import
-import { Globe } from 'lucide-react';
-
-// Array de países (mesmo do LeadSearchDialog)
-const COUNTRIES = [
-  { value: 'br', label: '🇧🇷 Brasil' },
-  { value: 'us', label: '🇺🇸 Estados Unidos' },
-  { value: 'ca', label: '🇨🇦 Canadá' },
-  { value: 'mx', label: '🇲🇽 México' },
-  { value: 'ar', label: '🇦🇷 Argentina' },
-  { value: 'pt', label: '🇵🇹 Portugal' },
-  { value: 'es', label: '🇪🇸 Espanha' },
-  { value: 'uk', label: '🇬🇧 Reino Unido' },
-  { value: 'de', label: '🇩🇪 Alemanha' },
-  { value: 'fr', label: '🇫🇷 França' },
-  { value: 'it', label: '🇮🇹 Itália' },
-];
-
-// Novo estado
-const [searchCountry, setSearchCountry] = useState('br');
-
-// Atualizar chamada (linhas 319-327)
-const { data, error } = await supabase.functions.invoke('scrape-google-maps', {
-  body: {
-    query: searchQuery,
-    limit: limit[0],
-    page: 1,
-    campaignId: id,
-    mode: 'normal',
-    country: searchCountry,  // ← NOVO
-  },
-});
-```
-
-**Adicionar seletor na UI:**
-```typescript
-// Na área de busca (provavelmente perto do Input de busca)
-<Select value={searchCountry} onValueChange={setSearchCountry}>
-  <SelectTrigger className="w-[180px]">
-    <SelectValue />
-  </SelectTrigger>
-  <SelectContent>
-    {COUNTRIES.map((c) => (
-      <SelectItem key={c.value} value={c.value}>
-        {c.label}
-      </SelectItem>
-    ))}
-  </SelectContent>
-</Select>
-```
-
-#### 2. GoogleMapsScraper.tsx
-
-**Adicionar estado e passar nas chamadas:**
-```typescript
-// Novo import
-import { Globe } from 'lucide-react';
-
-// Array de países
-const COUNTRIES = [
-  { value: 'br', label: '🇧🇷 Brasil' },
-  { value: 'us', label: '🇺🇸 Estados Unidos' },
-  // ... mesmo array
-];
-
-// Novo estado (após linha 71)
-const [country, setCountry] = useState('br');
-
-// Atualizar executeSearch (linha 120-121)
-const { data, error } = await supabase.functions.invoke("scrape-google-maps", {
-  body: { 
-    query: searchQuery, 
-    limit, 
-    page: 1, 
-    campaignId, 
-    mode,
-    country,  // ← NOVO
-  },
-});
-
-// Atualizar handleLoadMore (linha 220-221)
-const { data, error } = await supabase.functions.invoke("scrape-google-maps", {
-  body: { 
-    query: lastQuery, 
-    limit: 20, 
-    page: nextPage, 
-    campaignId, 
-    mode,
-    country,  // ← NOVO (usar mesmo país da busca original)
-  },
-});
-```
-
-**Adicionar seletor na UI (após o Input de query):**
-```typescript
-<div className="space-y-2">
-  <Label htmlFor="country" className="text-foreground">País</Label>
-  <Select value={country} onValueChange={setCountry}>
-    <SelectTrigger id="country" className="bg-input border-border">
-      <SelectValue />
-    </SelectTrigger>
-    <SelectContent>
-      {COUNTRIES.map((c) => (
-        <SelectItem key={c.value} value={c.value}>
-          {c.label}
-        </SelectItem>
-      ))}
-    </SelectContent>
-  </Select>
-</div>
-```
-
----
-
-### Fluxo Corrigido
-
-```text
-ANTES (CampaignLeadsPage.tsx):
-┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│ Busca: "lawyers  │────>│ Sem 'country'    │────>│ DDI 55 adicionado│
-│ in Miami"        │     │ default: br      │     │ 555551234567 ❌  │
-└──────────────────┘     └──────────────────┘     └──────────────────┘
-
-DEPOIS:
-┌──────────────────┐     ┌──────────────────┐     ┌──────────────────┐
-│ Busca: "lawyers  │────>│ country: 'us'    │────>│ DDI 1 adicionado │
-│ in Miami" 🇺🇸     │     │ passado          │     │ 15551234567 ✅   │
-└──────────────────┘     └──────────────────┘     └──────────────────┘
-```
-
----
-
 ### Resultado Esperado
 
-Após a correção, **todas as formas de buscar leads** terão suporte a país:
-
-| Local de Busca | Antes | Depois |
+| Funcionalidade | Antes | Depois |
 |----------------|-------|--------|
-| Prospecção B2B (`ProspectarTab`) | ✅ Com país | ✅ Com país |
-| Dialog de busca (`LeadSearchDialog`) | ✅ Com país | ✅ Com país |
-| Busca inline na campanha (`CampaignLeadsPage`) | ❌ Sem país | ✅ Com país |
-| Card de busca (`GoogleMapsScraper`) | ❌ Sem país | ✅ Com país |
+| Dashboard Admin | ❌ Não carrega (404) | ✅ Carrega normalmente |
+| Buscas Master | ❌ Erro de limites | ✅ Funciona sem limites |
+| Simulador PIX | ❌ 404 | ✅ Funciona |
+| Verificação de Email | ❌ 404 | ✅ Funciona |
+| Plano do Master | Free (errado) | Starter (correto) |
 
