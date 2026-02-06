@@ -13,7 +13,14 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Search, Loader2, MapPin, Plus, Sparkles, Eye, RefreshCw, RotateCcw } from "lucide-react";
+import { Search, Loader2, MapPin, Plus, Sparkles, Eye, RefreshCw, RotateCcw, Globe } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useDuplicateBehavior } from "@/hooks/useDuplicateBehavior";
@@ -70,6 +77,7 @@ export function GoogleMapsScraper({
   const [query, setQuery] = useState("");
   const [limit, setLimit] = useState(20);
   const [isLoading, setIsLoading] = useState(false);
+  const [country, setCountry] = useState("br");
   
   // Pagination state
   const [lastQuery, setLastQuery] = useState("");
@@ -118,7 +126,7 @@ export function GoogleMapsScraper({
     
     try {
       const { data, error } = await supabase.functions.invoke("scrape-google-maps", {
-        body: { query: searchQuery, limit, page: 1, campaignId, mode },
+        body: { query: searchQuery, limit, page: 1, campaignId, mode, country },
       });
 
       if (error) throw error;
@@ -218,7 +226,7 @@ export function GoogleMapsScraper({
     try {
       const mode = behavior === "update" ? "update" : "normal";
       const { data, error } = await supabase.functions.invoke("scrape-google-maps", {
-        body: { query: lastQuery, limit: 20, page: nextPage, campaignId, mode },
+        body: { query: lastQuery, limit: 20, page: nextPage, campaignId, mode, country },
       });
 
       if (error) throw error;
@@ -305,6 +313,29 @@ export function GoogleMapsScraper({
               onKeyDown={(e) => e.key === "Enter" && handleSearch()}
               className="bg-input border-border text-foreground placeholder:text-muted-foreground"
             />
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="country" className="text-foreground">País</Label>
+            <Select value={country} onValueChange={setCountry}>
+              <SelectTrigger id="country" className="bg-input border-border">
+                <Globe className="h-4 w-4 mr-2 text-muted-foreground" />
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="br">🇧🇷 Brasil</SelectItem>
+                <SelectItem value="us">🇺🇸 Estados Unidos</SelectItem>
+                <SelectItem value="ca">🇨🇦 Canadá</SelectItem>
+                <SelectItem value="mx">🇲🇽 México</SelectItem>
+                <SelectItem value="ar">🇦🇷 Argentina</SelectItem>
+                <SelectItem value="pt">🇵🇹 Portugal</SelectItem>
+                <SelectItem value="es">🇪🇸 Espanha</SelectItem>
+                <SelectItem value="uk">🇬🇧 Reino Unido</SelectItem>
+                <SelectItem value="de">🇩🇪 Alemanha</SelectItem>
+                <SelectItem value="fr">🇫🇷 França</SelectItem>
+                <SelectItem value="it">🇮🇹 Itália</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
 
           <div className="space-y-2">

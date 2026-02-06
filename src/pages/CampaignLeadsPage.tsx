@@ -165,6 +165,7 @@ export default function CampaignLeadsPage() {
   const [limit, setLimit] = useState([10]);
   const [isSearching, setIsSearching] = useState(false);
   const [isFirstSearch, setIsFirstSearch] = useState(true);
+  const [searchCountry, setSearchCountry] = useState('br');
 
   // View mode
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
@@ -323,6 +324,7 @@ export default function CampaignLeadsPage() {
           page: 1,
           campaignId: id,
           mode: 'normal',
+          country: searchCountry,
         },
       });
 
@@ -645,26 +647,54 @@ export default function CampaignLeadsPage() {
             />
           </div>
 
-          {/* Quantidade de leads */}
-          <div className="flex items-center gap-4">
-            <Label className="text-sm text-muted-foreground shrink-0 min-w-[140px]">
-              Quantidade de leads:
-            </Label>
-            <div className="flex-1 flex items-center gap-3">
-              <span className="text-xs text-muted-foreground">5</span>
-              <Slider
-                value={limit}
-                onValueChange={setLimit}
-                min={5}
-                max={20}
-                step={1}
-                className="flex-1"
-              />
-              <span className="text-xs text-muted-foreground">20</span>
+          {/* País e Quantidade */}
+          <div className="flex flex-wrap items-center gap-4">
+            {/* Seletor de País */}
+            <div className="flex items-center gap-2">
+              <Label className="text-sm text-muted-foreground shrink-0">
+                País:
+              </Label>
+              <Select value={searchCountry} onValueChange={setSearchCountry}>
+                <SelectTrigger className="w-[180px]">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="br">🇧🇷 Brasil</SelectItem>
+                  <SelectItem value="us">🇺🇸 Estados Unidos</SelectItem>
+                  <SelectItem value="ca">🇨🇦 Canadá</SelectItem>
+                  <SelectItem value="mx">🇲🇽 México</SelectItem>
+                  <SelectItem value="ar">🇦🇷 Argentina</SelectItem>
+                  <SelectItem value="pt">🇵🇹 Portugal</SelectItem>
+                  <SelectItem value="es">🇪🇸 Espanha</SelectItem>
+                  <SelectItem value="uk">🇬🇧 Reino Unido</SelectItem>
+                  <SelectItem value="de">🇩🇪 Alemanha</SelectItem>
+                  <SelectItem value="fr">🇫🇷 França</SelectItem>
+                  <SelectItem value="it">🇮🇹 Itália</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <Badge variant="default" className="text-base px-3 py-1 min-w-[40px] justify-center">
-              {limit[0]}
-            </Badge>
+
+            {/* Quantidade de leads */}
+            <div className="flex items-center gap-4 flex-1">
+              <Label className="text-sm text-muted-foreground shrink-0">
+                Quantidade:
+              </Label>
+              <div className="flex-1 flex items-center gap-3 max-w-xs">
+                <span className="text-xs text-muted-foreground">5</span>
+                <Slider
+                  value={limit}
+                  onValueChange={setLimit}
+                  min={5}
+                  max={20}
+                  step={1}
+                  className="flex-1"
+                />
+                <span className="text-xs text-muted-foreground">20</span>
+              </div>
+              <Badge variant="default" className="text-base px-3 py-1 min-w-[40px] justify-center">
+                {limit[0]}
+              </Badge>
+            </div>
           </div>
 
           {/* Botão centralizado */}
